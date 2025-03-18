@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('adminlte::page')
 
 @section('template_title')
     {{ $producto->name ?? __('Show') . " " . __('Producto') }}
@@ -22,7 +22,7 @@
                         
                                 <div class="form-group mb-2 mb20">
                                     <strong>Id Producto:</strong>
-                                    {{ $producto->id_producto }}
+                                    {{ $producto->id }}
                                 </div>
                                 <div class="form-group mb-2 mb20">
                                     <strong>Item:</strong>

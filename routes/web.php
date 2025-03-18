@@ -1,6 +1,10 @@
 <?php
 
+use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\InventarioController;
+use App\Http\Controllers\AlmaceneController;
+use App\Http\Controllers\PresupuestoController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,4 +26,15 @@ require __DIR__ . '/auth.php';
 
 Route::resource('productos', ProductoController::class);
 
-Route::delete('productos/{id}', [ProductoController::class, 'destroy'])->name('productos.destroy');
+Route::resource('clientes', ClienteController::class);
+
+Route::resource('inventarios', InventarioController::class);
+
+Route::resource('almacenes', AlmaceneController::class);
+
+Route::resource('presupuestos', PresupuestoController::class);
+
+Route::get('/obtener-productos', [PresupuestoController::class, 'obtenerProductos']);
+
+Route::get('/presupuesto/{id}/pdf', [PresupuestoController::class, 'generarPdf'])->name('presupuestos.pdf');
+

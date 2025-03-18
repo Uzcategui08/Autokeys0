@@ -13,10 +13,14 @@
 @section('css')
 {{-- Add here extra stylesheets --}}
 {{-- <link rel="stylesheet" href="/css/admin_custom.css"> --}}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
 @stop
 
 @section('js')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 <script>
-    console.log("Hi, I'm using the Laravel-AdminLTE package!");
+$(document).ready(function() {
+        console.log("Hi, I'm using the Laravel-AdminLTE package!");
+});
 </script>
 @stop

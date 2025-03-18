@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('adminlte::page')
 
 @section('template_title')
     {{ __('Update') }} Producto
@@ -14,7 +14,7 @@
                         <span class="card-title">{{ __('Update') }} Producto</span>
                     </div>
                     <div class="card-body bg-white">
-                        <form method="POST" action="{{ route('productos.update', $producto->id) }}"  role="form" enctype="multipart/form-data">
+                        <form method="POST" action="{{ route('productos.update', $producto->id_producto) }}"  role="form" enctype="multipart/form-data">
                             {{ method_field('PATCH') }}
                             @csrf
 
