@@ -7,21 +7,20 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * Class Producto
  *
- * @property $id_producto
- * @property $item
- * @property $marca
- * @property $t_llave
- * @property $sku
- * @property $precio
- * @property $created_at
- * @property $updated_at
+ * @property int $id_producto
+ * @property string $item
+ * @property string $marca
+ * @property string $t_llave
+ * @property string $sku
+ * @property float $precio
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
  *
  * @package App
  * @mixin \Illuminate\Database\Eloquent\Builder
  */
 class Producto extends Model
 {
-    
     protected $perPage = 20;
 
     /**
@@ -29,7 +28,15 @@ class Producto extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['id_producto', 'item', 'marca', 't_llave', 'sku', 'precio'];
+    protected $primaryKey = 'id_producto';
 
+    protected $fillable = ['item', 'marca', 't_llave', 'sku', 'precio'];
 
+    /**
+     * Get the inventory records associated with the product.
+     */
+    public function inventarios()
+    {
+        return $this->hasMany(Inventario::class, 'id_producto', 'id_producto');
+    }
 }
