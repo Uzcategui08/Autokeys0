@@ -36,14 +36,13 @@
                         <table class="table table-striped table-hover">
                             <thead class="thead">
                                 <tr>
-                                    <th>No</th>
-
-                                    <th>Id Inventario</th>
-                                    <th>Id Producto</th>
-                                    <th>Id Almacen</th>
-                                    <th>Cantidad</th>
-
-                                    <th></th>
+                                    <th class="text-center align-middle">#</th>
+                                    <th class="text-center align-middle">ID Inventario</th>
+                                    <th class="text-center align-middle">Producto</th>
+                                    <th class="text-center align-middle">Almacén</th>
+                                    <th class="text-center align-middle">Cantidad</th>
+                                    <th class="text-center align-middle">Total $</th>
+                                    <th class="text-center align-middle">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -51,12 +50,13 @@
                                 <tr>
                                     <td>{{ ++$i }}</td>
 
-                                    <td>{{ $inventario->id_inventario }}</td>
-                                    <td>{{ $inventario->producto->item }}</td> <!-- Nombre del producto -->
-                                    <td>{{ $inventario->almacene->nombre }}</td> <!-- Nombre del almacén -->
-                                    <td>{{ $inventario->cantidad }}</td>
+                                    <td class="text-center align-middle">{{ $inventario->id_inventario }}</td>
+                                    <td class="text-center align-middle">{{ $inventario->producto->item }}</td>
+                                    <td class="text-center align-middle">{{ $inventario->almacene->nombre }}</td>
+                                    <td class="text-center align-middle">{{ $inventario->cantidad }}</td>
+                                    <td class="text-center align-middle">$ {{ number_format($inventario->cantidad * $inventario->producto->precio, 2) }}</td>
 
-                                    <td>
+                                    <td class="text-center align-middle">
                                         <form action="{{ route('inventarios.destroy', $inventario->id_inventario) }}" method="POST">
                                             <a class="btn btn-sm btn-primary" href="{{ route('inventarios.show', $inventario->id_inventario) }}">
                                                 <i class="fa fa-fw fa-eye"></i> {{ __('Show') }}

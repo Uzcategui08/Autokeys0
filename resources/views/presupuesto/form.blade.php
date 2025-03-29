@@ -1,7 +1,6 @@
-
 <div class="row padding-1 p-1">
     <div class="col-md-12">
-        
+
         <div class="row">
             <div class="col-md-6">
                 <div class="form-group mb-2 mb20">
@@ -16,7 +15,7 @@
                     <select name="id_cliente" class="form-control select2 @error('id_cliente') is-invalid @enderror" id="id_cliente" style="height: 38px !important;">
                         <option value="">{{ __('Select Cliente') }}</option>
                         @foreach($clientes as $cliente)
-                            <option value="{{ $cliente->id_cliente }}" {{ old('id_cliente', $presupuesto?->id_cliente) == $cliente->id_cliente ? 'selected' : '' }}>{{ $cliente->nombre }}</option>
+                        <option value="{{ $cliente->id_cliente }}" {{ old('id_cliente', $presupuesto?->id_cliente) == $cliente->id_cliente ? 'selected' : '' }}>{{ $cliente->nombre }}</option>
                         @endforeach
                     </select>
                     {!! $errors->first('id_cliente', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
@@ -69,9 +68,9 @@
                 <div class="form-group mb-2 mb20">
                     <label for="estado" class="form-label">{{ __('Estado') }}</label>
                     <select name="estado" class="form-control @error('estado') is-invalid @enderror" id="estado">
-                    <option value="pendiente" {{ old('estado', $presupuesto?->estado) == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
-                    <option value="aprobado" {{ old('estado', $presupuesto?->estado) == 'aprobado' ? 'selected' : '' }}>Aprobado</option>
-                    <option value="rechazado" {{ old('estado', $presupuesto?->estado) == 'rechazado' ? 'selected' : '' }}>Rechazado</option>
+                        <option value="pendiente" {{ old('estado', $presupuesto?->estado) == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
+                        <option value="aprobado" {{ old('estado', $presupuesto?->estado) == 'aprobado' ? 'selected' : '' }}>Aprobado</option>
+                        <option value="rechazado" {{ old('estado', $presupuesto?->estado) == 'rechazado' ? 'selected' : '' }}>Rechazado</option>
                     </select>
                     {!! $errors->first('estado', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
                 </div>
@@ -82,7 +81,7 @@
                     <select name="almacen" id="almacen" class="form-control">
                         <option value="">{{ __('Select Almacén') }}</option>
                         @foreach($almacenes as $almacen)
-                            <option value="{{ $almacen->id_almacen }}">{{ $almacen->nombre }}</option>
+                        <option value="{{ $almacen->id_almacen }}">{{ $almacen->nombre }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -91,57 +90,57 @@
 
 
         <div class="form-group mb-2 mb20">
-                <label for="items" class="form-label">{{ __('Items') }}</label>
-                <div id="items-container">
-                    @if (isset($presupuesto->items) && count($presupuesto->items) > 0)
-                        @foreach ($presupuesto->items as $index => $item)
-                            <div class="row mb-2">
-                                <div class="col-md-6">
-                                    <select name="items[{{ $index }}][producto]" class="form-control select2" {{ !$presupuesto->almacen ? 'disabled' : '' }}>
-                                        <option value="">{{ __('Select Producto') }}</option>
-                                        @foreach($inventario as $producto)
-                                            <option value="{{ $producto->id_producto }}" {{ $item['producto'] == $producto->id_producto ? 'selected' : '' }}>
-                                                {{ $producto->id_producto }} - {{ $item['nombre_producto'] }} 
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <input type="number" name="items[{{ $index }}][cantidad]" class="form-control" placeholder="Cantidad" min="1" value="{{ $item['cantidad'] }}">
-                                </div>
-                                <div class="col-md-2">
-                                    @if ($index == 0)
-                                        <button type="button" class="btn btn-success btn-add-item">+</button>
-                                    @else
-                                        <button type="button" class="btn btn-danger btn-remove-item">-</button>
-                                    @endif
-                                </div>
-                            </div>
-                        @endforeach
-                    @else
-                        <div class="row mb-2">
-                            <div class="col-md-6">
-                                <select name="items[0][producto]" class="form-control select2" disabled>
-                                    <option value="">{{ __('Select Producto') }}</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <input type="number" name="items[0][cantidad]" class="form-control" placeholder="Cantidad" min="1">
-                            </div>
-                            <div class="col-md-2">
-                                <button type="button" class="btn btn-success btn-add-item">+</button>
-                            </div>
-                        </div>
-                    @endif
+            <label for="items" class="form-label">{{ __('Items') }}</label>
+            <div id="items-container">
+                @if (isset($presupuesto->items) && count($presupuesto->items) > 0)
+                @foreach ($presupuesto->items as $index => $item)
+                <div class="row mb-2">
+                    <div class="col-md-6">
+                        <select name="items[{{ $index }}][producto]" class="form-control select2" {{ !$presupuesto->almacen ? 'disabled' : '' }}>
+                            <option value="">{{ __('Select Producto') }}</option>
+                            @foreach($inventario as $producto)
+                            <option value="{{ $producto->id_producto }}" {{ $item['producto'] == $producto->id_producto ? 'selected' : '' }}>
+                                {{ $producto->id_producto }} - {{ $item['nombre_producto'] }}
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="number" name="items[{{ $index }}][cantidad]" class="form-control" placeholder="Cantidad" min="1" value="{{ $item['cantidad'] }}">
+                    </div>
+                    <div class="col-md-2">
+                        @if ($index == 0)
+                        <button type="button" class="btn btn-success btn-add-item">+</button>
+                        @else
+                        <button type="button" class="btn btn-danger btn-remove-item">-</button>
+                        @endif
+                    </div>
                 </div>
+                @endforeach
+                @else
+                <div class="row mb-2">
+                    <div class="col-md-6">
+                        <select name="items[0][producto]" class="form-control select2" disabled>
+                            <option value="">{{ __('Select Producto') }}</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="number" name="items[0][cantidad]" class="form-control" placeholder="Cantidad" min="1">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-success btn-add-item">+</button>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
-
     </div>
 
-    <div class="col-md-12 mt-4 text-center">
-        <button type="submit" class="btn btn-secondary btn-lg px-5">{{ __('Grabar') }}</button>
-    </div>
+</div>
+
+<div class="col-md-12 mt-4 text-center">
+    <button type="submit" class="btn btn-secondary btn-lg px-5">{{ __('Grabar') }}</button>
+</div>
 
 </div>
 
@@ -180,8 +179,8 @@
                     },
                     success: function(response) {
 
-                        if ($select.find('option').length <= 1) { 
-                            $select.empty().append('<option value="">{{ __('Select Producto') }}</option>');
+                        if ($select.find('option').length <= 1) {
+                            $select.empty().append('<option value="">Select Producto</option>');
                             response.forEach(function(producto) {
                                 $select.append(
                                     `<option value="${producto.id_producto}">${producto.id_producto} - ${producto.item}</option>` //(Cantidad: ${producto.cantidad})
@@ -238,7 +237,7 @@
 
                 $('select[name^="items"]').each(function() {
                     const $select = $(this);
-                    if (!$select.val()) { 
+                    if (!$select.val()) {
                         cargarProductosEnSelect($select);
                     }
                 });

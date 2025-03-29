@@ -314,18 +314,23 @@ return [
 
         ['header' => 'account_settings'],
         [
+            'text' => 'Registro de Ventas',
+            'url' => 'registro-vs',
+            'icon' => 'fas fa-fw fa-cash-register',
+        ],
+        [
             'text' => 'Inventario',
             'url' => 'inventarios',
-            'icon' => 'fas fa-solid fa-warehouse',
+            'icon' => 'fas fa-fw fa-warehouse',
         ],
         [
             'text' => 'Productos',
             'url' => 'productos',
-            'icon' => 'fas fa-fw fa-lock',
+            'icon' => 'fas fa-fw fa-key',
         ],
         [
             'text' => 'Ventas',
-            'icon' => 'fas fa-solid fa-receipt',
+            'icon' => 'fas fa-fw fa-receipt',
             'submenu' => [
                 [
                     'text' => 'Presupuesto',
@@ -406,16 +411,16 @@ return [
             ],
         ],
         'Select2' => [
-            'active' => false,
+            'active' => true,
             'files' => [
                 [
                     'type' => 'js',
-                    'asset' => false,
+                    'asset' => true,
                     'location' => '//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js',
                 ],
                 [
                     'type' => 'css',
-                    'asset' => false,
+                    'asset' => true,
                     'location' => '//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.css',
                 ],
             ],
