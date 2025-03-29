@@ -2,14 +2,14 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Presupuesto - {{ $presupuesto->id_presupuesto }}</title>
+    <title>Orden - {{ $orden->id_orden }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
-            position: relative; 
-            min-height: 100vh; 
+            position: relative;
+            min-height: 100vh;
             box-sizing: border-box;
         }
         .header {
@@ -32,7 +32,7 @@
             padding: 10px;
         }
         .info-box th, .info-box td {
-            border: none; 
+            border: none;
             padding: 8px;
             text-align: left;
         }
@@ -102,7 +102,7 @@
 <body>
     <div class="header">
         <img src="{{ public_path('images/logo.webp') }}" alt="Logo de la empresa" style="float: right; max-height: 50px;">
-        <h1 style="text-align: left;">Presupuesto Nº {{ $presupuesto->id_presupuesto }}</h1>
+        <h1 style="text-align: left;">Orden Nº {{ $orden->id_orden }}</h1>
     </div>
 
     <div class="info-container">
@@ -136,25 +136,22 @@
                 <td style="width: 50%; border: 1px solid #000; padding: 10px; vertical-align: top;">
                     <table style="width: 100%;">
                         <tr>
-                            <th style="width: 100%; font-size: 12px; text-align: left;">Datos del cliente</th>
+                            <th style="width: 100%; font-size: 12px; text-align: left;">Datos</th>
                         </tr>
                         <tr>
                             <td><hr style="border: 1px solid #000;"></td>
                         </tr>
                         <tr>
-                            <td><strong>Nombre:</strong> {{ $presupuesto->cliente->nombre ?? 'N/A' }}</td>
+                            <td><strong>Nombre del Cliente:</strong> {{ $orden->cliente->nombre ?? 'N/A' }}</td>
                         </tr>
                         <tr>
-                            <td><strong>Dirección:</strong> {{ $presupuesto->cliente->direccion ?? 'N/A' }}</td>
+                            <td><strong>Dirección:</strong> {{ $orden->direccion ?? 'N/A' }}</td>
                         </tr>
                         <tr>
-                            <td><strong>CUIT-NIF:</strong> {{ $presupuesto->cliente->cuit ?? 'N/A' }}</td>
+                            <td><strong>Técnico:</strong> {{ $orden->id_tecnico ?? 'N/A' }}</td>
                         </tr>
                         <tr>
-                            <td><strong>Teléfono:</strong> {{ $presupuesto->cliente->telefono ?? 'N/A' }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>E-mail:</strong> {{ $presupuesto->cliente->email ?? 'N/A' }}</td>
+                            <td><strong>Estado:</strong> {{ $orden->estado ?? 'N/A' }}</td>
                         </tr>
                     </table>
                 </td>
@@ -165,22 +162,13 @@
     <div class="date-line">
         <table style="width: 100%;">
             <tr>
-                <td style="text-align: left;"><strong>Fecha presupuesto:</strong> {{ \Carbon\Carbon::parse($presupuesto->f_presupuesto)->format('Y/m/d') }}</td>
-                <td style="text-align: right;">
-                    <strong>Validez:</strong> 
-                    @php
-                        $f_presupuesto = \Carbon\Carbon::parse($presupuesto->f_presupuesto);
-                        $fechaValidez = \Carbon\Carbon::parse($presupuesto->validez);
-                        $diferenciaDias = $f_presupuesto->diffInDays($fechaValidez);
-                    @endphp
-                    Hasta {{ $fechaValidez->format('Y/m/d') }} ({{ $diferenciaDias }} días)
-                </td>
+                <td style="text-align: left;"><strong>Fecha orden:</strong> {{ \Carbon\Carbon::parse($orden->f_orden)->format('Y/m/d') }}</td>
             </tr>
         </table>
     </div>
 
-    @if (is_array($presupuesto->items))
-        @foreach ($presupuesto->items as $itemGroup)
+    @if (is_array($orden->items))
+        @foreach ($orden->items as $itemGroup)
             <h3>Trabajo: {{ $itemGroup['trabajo'] ?? 'N/A' }}</h3>
             <table class="items-table">
                 <thead>
@@ -207,52 +195,15 @@
         @endforeach
     @endif
 
-    <div class="totals">
-        @php
-            $subtotal = 0;
-            foreach ($presupuesto->items as $itemGroup) {
-                if (isset($itemGroup['productos']) && is_array($itemGroup['productos'])) {
-                    foreach ($itemGroup['productos'] as $item) {
-                        $subtotal += $item['cantidad'] * $item['precio_producto'];
-                    }
-                }
-            }
-            
-            $descuentoAmount = $subtotal * ($presupuesto->descuento / 100);
-            $subtotalConDescuento = $subtotal - $descuentoAmount;
-            $ivaAmount = $subtotalConDescuento * ($presupuesto->iva / 100);
-            $total = $subtotalConDescuento + $ivaAmount;
-        @endphp
-    
-        <table>
-            <tr>
-                <th>SUBTOTAL</th>
-                <td>${{ number_format($subtotal, 2) }}</td>
-            </tr>
-            <tr>
-                <th>DESCUENTO ({{ $presupuesto->descuento }}%)</th>
-                <td>${{ number_format($descuentoAmount, 2) }}</td>
-            </tr>
-            <tr>
-                <th>IVA ({{ $presupuesto->iva }}%)</th>
-                <td>${{ number_format($ivaAmount, 2) }}</td>
-            </tr>
-            <tr>
-                <th><strong>TOTAL PRESUPUESTADO</strong></th>
-                <td><strong>${{ number_format($total, 2) }}</strong></td>
-            </tr>
-        </table>
-    </div>
-
     <div class="footer">
         <table style="width: 100%;">
             <tr>
                 <td style="width: 50%; border: 1px solid #000; padding: 10px; vertical-align: top; font-size: 12px;">
-                    <p style="margin-bottom: 15px;">Firma de la persona que confecciona el presupuesto</p>
+                    <p style="margin-bottom: 15px;">Firma del técnico</p>
                     <hr style="border: 1px solid #000; margin-top: 50px;">
                 </td>
                 <td style="width: 50%; border: 1px solid #000; padding: 10px; vertical-align: top; font-size: 12px;">
-                    <p style="margin-bottom: 15px;">Firma de aceptación del cliente</p>
+                    <p style="margin-bottom: 15px;">Firma del cliente</p>
                     <hr style="border: 1px solid #000;margin-top: 50px;">
                 </td>
             </tr>
