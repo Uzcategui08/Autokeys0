@@ -20,7 +20,7 @@
                             style="height: 38px !important;">
                         <option value="">{{ __('Select Cliente') }}</option>
                         @foreach($clientes as $cliente)
-                            <option value="{{ $cliente->id_cliente }}" {{ old('id_cliente', $presupuesto?->id_cliente) == $cliente->id_cliente ? 'selected' : '' }}>{{ $cliente->nombre }}</option>
+                        <option value="{{ $cliente->id_cliente }}" {{ old('id_cliente', $presupuesto?->id_cliente) == $cliente->id_cliente ? 'selected' : '' }}>{{ $cliente->nombre }}</option>
                         @endforeach
                     </select>
                     {!! $errors->first('id_cliente', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
@@ -93,7 +93,6 @@
 
         <div class="form-group mb-2 mb20" id="items-container">
             <label for="items" class="form-label">{{ __('Items') }}</label>
-
         </div>
 
         <div class="col-md-12 mt-4 text-center">

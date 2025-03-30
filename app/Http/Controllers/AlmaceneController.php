@@ -18,7 +18,7 @@ class AlmaceneController extends Controller
     {
         $almacenes = Almacene::paginate();
 
-        return view('almacene.index', compact('almacenes'))
+        return view('almacenes.index', compact('almacenes'))
             ->with('i', ($request->input('page', 1) - 1) * $almacenes->perPage());
     }
 
@@ -29,7 +29,7 @@ class AlmaceneController extends Controller
     {
         $almacene = new Almacene();
 
-        return view('almacene.create', compact('almacene'));
+        return view('almacenes.create', compact('almacenes'));
     }
 
     /**

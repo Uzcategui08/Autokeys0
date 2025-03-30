@@ -39,4 +39,9 @@ class Producto extends Model
     {
         return $this->hasMany(Inventario::class, 'id_producto', 'id_producto');
     }
+
+    public function registroVs()
+    {
+        return $this->belongsTo(RegistroV::class);
+    }
 }

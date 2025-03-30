@@ -17,15 +17,19 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Almacene extends Model
 {
-    
+
     protected $perPage = 20;
 
+    protected $primaryKey = 'id_almacen';
+
+    public function almacen()
+    {
+        return $this->belongsTo(Almacene::class, 'inventario', 'id_almacen');
+    }
     /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
      */
     protected $fillable = ['id_almacen', 'nombre'];
-
-
 }
