@@ -2,30 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Arr;
-use App\Models\Presupuesto;
+use App\Models\Orden;
+use App\Models\Inventario;
+use App\Models\Almacene;
 use App\Models\Cliente;
-use App\Models\Producto;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use App\Http\Requests\PresupuestoRequest;
-use App\Models\Almacene;
-use App\Models\Inventario;
+use App\Http\Requests\OrdenRequest;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Arr;
+use App\Models\Producto;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 
-class PresupuestoController extends Controller
+class OrdenController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request): View
     {
-        $presupuestos = Presupuesto::with('cliente')->paginate();
 
-        return view('presupuesto.index', compact('presupuestos'))
-            ->with('i', ($request->input('page', 1) - 1) * $presupuestos->perPage());
+        $ordens = Orden::with('cliente')->paginate();
+
+        return view('orden.index', compact('ordens'))
+            ->with('i', ($request->input('page', 1) - 1) * $ordens->perPage());
     }
 
     /**
@@ -33,21 +34,21 @@ class PresupuestoController extends Controller
      */
     public function create(): View
     {
-        $clientes = Cliente::all();
-
         $inventario = Inventario::with('producto')->get();
 
         $almacenes = Almacene::all();
 
-        $presupuesto = new Presupuesto();
+        $clientes = Cliente::all();
 
-        return view('presupuesto.create', compact('presupuesto', 'clientes', 'inventario', 'almacenes'));
+        $orden = new Orden();
+
+        return view('orden.create', compact('orden', 'inventario', 'almacenes', 'clientes'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(presupuestoRequest $request): RedirectResponse
+    public function store(OrdenRequest $request): RedirectResponse
     {
 
         $validatedData = $request->validated();
@@ -78,20 +79,22 @@ class PresupuestoController extends Controller
    
         $validatedData['items'] = json_encode($trabajos);
     
-        Presupuesto::create($validatedData);
+        Orden::create($validatedData);
     
-        return Redirect::route('presupuestos.index')
-            ->with('success', 'Presupuesto creado exitosamente.');
+        return Redirect::route('ordens.index')
+            ->with('success', 'Orden creada exitosamente.');
     }
+    
+    
 
     /**
      * Display the specified resource.
      */
     public function show($id): View
     {
-        $presupuesto = Presupuesto::find($id);
+        $orden = Orden::find($id);
     
-        $items = json_decode($presupuesto->items, true);
+        $items = json_decode($orden->items, true);
     
         if (is_array($items)) {
 
@@ -118,21 +121,23 @@ class PresupuestoController extends Controller
             }
         }
 
-        $presupuesto->items = $items;
+        $orden->items = $items;
 
-        return view('presupuesto.show', compact('presupuesto'));
+        return view('orden.show', compact('orden'));
     }
+    
+    
 
     /**
      * Show the form for editing the specified resource.
      */
     public function edit($id): View
     {
-        $presupuesto = Presupuesto::findOrFail($id);
+        $orden = Orden::findOrFail($id);
         $almacenes = Almacene::all();
         $clientes = Cliente::all();
 
-        $items = json_decode($presupuesto->items, true) ?? [];
+        $items = json_decode($orden->items, true) ?? [];
         
         foreach ($items as &$trabajo) {
             if (isset($trabajo['productos'])) {
@@ -153,85 +158,83 @@ class PresupuestoController extends Controller
             }
         }
         
-        $presupuesto->items = $items;
+        $orden->items = $items;
         
-        return view('presupuesto.edit', compact('presupuesto', 'almacenes', 'clientes'));
+        return view('orden.edit', compact('orden', 'almacenes', 'clientes'));
     }
+    
     
 
     /**
      * Update the specified resource in storage.
 
-    public function update(PresupuestoRequest $request, Presupuesto $presupuesto): RedirectResponse
+    public function update(OrdenRequest $request, Orden $orden): RedirectResponse
     {
 
-        $presupuesto->update($request->validated());
+        $orden->update($request->validated());
     
         if ($request->has('items')) {
             foreach ($request->input('items') as $index => $itemData) {
-                $productoId = $itemData['producto'] ?? $presupuesto->items[$index]['producto'] ?? null;
-                $almacenId = $itemData['almacen'] ?? $presupuesto->items[$index]['almacen'] ?? null;
-                $cantidad = $itemData['cantidad'] ?? $presupuesto->items[$index]['cantidad'] ?? null;
+                $productoId = $itemData['producto'] ?? $orden->items[$index]['producto'] ?? null;
+                $almacenId = $itemData['almacen'] ?? $orden->items[$index]['almacen'] ?? null;
+                $cantidad = $itemData['cantidad'] ?? $orden->items[$index]['cantidad'] ?? null;
     
             }
         }
-    
-        return Redirect::route('presupuestos.index')
-            ->with('success', 'Presupuesto updated successfully');
-    }
-     */
 
-    public function update(PresupuestoRequest $request, Presupuesto $presupuesto): RedirectResponse
+        return Redirect::route('ordens.index')
+            ->with('success', 'Orden updated successfully');
+    }
+    */
+
+    public function update(OrdenRequest $request, Orden $orden): RedirectResponse
     {
         $validatedData = $request->validated();
 
         $items = $request->input('items');
 
-        $presupuesto->update(Arr::except($validatedData, ['items']));
+        $orden->update(Arr::except($validatedData, ['items']));
 
         if ($request->has('items')) {
-            $presupuesto->items = json_encode($items);
-            $presupuesto->save();
+            $orden->items = json_encode($items);
+            $orden->save();
         }
 
-        return Redirect::route('presupuestos.index')
-            ->with('success', 'Presupuesto updated successfully');
+        return Redirect::route('ordens.index')
+            ->with('success', 'Orden updated successfully');
     }
-    
-    
 
     public function destroy($id): RedirectResponse
     {
-        Presupuesto::find($id)->delete();
+        Orden::find($id)->delete();
 
-        return Redirect::route('presupuestos.index')
-            ->with('success', 'Presupuesto deleted successfully');
+        return Redirect::route('ordens.index')
+            ->with('success', 'Orden deleted successfully');
     }
 
     public function obtenerProductos(Request $request)
     {
         $idAlmacen = $request->input('id_almacen');
 
-        $productos = Inventario::with('producto')
-            ->where('id_almacen', $idAlmacen)
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'id_producto' => $item->id_producto,
-                    'item' => $item->producto->item,
-                    'cantidad' => $item->cantidad,
-                ];
-            });
+        $productos = Inventario::where('id_almacen', $idAlmacen)
+                               ->with('producto')
+                               ->get()
+                               ->map(function ($item) {
+                                   return [
+                                    'id_producto' => $item->id_producto,
+                                    'item' => $item->producto->item,
+                                    'cantidad' => $item->cantidad,
+                                   ];
+                               });
 
         return response()->json($productos);
     }
 
     public function generarPdf($id)
     {
-        $presupuesto = Presupuesto::find($id);
+        $orden = Orden::find($id);
 
-        $items = json_decode($presupuesto->items, true);
-
+        $items = json_decode($orden->items, true);
 
         if (is_array($items)) {
             foreach ($items as &$itemGroup) {
@@ -255,10 +258,10 @@ class PresupuestoController extends Controller
             }
         }
 
-        $presupuesto->items = $items;
-
-        $pdf = Pdf::loadView('presupuesto.pdf', compact('presupuesto'));
-
-        return $pdf->stream('presupuesto_' . $presupuesto->id_presupuesto . '.pdf');
+        $orden->items = $items;
+    
+        $pdf = Pdf::loadView('orden.pdf', compact('orden'));
+    
+        return $pdf->stream('orden_' . $orden->id_orden . '.pdf');
     }
 }

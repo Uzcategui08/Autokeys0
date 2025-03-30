@@ -5,6 +5,7 @@ use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\AlmaceneController;
 use App\Http\Controllers\PresupuestoController;
+use App\Http\Controllers\OrdenController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegistroVController;
 use Illuminate\Support\Facades\Route;
@@ -40,5 +41,9 @@ Route::resource('registro-vs', RegistroVController::class);
 Route::get('/obtener-productos-registroV', [RegistroVController::class, 'obtenerProductosV']);
 
 Route::get('/obtener-productos', [PresupuestoController::class, 'obtenerProductos']);
-
 Route::get('/presupuesto/{id}/pdf', [PresupuestoController::class, 'generarPdf'])->name('presupuestos.pdf');
+
+Route::resource('ordens', OrdenController::class);
+Route::get('/obtener-productos-orden', [OrdenController::class, 'obtenerProductos']);
+Route::get('/orden/{id}/pdf', [OrdenController::class, 'generarPdf'])->name('ordens.pdf');
+
