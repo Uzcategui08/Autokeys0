@@ -329,6 +329,11 @@ return [
             'icon' => 'fas fa-fw fa-key',
         ],
         [
+            'text' => 'Clientes',
+            'url' => 'clientes',
+            'icon' => 'fas fa-fw fa-users',
+        ],
+        [
             'text' => 'Ventas',
             'icon' => 'fas fa-fw fa-receipt',
             'submenu' => [
@@ -337,8 +342,8 @@ return [
                     'url' => 'presupuestos',
                 ],
                 [
-                    'text' => 'level_one',
-                    'url' => '#',
+                    'text' => 'orden',
+                    'url' => 'ordens',
                 ],
             ],
         ],

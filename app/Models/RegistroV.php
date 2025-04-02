@@ -54,4 +54,9 @@ class RegistroV extends Model
     {
         return $this->belongsTo(RegistroV::class);
     }
+
+    public function cliente()
+    {
+        return $this->belongsTo(Cliente::class);
+    }
 }

@@ -6,9 +6,9 @@
                 <div class="form-group mb-2 mb20">
                     <label for="id_presupuesto" class="form-label">{{ __('Id Presupuesto') }}</label>
                     <input type="text" name="id_presupuesto"
-                           class="form-control @error('id_presupuesto') is-invalid @enderror"
-                           value="{{ old('id_presupuesto', $presupuesto?->id_presupuesto) }}" id="id_presupuesto"
-                           placeholder="Id Presupuesto">
+                        class="form-control @error('id_presupuesto') is-invalid @enderror"
+                        value="{{ old('id_presupuesto', $presupuesto?->id_presupuesto) }}" id="id_presupuesto"
+                        placeholder="Id Presupuesto">
                     {!! $errors->first('id_presupuesto', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
                 </div>
             </div>
@@ -16,11 +16,11 @@
                 <div class="form-group mb-2 mb20">
                     <label for="id_cliente" class="form-label">{{ __('Id Cliente') }}</label>
                     <select name="id_cliente"
-                            class="form-control select2 @error('id_cliente') is-invalid @enderror" id="id_cliente"
-                            style="height: 38px !important;">
+                        class="form-control select2 @error('id_cliente') is-invalid @enderror" id="id_cliente"
+                        style="height: 38px !important;">
                         <option value="">{{ __('Select Cliente') }}</option>
                         @foreach($clientes as $cliente)
-                            <option value="{{ $cliente->id_cliente }}" {{ old('id_cliente', $presupuesto?->id_cliente) == $cliente->id_cliente ? 'selected' : '' }}>{{ $cliente->nombre }}</option>
+                        <option value="{{ $cliente->id_cliente }}" {{ old('id_cliente', $presupuesto?->id_cliente) == $cliente->id_cliente ? 'selected' : '' }}>{{ $cliente->nombre }}</option>
                         @endforeach
                     </select>
                     {!! $errors->first('id_cliente', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
@@ -30,8 +30,8 @@
                 <div class="form-group mb-2 mb20">
                     <label for="f_presupuesto" class="form-label">{{ __('F Presupuesto') }}</label>
                     <input type="date" name="f_presupuesto"
-                           class="form-control @error('f_presupuesto') is-invalid @enderror"
-                           value="{{ old('f_presupuesto', $presupuesto?->f_presupuesto) }}" id="f_presupuesto">
+                        class="form-control @error('f_presupuesto') is-invalid @enderror"
+                        value="{{ old('f_presupuesto', $presupuesto?->f_presupuesto) }}" id="f_presupuesto">
                     {!! $errors->first('f_presupuesto', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
                 </div>
             </div>
@@ -39,7 +39,7 @@
                 <div class="form-group mb-2 mb20">
                     <label for="validez" class="form-label">{{ __('Validez') }}</label>
                     <input type="date" name="validez" class="form-control @error('validez') is-invalid @enderror"
-                           value="{{ old('validez', $presupuesto?->validez) }}" id="validez">
+                        value="{{ old('validez', $presupuesto?->validez) }}" id="validez">
                     {!! $errors->first('validez', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
                 </div>
             </div>
@@ -51,9 +51,9 @@
                     <label for="descuento" class="form-label">{{ __('Descuento') }}</label>
                     <div class="input-group">
                         <input type="number" name="descuento"
-                               class="form-control @error('descuento') is-invalid @enderror"
-                               value="{{ old('descuento', $presupuesto?->descuento) }}" id="descuento"
-                               placeholder="Descuento" min="0" max="100">
+                            class="form-control @error('descuento') is-invalid @enderror"
+                            value="{{ old('descuento', $presupuesto?->descuento) }}" id="descuento"
+                            placeholder="Descuento" min="0" max="100">
                         <div class="input-group-append">
                             <span class="input-group-text">%</span>
                         </div>
@@ -95,9 +95,9 @@
                     <select name="almacen" id="almacen" class="form-control">
                         <option value="">{{ __('Select Almacén') }}</option>
                         @foreach($almacenes as $almacen)
-                            <option value="{{ $almacen->id_almacen }}" {{ old('almacen', $presupuesto?->almacen) == $almacen->id_almacen ? 'selected' : '' }}>
-                                {{ $almacen->nombre }}
-                            </option>
+                        <option value="{{ $almacen->id_almacen }}" {{ old('almacen', $presupuesto?->almacen) == $almacen->id_almacen ? 'selected' : '' }}>
+                            {{ $almacen->nombre }}
+                        </option>
                         @endforeach
                     </select>
                 </div>
@@ -108,51 +108,51 @@
             <label for="items" class="form-label">{{ __('Items') }}</label>
             <div id="items-container">
                 @if (isset($presupuesto->items) && count($presupuesto->items) > 0)
-                    @foreach ($presupuesto->items as $index => $item)
-                        <div class="row mb-2">
-                            <div class="col-md-6">
-                                <select name="items[{{ $index }}][producto]"
-                                        class="form-control select2-producto" {{ !$presupuesto->almacen ? 'disabled' : '' }}>
-                                    <option value="">{{ __('Select Producto') }}</option>
-                                    @foreach($inventario as $producto)
-                                        <option value="{{ $producto->id_producto }}" {{ $item['producto'] == $producto->id_producto ? 'selected' : '' }}>
-                                            {{ $producto->id_producto }} - {{ $item['nombre_producto'] }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <input type="number" name="items[{{ $index }}][cantidad]"
-                                       class="form-control" placeholder="Cantidad" min="1"
-                                       value="{{ old("items.$index.cantidad", $item['cantidad']) }}">
-                            </div>
-                            <input type="hidden" name="items[{{ $index }}][almacen]"
-                                   value="{{ old("items.$index.almacen", $item['almacen'] ?? '') }}">
-                            <div class="col-md-2">
-                                @if ($index == 0)
-                                    <button type="button" class="btn btn-success btn-add-item">+</button>
-                                @else
-                                    <button type="button" class="btn btn-danger btn-remove-item">-</button>
-                                @endif
-                            </div>
-                        </div>
-                    @endforeach
+                @foreach ($presupuesto->items as $index => $item)
+                <div class="row mb-2">
+                    <div class="col-md-6">
+                        <select name="items[{{ $index }}][producto]"
+                            class="form-control select2-producto" {{ !$presupuesto->almacen ? 'disabled' : '' }}>
+                            <option value="">{{ __('Select Producto') }}</option>
+                            @foreach($inventario as $producto)
+                            <option value="{{ $producto->id_producto }}" {{ $item['producto'] == $producto->id_producto ? 'selected' : '' }}>
+                                {{ $producto->id_producto }} - {{ $item['nombre_producto'] }}
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="number" name="items[{{ $index }}][cantidad]"
+                            class="form-control" placeholder="Cantidad" min="1"
+                            value="{{ old('items.$index.cantidad', $item['cantidad']) }}">
+                    </div>
+                    <input type="hidden" name="items[{{ $index }}][almacen]"
+                        value="{{ old('items.$index.almacen', $item['almacen'] ?? '') }}">
+                    <div class="col-md-2">
+                        @if ($index == 0)
+                        <button type="button" class="btn btn-success btn-add-item">+</button>
+                        @else
+                        <button type="button" class="btn btn-danger btn-remove-item">-</button>
+                        @endif
+                    </div>
+                </div>
+                @endforeach
 
                 @else
-                    <div class="row mb-2">
-                        <div class="col-md-6">
-                            <select name="items[0][producto]" class="form-control select2-producto" disabled>
-                                <option value="">{{ __('Select Producto') }}</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <input type="number" name="items[0][cantidad]" class="form-control" placeholder="Cantidad"
-                                   min="1">
-                        </div>
-                        <div class="col-md-2">
-                            <button type="button" class="btn btn-success btn-add-item">+</button>
-                        </div>
+                <div class="row mb-2">
+                    <div class="col-md-6">
+                        <select name="items[0][producto]" class="form-control select2-producto" disabled>
+                            <option value="">{{ __('Select Producto') }}</option>
+                        </select>
                     </div>
+                    <div class="col-md-4">
+                        <input type="number" name="items[0][cantidad]" class="form-control" placeholder="Cantidad"
+                            min="1">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-success btn-add-item">+</button>
+                    </div>
+                </div>
                 @endif
             </div>
         </div>
@@ -177,53 +177,54 @@
 
 
 <script>
-$(document).ready(function() {
-    let itemIndex = $('#items-container .row').length;
+    $(document).ready(function() {
+        let itemIndex = $('#items-container .row').length;
 
-    function actualizarEstadoProductos() {
-        const idAlmacen = $('#almacen').val();
-        const productosHabilitados = idAlmacen !== "";
+        function actualizarEstadoProductos() {
+            const idAlmacen = $('#almacen').val();
+            const productosHabilitados = idAlmacen !== "";
 
-        $('select[name^="items"]').each(function() {
-            const $select = $(this);
-            if (!productosHabilitados) {
-                $select.prop('disabled', true);
-            } else {
-                $select.prop('disabled', false);
-                if (!$select.val()) {
-                    cargarProductosEnSelect($select);
-                }
-            }
-        });
-    }
-
-    function cargarProductosEnSelect($select) {
-        const idAlmacen = $('#almacen').val();
-
-        if (idAlmacen) {
-            $.ajax({
-                url: '/obtener-productos',
-                type: 'GET',
-                data: {
-                    id_almacen: idAlmacen
-                },
-                success: function(response) {
-                    $select.empty().append('<option value="">{{ __('Select Producto') }}</option>');
-                    response.forEach(function(producto) {
-                        $select.append(
-                            `<option value="${producto.id_producto}">${producto.id_producto} - ${producto.item}</option>`
-                        );
-                    });
-                },
-                error: function(xhr) {
-                    console.error('Error al cargar los productos');
+            $('select[name^="items"]').each(function() {
+                const $select = $(this);
+                if (!productosHabilitados) {
+                    $select.prop('disabled', true);
+                } else {
+                    $select.prop('disabled', false);
+                    if (!$select.val()) {
+                        cargarProductosEnSelect($select);
+                    }
                 }
             });
         }
-    }
 
-    $(document).on('click', '.btn-add-item', function() {
-        const newItem = `
+        function cargarProductosEnSelect($select) {
+            const idAlmacen = $('#almacen').val();
+
+            if (idAlmacen) {
+                $.ajax({
+                    url: '/obtener-productos',
+                    type: 'GET',
+                    data: {
+                        id_almacen: idAlmacen
+                    },
+                    success: function(response) {
+                        $select.empty().append('<option value="">{{ __('
+                            Select Producto ') }}</option>');
+                        response.forEach(function(producto) {
+                            $select.append(
+                                `<option value="${producto.id_producto}">${producto.id_producto} - ${producto.item}</option>`
+                            );
+                        });
+                    },
+                    error: function(xhr) {
+                        console.error('Error al cargar los productos');
+                    }
+                });
+            }
+        }
+
+        $(document).on('click', '.btn-add-item', function() {
+            const newItem = `
             <div class="row mb-2">
                 <div class="col-md-6">
                     <select name="items[${itemIndex}][producto]" class="form-control select2-producto">
@@ -239,49 +240,49 @@ $(document).ready(function() {
                 </div>
             </div>
         `;
-        $('#items-container').append(newItem);
+            $('#items-container').append(newItem);
 
-        const $newSelect = $('select[name="items[' + itemIndex + '][producto]"]');
-        $newSelect.select2();
+            const $newSelect = $('select[name="items[' + itemIndex + '][producto]"]');
+            $newSelect.select2();
+
+            actualizarEstadoProductos();
+
+            if ($('#almacen').val()) {
+                cargarProductosEnSelect($newSelect);
+            }
+
+            itemIndex++;
+        });
+
+        $(document).on('click', '.btn-remove-item', function() {
+            $(this).closest('.row').remove();
+        });
+
+        $('#almacen').change(function() {
+            const idAlmacen = $(this).val();
+
+            if (idAlmacen) {
+                actualizarEstadoProductos();
+
+                $('select[name^="items"]').each(function() {
+                    const $select = $(this);
+                    if (!$select.val()) {
+                        cargarProductosEnSelect($select);
+                    }
+                });
+            } else {
+                actualizarEstadoProductos();
+            }
+        });
 
         actualizarEstadoProductos();
 
         if ($('#almacen').val()) {
-            cargarProductosEnSelect($newSelect);
-        }
-
-        itemIndex++;
-    });
-
-    $(document).on('click', '.btn-remove-item', function() {
-        $(this).closest('.row').remove();
-    });
-
-    $('#almacen').change(function() {
-        const idAlmacen = $(this).val();
-
-        if (idAlmacen) {
-            actualizarEstadoProductos();
-
-            $('select[name^="items"]').each(function() {
-                const $select = $(this);
-                if (!$select.val()) {
-                    cargarProductosEnSelect($select);
-                }
-            });
-        } else {
             actualizarEstadoProductos();
         }
+
+        $('form').on('submit', function() {
+            $(':disabled').prop('disabled', false);
+        });
     });
-
-    actualizarEstadoProductos();
-
-    if ($('#almacen').val()) {
-        actualizarEstadoProductos();
-    }
-
-    $('form').on('submit', function() {
-        $(':disabled').prop('disabled', false);
-    });
-});
 </script>
