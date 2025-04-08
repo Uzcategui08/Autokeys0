@@ -319,14 +319,14 @@ return [
             'icon' => 'fas fa-fw fa-warehouse',
         ],
         [
-            'text' => 'Inventario',
-            'url' => 'inventarios',
-            'icon' => 'fas fa-fw fa-box',
-        ],
-        [
             'text' => 'Productos',
             'url' => 'productos',
             'icon' => 'fas fa-fw fa-key',
+        ],
+        [
+            'text' => 'Inventario',
+            'url' => 'inventarios',
+            'icon' => 'fas fa-fw fa-box',
         ],
         ['header' => 'Ventas'],
         [

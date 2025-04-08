@@ -136,12 +136,12 @@
                 @foreach($clientes as $cliente)
                 <option value="{{ $cliente->nombre }}"
                     data-telefono="{{ $cliente->telefono }}"
-                    {{ old('id_cliente', $registroV?->id_cliente) == $cliente->id_cliente ? 'selected' : '' }}>
+                    {{ old('cliente', $registroV?->cliente) == $cliente->nombre ? 'selected' : '' }}>
                     {{ $cliente->nombre }} {{ $cliente->apellido ?? '' }}
                 </option>
                 @endforeach
             </select>
-            {!! $errors->first('id_cliente', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
+            {!! $errors->first('cliente', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
         </div>
         
         <!-- Input de Teléfono (ocupará 4 columnas) -->
@@ -153,8 +153,6 @@
         </div>
     </div>
 </div>
-
-
             </div>
         </div>
 

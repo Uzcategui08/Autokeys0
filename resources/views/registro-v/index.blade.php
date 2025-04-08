@@ -3,7 +3,7 @@
 @section('title', 'Presupuestos')
 
 @section('content_header')
-<h1>Registro de Presupuestos</h1>
+<h1>Registro de Ventas</h1>
 @stop
 
 @section('content')
