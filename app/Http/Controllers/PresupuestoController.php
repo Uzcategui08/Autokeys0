@@ -64,7 +64,7 @@ class PresupuestoController extends Controller
                                     'producto' => $producto['producto'],
                                     'cantidad' => $producto['cantidad'],
                                     'almacen' => $producto['almacen'],
-                                    'precio' => $producto['precio'],
+
                                 ];
                             }
                         }
