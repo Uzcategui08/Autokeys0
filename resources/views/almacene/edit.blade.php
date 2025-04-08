@@ -7,20 +7,20 @@
 @stop
 
 @section('content')
-
     <section class="content container-fluid">
-        <div class="row">
+        <div class="">
             <div class="col-md-12">
 
                 <div class="card card-default">
                     <div class="card-header">
-                        <span class="card-title">{{ __('Create') }} Cliente</span>
+                        <span class="card-title">{{ __('Update') }} Almacene</span>
                     </div>
                     <div class="card-body bg-white">
-                        <form method="POST" action="{{ route('clientes.store') }}"  role="form" enctype="multipart/form-data">
+                        <form method="POST" action="{{ route('almacenes.update', $almacene->id_almacen) }}"  role="form" enctype="multipart/form-data">
+                            {{ method_field('PATCH') }}
                             @csrf
 
-                            @include('cliente.form')
+                            @include('almacene.form')
 
                         </form>
                     </div>
@@ -28,7 +28,7 @@
             </div>
         </div>
     </section>
-    @stop
+@endsection
 @section('css')
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 @stop

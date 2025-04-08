@@ -303,50 +303,54 @@ return [
         [
             'type' => 'navbar-search',
             'text' => 'search',
-            'topnav_right' => true,
+            'topnav_right' => false,
         ],
         [
             'type' => 'fullscreen-widget',
-            'topnav_right' => true,
+            'topnav_right' => false,
         ],
 
         // Sidebar items:
 
-        ['header' => 'account_settings'],
+        ['header' => 'Productos/Almacen'],
         [
-            'text' => 'Registro de Ventas',
-            'url' => 'registro-vs',
-            'icon' => 'fas fa-fw fa-cash-register',
+            'text' => 'Almacenes',
+            'url' => 'almacenes',
+            'icon' => 'fas fa-fw fa-warehouse',
         ],
         [
             'text' => 'Inventario',
             'url' => 'inventarios',
-            'icon' => 'fas fa-fw fa-warehouse',
+            'icon' => 'fas fa-fw fa-box',
         ],
         [
             'text' => 'Productos',
             'url' => 'productos',
             'icon' => 'fas fa-fw fa-key',
         ],
+        ['header' => 'Ventas'],
+        [
+            'text' => 'Registro de Ventas',
+            'url' => 'registro-vs',
+            'icon' => 'fas fa-fw fa-cash-register',
+        ],
+        [
+            'text' => 'Presupuestos',
+            'url' => 'presupuestos',
+            'icon' => 'fas fa-fw fa-receipt',
+        ],
+        [
+            'text' => 'Orden',
+            'url' => 'ordens',
+            'icon' => 'fas fa-fw fa-receipt',
+        ],
+        ['header' => '-'],
         [
             'text' => 'Clientes',
             'url' => 'clientes',
             'icon' => 'fas fa-fw fa-users',
         ],
-        [
-            'text' => 'Ventas',
-            'icon' => 'fas fa-fw fa-receipt',
-            'submenu' => [
-                [
-                    'text' => 'Presupuesto',
-                    'url' => 'presupuestos',
-                ],
-                [
-                    'text' => 'orden',
-                    'url' => 'ordens',
-                ],
-            ],
-        ],
+
         ['header' => 'Usuarios'],
         [
             'text' => 'Usuario',
@@ -431,7 +435,7 @@ return [
             ],
         ],
         'Chartjs' => [
-            'active' => false,
+            'active' => true,
             'files' => [
                 [
                     'type' => 'js',
@@ -441,7 +445,7 @@ return [
             ],
         ],
         'Sweetalert2' => [
-            'active' => false,
+            'active' => true,
             'files' => [
                 [
                     'type' => 'js',

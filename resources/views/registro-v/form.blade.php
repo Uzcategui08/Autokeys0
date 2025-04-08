@@ -134,7 +134,7 @@
             <select name="cliente" id="id_cliente" class="form-control @error('id_cliente') is-invalid @enderror">
                 <option value="">{{ __('Seleccione un cliente') }}</option>
                 @foreach($clientes as $cliente)
-                <option value="{{ $cliente->id_cliente }}"
+                <option value="{{ $cliente->nombre }}"
                     data-telefono="{{ $cliente->telefono }}"
                     {{ old('id_cliente', $registroV?->id_cliente) == $cliente->id_cliente ? 'selected' : '' }}>
                     {{ $cliente->nombre }} {{ $cliente->apellido ?? '' }}

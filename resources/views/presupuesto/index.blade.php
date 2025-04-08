@@ -17,8 +17,8 @@
                                 {{ __('Presupuestos') }}
                             </span>
                             <div class="float-right">
-                                <a href="{{ route('presupuestos.create') }}" class="btn btn-secondary btn-sm float-right" data-placement="left">
-                                    {{ __('Crear Nuevo Presupuesto') }}
+                                <a href="{{ route('presupuestos.create') }}" class="btn btn-primary btn-sm float-right" data-placement="left">
+                                    {{ __('Crear Presupuesto') }}
                                 </a>
                             </div>
                         </div>

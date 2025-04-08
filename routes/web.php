@@ -38,6 +38,8 @@ Route::resource('presupuestos', PresupuestoController::class);
 
 Route::resource('registro-vs', RegistroVController::class);
 
+Route::resource('almacenes', AlmaceneController::class);
+
 Route::get('/obtener-productos-registroV', [RegistroVController::class, 'obtenerProductosV']);
 
 Route::get('/obtener-productos', [PresupuestoController::class, 'obtenerProductos']);

@@ -22,7 +22,7 @@ class RegistroVController extends Controller
      */
     public function index(Request $request): View
     {
-        $registroVs = RegistroV::with('cliente')->paginate();
+        $registroVs = RegistroV::with('cliente')->paginate(15);
 
         return view('registro-v.index', compact('registroVs'))
             ->with('i', ($request->input('page', 1) - 1) * $registroVs->perPage());
@@ -80,6 +80,7 @@ class RegistroVController extends Controller
                                     'producto' => $producto['producto'],
                                     'cantidad' => $producto['cantidad'],
                                     'almacen' => $producto['almacen'],
+                                    'precio' => $producto['precio'],
                                 ];
                             }
                         }

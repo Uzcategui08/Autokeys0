@@ -20,7 +20,7 @@
 
                         <div class="float-right">
                             <a href="{{ route('registro-vs.create') }}" class="btn btn-primary btn-sm float-right" data-placement="left">
-                                {{ __('Create New') }}
+                                {{ __('Crear Registro de Venta') }}
                             </a>
                         </div>
                     </div>
@@ -33,7 +33,7 @@
 
                 <div class="card-body bg-white">
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
+                    <table class="table table-striped table-bordered dataTable">
                             <thead class="thead">
                                 <tr>
                                     <th>No</th>
@@ -42,20 +42,10 @@
                                     <th>Tecnico</th>
                                     <th>Trabajo</th>
                                     <th>Cliente</th>
-                                    <th>Telefono</th>
                                     <th>Valor V</th>
                                     <th>Estatus</th>
-                                    <th>Metodo P</th>
-                                    <th>Titular C</th>
                                     <th>Cobro</th>
                                     <th>Descripcion Ce</th>
-                                    <th>Monto Ce</th>
-                                    <th>Metodo Pce</th>
-                                    <th>Porcentaje C</th>
-                                    <th>Marca</th>
-                                    <th>Modelo</th>
-                                    <th>Año</th>
-                                    <th>Items</th>
 
                                     <th></th>
                                 </tr>
@@ -68,22 +58,11 @@
                                     <td>{{ $registroV->fecha_h }}</td>
                                     <td>{{ $registroV->tecnico }}</td>
                                     <td>{{ $registroV->trabajo }}</td>
-                                    <td>{{ $registroV->cliente }}</td>
-                                    <td>{{ $registroV->telefono }}</td>
+                                    <td>{{ $registroV->cliente}}</td>
                                     <td>{{ $registroV->valor_v }}</td>
                                     <td>{{ $registroV->estatus }}</td>
-                                    <td>{{ $registroV->metodo_p }}</td>
-                                    <td>{{ $registroV->titular_c }}</td>
                                     <td>{{ $registroV->cobro }}</td>
                                     <td>{{ $registroV->descripcion_ce }}</td>
-                                    <td>{{ $registroV->monto_ce }}</td>
-                                    <td>{{ $registroV->metodo_pce }}</td>
-                                    <td>{{ $registroV->porcentaje_c }}</td>
-                                    <td>{{ $registroV->marca }}</td>
-                                    <td>{{ $registroV->modelo }}</td>
-                                    <td>{{ $registroV->año }}</td>
-                                    <td>{{ $registroV->items }}</td>
-
                                     <td>
                                         <form action="{{ route('registro-vs.destroy', $registroV->id) }}" method="POST">
                                             <a class="btn btn-sm btn-primary " href="{{ route('registro-vs.show', $registroV->id) }}"><i class="fa fa-fw fa-eye"></i> {{ __('Show') }}</a>
@@ -104,53 +83,56 @@
         </div>
     </div>
 </div>
+@stop
+
+@section('css')
 <style>
-    .dataTable {
-        width: 100% !important;
-        margin: 0 auto;
-        border-collapse: collapse;
-    }
+        .dataTable {
+            width: 100% !important;
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
 
-    .dataTable th,
-    .dataTable td {
-        padding: 12px;
-        text-align: center;
-        vertical-align: middle;
-    }
+        .dataTable th,
+        .dataTable td {
+            padding: 12px;
+            text-align: center;
+            vertical-align: middle;
+        }
 
-    .dataTable thead th {
-        color: black;
-        font-weight: bold;
-    }
+        .dataTable thead th {
+            color: black;
+            font-weight: bold;
+        }
 
-    .dataTable tbody tr:nth-of-type(odd) {
-        background-color: rgba(0, 0, 0, 0.05);
-    }
+        .dataTable tbody tr:nth-of-type(odd) {
+            background-color: rgba(0, 0, 0, 0.05); 
+        }
 
-    .btn-sm {
-        margin: 2px;
-    }
+        .btn-sm {
+            margin: 2px;
+        }
 
-    .dt-buttons .btn {
-        margin-right: 5px;
-    }
-</style>
+        .dt-buttons .btn {
+            margin-right: 5px;
+        }
+    </style>
 
 @endsection
 
-@push('js')
-<script>
-    $(document).ready(function() {
-        $('.dataTable').DataTable({
-            responsive: true,
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json'
-            },
-            dom: 'Bfrtip',
-            buttons: [
-                'copy', 'csv', 'excel', 'pdf', 'print'
-            ]
+@section('js')
+    <script>
+        $(document).ready(function() {
+            $('.dataTable').DataTable({
+                responsive: true, 
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json' 
+                },
+                dom: 'Bfrtip', 
+                buttons: [
+                    'copy', 'csv', 'excel', 'pdf', 'print' 
+                ]
+            });
         });
-    });
-</script>
-@endpush
+    </script>
+@stop
