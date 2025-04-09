@@ -6,9 +6,8 @@
             <div class="col-md-6">
                 <div class="form-group mb-2 mb20">
                     <label for="fecha_h" class="form-label">{{ __('Fecha H') }}</label>
-                    <input type="text" name="fecha_h" class="form-control @error('fecha_h') is-invalid @enderror"
-                        value="{{ old('fecha_h', $registroV?->fecha_h ?? now()->toDateString()) }}"
-                        id="fecha_h" placeholder="Fecha H" readonly>
+                    <input type="date" name="fecha_h" class="form-control @error('fecha_h') is-invalid @enderror"
+                        id="fecha_h" placeholder="Fecha H">
                     {!! $errors->first('fecha_h', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                 </div>
 

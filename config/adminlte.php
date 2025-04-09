@@ -350,6 +350,12 @@ return [
             'url' => 'clientes',
             'icon' => 'fas fa-fw fa-users',
         ],
+        ['header' => 'Nomina'],
+        [
+            'text' => 'Nomina',
+            'url' => 'nomina',
+            'icon' => 'fas fa-fw fa-money',
+        ],
 
         ['header' => 'Usuarios'],
         [

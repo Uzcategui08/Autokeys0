@@ -175,7 +175,7 @@ class RegistroVController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(RegistroVRequest $request, RegistroV $registroV): RedirectResponse
+     public function update(RegistroVRequest $request, RegistroV $registroV): RedirectResponse
     {
         $validatedData = $request->validated();
 
