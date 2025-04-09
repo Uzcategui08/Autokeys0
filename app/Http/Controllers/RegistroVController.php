@@ -142,19 +142,19 @@ class RegistroVController extends Controller
      */
     public function edit($id): View
     {
-        $registroV = RegistroV::findOrFail($id);
+        $registroV = registroV::findOrFail($id);
         $almacenes = Almacene::all();
         $clientes = Cliente::all();
 
         $items = json_decode($registroV->items, true) ?? [];
-
+        
         foreach ($items as &$trabajo) {
             if (isset($trabajo['productos'])) {
                 foreach ($trabajo['productos'] as &$producto) {
                     $producto['producto'] = $producto['producto'] ?? null;
                     $producto['cantidad'] = $producto['cantidad'] ?? 1;
                     $producto['almacen'] = $producto['almacen'] ?? null;
-
+                    
                     if ($producto['producto']) {
                         $productoModel = Producto::find($producto['producto']);
                         $producto['nombre_producto'] = $productoModel ? $productoModel->item : 'Producto no encontrado';
@@ -166,9 +166,9 @@ class RegistroVController extends Controller
                 $trabajo['productos'] = [];
             }
         }
-
+        
         $registroV->items = $items;
-
+        
         return view('registro-v.edit', compact('registroV', 'almacenes', 'clientes'));
     }
 

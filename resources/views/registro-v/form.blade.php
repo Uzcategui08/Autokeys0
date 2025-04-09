@@ -155,20 +155,17 @@
             </div>
         </div>
 
-        <!-- Área de Items -->
-        <div class="row">
-            <div class="col-md-12">
-                <div class="form-group mb-2 mb20" id="items-container">
-                    <label for="items" class="form-label">{{ __('Items') }}</label>
-                </div>
-            </div>
+        <div class="form-group mb-2 mb20" id="items-container">
+            <label for="items" class="form-label">{{ __('Items') }}</label>
+
         </div>
 
-        <!-- Botón de Submit -->
-        <div class="row">
-            <div class="col-md-12 mt-3">
-                <button type="submit" class="btn btn-primary">{{ __('Submit') }}</button>
-            </div>
+        <div class="col-md-12 mt-4 text-center">
+            <button type="button" class="btn btn-success btn-add-work">{{ __('Agregar Trabajo') }}</button>
+        </div>
+
+        <div class="col-md-12 mt-4 text-center">
+            <button type="submit" class="btn btn-secondary btn-lg px-5">{{ __('Grabar') }}</button>
         </div>
     </div>
 </div>
@@ -207,14 +204,15 @@
         });
     </script>
    <script>
+
 $(document).ready(function() {
     let itemGroupIndex = 0;
-    const itemsExistentes = @json($orden->items ?? []);
+    const itemsExistentes = @json($registroV->items ?? []);
 
     function cargarProductosEnSelect($select, idAlmacen, productoSeleccionado = null, nombreProducto = null) {
         if (idAlmacen) {
             $.ajax({
-                url: '/obtener-productos',
+                url: '/obtener-productos-orden',
                 type: 'GET',
                 data: { id_almacen: idAlmacen },
                 success: function(response) {
@@ -345,7 +343,16 @@ $(document).ready(function() {
     function addNewItemGroup(itemData = null) {
         const currentIndex = itemGroupIndex;
         const newItemGroup = $(`
-            <div class="item-group"data-index="${currentIndex}">
+            <div class="item-group mb-4 p-3 border rounded" data-index="${currentIndex}">
+                <div class="row mb-2">
+                    <div class="col-md-11">
+                        <label class="form-label">{{ __('Trabajo') }}</label>
+                        <textarea name="items[${currentIndex}][trabajo]" class="form-control" placeholder="Descripción del trabajo">${itemData ? (itemData.trabajo || '') : ''}</textarea>
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-danger btn-remove-item-group mt-4">×</button>
+                    </div>
+                </div>
                 <div class="productos-container"></div>
                 <button type="button" class="btn btn-success btn-add-producto mt-2">{{ __('Agregar Producto') }}</button>
             </div>
