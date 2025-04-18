@@ -52,7 +52,7 @@
                     <div class="input-group">
                         <input type="number" name="descuento"
                                class="form-control @error('descuento') is-invalid @enderror"
-                               value="{{ old('descuento', $presupuesto?->descuento) }}" id="descuento"
+                               value="{{ old('descuento', $presupuesto?->descuento ?? 0) }}"  id="descuento"
                                placeholder="Descuento" min="0" max="100">
                         <div class="input-group-append">
                             <span class="input-group-text">%</span>

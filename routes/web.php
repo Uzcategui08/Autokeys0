@@ -8,15 +8,14 @@ use App\Http\Controllers\PresupuestoController;
 use App\Http\Controllers\OrdenController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegistroVController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, "index"])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -30,6 +29,8 @@ Route::resource('productos', ProductoController::class);
 
 Route::resource('clientes', ClienteController::class);
 
+route::get('admin/dashboard', [DashboardController::class, "index"])->name('admin.dashboard');
+
 Route::resource('inventarios', InventarioController::class);
 
 Route::resource('almacenes', AlmaceneController::class);
@@ -39,6 +40,8 @@ Route::resource('presupuestos', PresupuestoController::class);
 Route::resource('registro-vs', RegistroVController::class);
 
 Route::resource('almacenes', AlmaceneController::class);
+
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 Route::get('/obtener-productos-registroV', [RegistroVController::class, 'obtenerProductosV']);
 

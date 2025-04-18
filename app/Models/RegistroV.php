@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property $estatus
  * @property $metodo_p
  * @property $titular_c
- * @property $cobro
+ * @property $pagos
  * @property $descripcion_ce
  * @property $monto_ce
  * @property $metodo_pce
@@ -43,7 +43,7 @@ class RegistroV extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['fecha_h', 'tecnico', 'trabajo', 'cliente', 'telefono', 'valor_v', 'estatus', 'metodo_p', 'titular_c', 'cobro', 'descripcion_ce', 'monto_ce', 'metodo_pce', 'porcentaje_c', 'marca', 'modelo', 'año', 'items'];
+    protected $fillable = ['fecha_h', 'tecnico', 'trabajo', 'cliente', 'telefono', 'valor_v', 'estatus', 'metodo_p', 'titular_c', 'pagos', 'descripcion_ce', 'monto_ce', 'metodo_pce', 'porcentaje_c', 'marca', 'modelo', 'año', 'items'];
 
     public function inventarios()
     {
