@@ -45,6 +45,21 @@ class RegistroV extends Model
      */
     protected $fillable = ['fecha_h', 'tecnico', 'trabajo', 'cliente', 'telefono', 'valor_v', 'estatus', 'metodo_p', 'titular_c', 'pagos', 'descripcion_ce', 'monto_ce', 'metodo_pce', 'porcentaje_c', 'marca', 'modelo', 'año', 'items'];
 
+    protected $casts = [
+        'pagos' => 'array',
+        'fecha_h' => 'datetime'
+    ];
+
+    public function setPagosAttribute($value)
+    {
+        $this->attributes['pagos'] = is_array($value) ? json_encode($value) : $value;
+    }
+
+    public function getPagosAttribute($value)
+    {
+        return json_decode($value, true) ?? [];
+    }
+
     public function inventarios()
     {
         return $this->hasMany(Inventario::class, 'id_producto', 'id_producto');

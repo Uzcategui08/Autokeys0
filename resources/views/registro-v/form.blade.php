@@ -1,15 +1,12 @@
 <div class="row padding-1 p-1">
     <div class="col-md-12">
-        <!-- Primera Fila -->
         <div class="row">
-            <!-- Columna Izquierda -->
-
-
             <div class="col-md-6">
                 <div class="form-group mb-2 mb20">
                     <label for="fecha_h" class="form-label">{{ __('Fecha H') }}</label>
                     <input type="date" name="fecha_h" class="form-control @error('fecha_h') is-invalid @enderror"
-                    value="{{ old('fecha_h', $registroV?->fecha_h) }}"  id="fecha_h" placeholder="Fecha H">
+                            value="{{ old('fecha_h', isset($registroV->fecha_h) ? $registroV->fecha_h->format('Y-m-d') : '') }}"  
+                            id="fecha_h" placeholder="Fecha H">
                     {!! $errors->first('fecha_h', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                 </div>
 
@@ -46,7 +43,6 @@
                 </div>
             </div>
 
-            <!-- Columna Derecha -->
             <div class="col-md-6">
                 <div class="form-group mb-2 mb20">
                     <label for="metodo_p" class="form-label">{{ __('Metodo P') }}</label>
@@ -60,6 +56,13 @@
                     <input type="text" name="titular_c" class="form-control @error('titular_c') is-invalid @enderror" 
                         value="{{ old('titular_c', $registroV?->titular_c) }}" id="titular_c" placeholder="Titular C">
                     {!! $errors->first('titular_c', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
+                </div>
+
+                <div class="form-group mb-2 mb20">
+                    <label for="cobro" class="form-label">{{ __('Cobro') }}</label>
+                    <input type="text" name="cobro" class="form-control @error('cobro') is-invalid @enderror" 
+                        value="{{ old('cobro', $registroV?->cobro) }}" id="cobro" placeholder="Cobro">
+                    {!! $errors->first('cobro', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                 </div>
 
                 <div class="form-group mb-2 mb20">
@@ -78,9 +81,7 @@
             </div>
         </div>
 
-        <!-- Segunda Fila -->
         <div class="row">
-            <!-- Columna Izquierda -->
             <div class="col-md-6">
                 <div class="form-group mb-2 mb20">
                     <label for="metodo_pce" class="form-label">{{ __('Metodo Pce') }}</label>
@@ -104,7 +105,6 @@
                 </div>
             </div>
 
-            <!-- Columna Derecha -->
             <div class="col-md-6">
                 <div class="form-group mb-2 mb20">
                     <label for="modelo" class="form-label">{{ __('Modelo') }}</label>
@@ -121,170 +121,191 @@
                 </div>
 
                 <div class="form-group mb-2 mb20">
-    <div class="row">
-        <!-- Select de Cliente (ocupará 8 columnas) -->
-        <div class="col-md-8">
-            <label for="id_cliente" class="form-label">{{ __('Cliente') }}</label>
-            <select name="cliente" id="id_cliente" class="form-control @error('id_cliente') is-invalid @enderror">
-                <option value="">{{ __('Seleccione un cliente') }}</option>
-                @foreach($clientes as $cliente)
-                <option value="{{ $cliente->nombre }}"
-                    data-telefono="{{ $cliente->telefono }}"
-                    {{ old('cliente', $registroV?->cliente) == $cliente->nombre ? 'selected' : '' }}>
-                    {{ $cliente->nombre }} {{ $cliente->apellido ?? '' }}
-                </option>
-                @endforeach
-            </select>
-            {!! $errors->first('cliente', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
-        </div>
-        
-        <!-- Input de Teléfono (ocupará 4 columnas) -->
-        <div class="col-md-4">
-            <label for="telefono" class="form-label">{{ __('Teléfono') }}</label>
-            <input type="text" name="telefono" class="form-control @error('telefono') is-invalid @enderror"
-                id="telefono" placeholder="Teléfono" readonly>
-            {!! $errors->first('telefono', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
-        </div>
-    </div>
-</div>
-            </div>
-        </div>
-        <div class="card mt-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0">Registro de Pagos Parciales</h5>
-            </div>
-            <div class="card-body">
-                <div class="alert alert-info mb-4">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <strong>Valor Total:</strong> 
-                            <span id="valor-total">${{ number_format($registroV->monto_ce ?? 0, 2) }}</span>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <label for="id_cliente" class="form-label">{{ __('Cliente') }}</label>
+                            <select name="cliente" id="id_cliente" class="form-control @error('id_cliente') is-invalid @enderror">
+                                <option value="">{{ __('Seleccione un cliente') }}</option>
+                                @foreach($clientes as $cliente)
+                                <option value="{{ $cliente->nombre }}"
+                                    data-telefono="{{ $cliente->telefono }}"
+                                    {{ old('cliente', $registroV?->cliente) == $cliente->nombre ? 'selected' : '' }}>
+                                    {{ $cliente->nombre }} {{ $cliente->apellido ?? '' }}
+                                </option>
+                                @endforeach
+                            </select>
+                            {!! $errors->first('cliente', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                         </div>
-                        <div>
-                            <strong>Total Pagado:</strong> 
-                            <span id="total-pagado">$0.00</span>
-                        </div>
-                        <div>
-                            <strong>Saldo Pendiente:</strong> 
-                            <span id="saldo-pendiente">${{ number_format($registroV->monto_ce ?? 0, 2) }}</span>
+
+                        <div class="col-md-4">
+                            <label for="telefono" class="form-label">{{ __('Teléfono') }}</label>
+                            <input type="text" name="telefono" class="form-control @error('telefono') is-invalid @enderror"
+                                id="telefono" placeholder="Teléfono" readonly>
+                            {!! $errors->first('telefono', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <div class="row g-3 mb-4">
-                    <div class="col-md-4">
-                        <label class="form-label">Monto</label>
-                        <input type="number" step="0.01" id="pago_monto" class="form-control" placeholder="0.00">
-                        <small class="text-muted">Monto máximo: <span id="maximo-pago">${{ number_format($registroV->monto_ce ?? 0, 2) }}</span></small>
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Registro de Pagos Parciales</h5>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Método de Pago</label>
-                        <select id="pago_metodo" class="form-control">
-                            <option value="efectivo">Efectivo</option>
-                            <option value="transferencia">Transferencia</option>
-                            <option value="tarjeta">Tarjeta</option>
-                            <option value="cheque">Cheque</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Fecha</label>
-                        <input type="date" id="pago_fecha" class="form-control" value="{{ date('Y-m-d') }}">
-                    </div>
-                </div>
-
-                <button type="button" id="btn-agregar-pago" class="btn btn-primary">
-                    <i class="fas fa-plus-circle me-1"></i> Agregar Pago
-                </button>
-
-                <div class="mt-4" id="lista-pagos">
-                    @if(!empty($costo->pagos) && is_array($costo->pagos))
-                        @foreach($costo->pagos as $index => $pago)
-                        <div class="pago-item card mb-2">
-                            <div class="card-body py-2">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <span class="fw-bold">${{ number_format($pago['monto'], 2) }}</span>
-                                        <span class="text-muted ms-2">({{ $pago['metodo_pago'] }})</span>
-                                        <small class="text-muted ms-2">{{ $pago['fecha'] }}</small>
-                                    </div>
-                                    <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-pago" data-index="{{ $index }}">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
+                    <div class="card-body">
+                        <div class="alert alert-info mb-4">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <strong>Valor Total:</strong> 
+                                    <span id="valor-total">${{ number_format($registroV->valor_v ?? 0, 2) }}</span>
+                                </div>
+                                <div>
+                                    <strong>Total Pagado:</strong> 
+                                    <span id="total-pagado">$0.00</span>
+                                </div>
+                                <div>
+                                    <strong>Saldo Pendiente:</strong> 
+                                    <span id="saldo-pendiente">${{ number_format($registroV->valor_v ?? 0, 2) }}</span>
                                 </div>
                             </div>
                         </div>
-                        @endforeach
-                    @else
-                        <div class="alert alert-warning">No hay pagos registrados</div>
-                    @endif
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label">Monto</label>
+                                <input type="number" step="0.01" id="pago_monto" class="form-control" placeholder="0.00">
+                                <small class="text-muted">Monto máximo: <span id="maximo-pago">${{ number_format($registroV->valor_v ?? 0, 2) }}</span></small>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Método de Pago</label>
+                                <select id="pago_metodo" class="form-control">
+                                    <option value="efectivo">Efectivo</option>
+                                    <option value="transferencia">Transferencia</option>
+                                    <option value="tarjeta">Tarjeta</option>
+                                    <option value="cheque">Cheque</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Fecha</label>
+                                <input type="date" id="pago_fecha" class="form-control" value="{{ date('Y-m-d') }}">
+                            </div>
+                        </div>
+
+                        <button type="button" id="btn-agregar-pago" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-1"></i> Agregar Pago
+                        </button>
+
+                        <div class="mt-4" id="lista-pagos">
+                            @if(!empty($registroV->pagos) && is_array($registroV->pagos))
+                                @foreach($registroV->pagos as $index => $pago)
+                                <div class="pago-item card mb-2">
+                                    <div class="card-body py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <span class="fw-bold">${{ number_format($pago['monto'], 2) }}</span>
+                                                <span class="text-muted ms-2">({{ $pago['metodo_pago'] }})</span>
+                                                <small class="text-muted ms-2">{{ $pago['fecha'] }}</small>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-pago" data-index="{{ $index }}">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endforeach
+                            @else
+                                <div class="alert alert-warning">No hay pagos registrados</div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" name="pagos" id="pagos_json" value='@json(old('pagos', $registroV->pagos ?? []))'>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <div class="form-group mb-2 mb20" id="items-container">
+                    <label for="items" class="form-label">{{ __('Items') }}</label>
                 </div>
             </div>
         </div>
 
-        <input type="hidden" name="pagos" id="pagos_json" 
-        value='@json(old('pagos', $costo->pagos ?? []))'>
-
-        <div class="form-group mb-2 mb20" id="items-container">
-            <label for="items" class="form-label">{{ __('Items') }}</label>
-
-        </div>
-
-        <div class="col-md-12 mt-4 text-center">
-            <button type="button" class="btn btn-success btn-add-work">{{ __('Agregar Trabajo') }}</button>
-        </div>
-
-        <div class="col-md-12 mt-4 text-center">
-            <button type="submit" class="btn btn-secondary btn-lg px-5">{{ __('Grabar') }}</button>
+        <div class="row mt-3">
+            <div class="col-md-12 text-center">
+                <button type="button" class="btn btn-success btn-add-work">{{ __('Agregar Trabajo') }}</button>
+            </div>
+            <div class="col-md-12 mt-3 text-center">
+                <button type="submit" class="btn btn-secondary btn-lg px-5">{{ __('Grabar') }}</button>
+            </div>
         </div>
     </div>
 </div>
 
-    <style>
-        .select2-container .select2-selection--single {
-            height: 38px !important;
-        }
+<style>
+.select2-container .select2-selection--single {
+    height: 38px !important;
+}
 
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 38px !important;
-        }
-    </style>
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 38px !important;
+}
+.pago-item {
+transition: all 0.3s ease;
+}
+.pago-item:hover {
+    background-color: #f8f9fa;
+}
+.btn-eliminar-pago {
+    transition: all 0.2s ease;
+}
+.btn-eliminar-pago:hover {
+    transform: scale(1.1);
+}
+#valor-total, #total-pagado, #saldo-pendiente {
+    font-weight: bold;
+}
+</style>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const clienteSelect = document.getElementById('id_cliente');
-            const telefonoInput = document.getElementById('telefono');
-
-            // Función para actualizar el teléfono
-            function actualizarTelefono() {
-                if (clienteSelect.value) {
-                    const selectedOption = clienteSelect.options[clienteSelect.selectedIndex];
-                    telefonoInput.value = selectedOption.dataset.telefono || '';
-                } else {
-                    telefonoInput.value = '';
-                }
-            }
-
-            // Cargar teléfono inicial si hay cliente seleccionado
-            actualizarTelefono();
-
-            // Escuchar cambios en el select
-            clienteSelect.addEventListener('change', actualizarTelefono);
-        });
-    </script>
-    <script>
-    $(document).ready(function() {
-    let valorTotal = parseFloat($('#monto_ce').val()) || 0;
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    let valorTotal = parseFloat($('#valor_v').val()) || 0;
     let totalPagado = 0;
     let saldoPendiente = valorTotal;
 
     actualizarResumen();
 
-    $('#monto_ce').on('change', function() {
+    $('#valor_v').on('change', function() {
         valorTotal = parseFloat($(this).val()) || 0;
         actualizarResumen();
         actualizarMaximoPago();
     });
+
+    $('#estatus').on('change', function() {
+
+        if(totalPagado === 0) {
+            if($(this).val() === 'pagado') {
+
+                agregarPagoCompleto();
+            }
+        }
+    });
+
+    function agregarPagoCompleto() {
+        const pagosJson = JSON.stringify([{
+            monto: valorTotal,
+            metodo_pago: 'completo',
+            fecha: new Date().toISOString().split('T')[0]
+        }]);
+        
+        $('#pagos_json').val(pagosJson);
+        actualizarListaPagos();
+        actualizarResumen();
+    }
 
     function actualizarResumen() {
         totalPagado = calcularTotalPagado();
@@ -298,8 +319,9 @@
     }
 
     function actualizarMaximoPago() {
-        $('#maximo-pago').text('$' + saldoPendiente.toFixed(2));
-        $('#pago_monto').attr('max', saldoPendiente);
+        const maxPago = saldoPendiente > 0 ? saldoPendiente : 0;
+        $('#maximo-pago').text('$' + maxPago.toFixed(2));
+        $('#pago_monto').attr('max', maxPago);
     }
 
     function calcularTotalPagado() {
@@ -317,7 +339,7 @@
         if (saldoPendiente <= 0.01) { 
             $('#estatus').val('pagado');
         } else if (totalPagado > 0) {
-            $('#estatus').val('parcialmente_pagado');
+            $('#estatus').val('parcialementep'); 
         } else {
             $('#estatus').val('pendiente');
         }
@@ -361,8 +383,6 @@
         actualizarMaximoPago();
         
         $('#pago_monto').val('').focus();
-        
-        alert('Pago de $' + monto.toFixed(2) + ' agregado correctamente');
     });
 
     function actualizarListaPagos() {
@@ -409,14 +429,12 @@
             let pagos = JSON.parse(pagosJson);
             
             if (index >= 0 && index < pagos.length) {
-                const pagoEliminado = pagos.splice(index, 1);
+                pagos.splice(index, 1);
                 
                 $('#pagos_json').val(JSON.stringify(pagos));
                 actualizarListaPagos();
                 actualizarResumen();
                 actualizarMaximoPago();
-                
-                alert('Pago eliminado correctamente');
             }
         } catch (e) {
             console.error('Error eliminando pago:', e);
@@ -427,8 +445,32 @@
     actualizarMaximoPago();
 });
 </script>
-   <script>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const clienteSelect = document.getElementById('id_cliente');
+    const telefonoInput = document.getElementById('telefono');
+
+    // Función para actualizar el teléfono
+    function actualizarTelefono() {
+        if (clienteSelect.value) {
+            const selectedOption = clienteSelect.options[clienteSelect.selectedIndex];
+            telefonoInput.value = selectedOption.dataset.telefono || '';
+        } else {
+            telefonoInput.value = '';
+        }
+    }
+
+    // Cargar teléfono inicial si hay cliente seleccionado
+    actualizarTelefono();
+
+    // Escuchar cambios en el select
+    clienteSelect.addEventListener('change', actualizarTelefono);
+});
+
+</script>
+
+<script>
 $(document).ready(function() {
     let itemGroupIndex = 0;
     const itemsExistentes = @json($registroV->items ?? []);
@@ -436,7 +478,7 @@ $(document).ready(function() {
     function cargarProductosEnSelect($select, idAlmacen, productoSeleccionado = null, nombreProducto = null) {
         if (idAlmacen) {
             $.ajax({
-                url: '/obtener-productos',
+                url: '/obtener-productos-orden',
                 type: 'GET',
                 data: { id_almacen: idAlmacen },
                 success: function(response) {
@@ -511,7 +553,7 @@ $(document).ready(function() {
 
         const newProductoRow = `
             <div class="row mb-2 producto-row">
-                <div class="col-md-5">
+                <div class="col-md-4">
                     <label class="form-label">{{ __('Producto') }}</label>
                     <select name="items[${itemGroupIndex}][productos][${productoIndex}][producto]"
                             class="form-control select2-producto" ${productoData ? '' : 'disabled'}>
@@ -523,17 +565,17 @@ $(document).ready(function() {
                         ` : ''}
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">{{ __('Cantidad') }}</label>
                     <input type="number" name="items[${itemGroupIndex}][productos][${productoIndex}][cantidad]"
                            class="form-control" placeholder="Cantidad" min="1"
                            value="${productoData ? productoData.cantidad : ''}">
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">{{ __('Precio') }}</label>
-                    <input type="number" name="items[${itemGroupIndex}][productos][${productoIndex}][precio]"
-                           class="form-control" placeholder="Precio" min="1"
-                           value="${productoData ? productoData.precio : ''}">
+                <div class="col-md-2">
+                <label class="form-label">{{ __('Precio') }}</label>
+                <input type="number" name="items[${itemGroupIndex}][productos][${productoIndex}][precio]"
+                        class="form-control" placeholder="Precio" min="1"
+                        value="${productoData ? productoData.precio : ''}">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">{{ __('Almacén') }}</label>
@@ -565,8 +607,8 @@ $(document).ready(function() {
                 $selectProducto,
                 productoData.almacen,
                 productoData.producto,
-                productoData.precio,
-                productoData.nombre_producto
+                productoData.nombre_producto,
+                productoData.cantidad
             );
         }
     }
@@ -581,7 +623,7 @@ $(document).ready(function() {
                         <textarea name="items[${currentIndex}][trabajo]" class="form-control" placeholder="Descripción del trabajo">${itemData ? (itemData.trabajo || '') : ''}</textarea>
                     </div>
                     <div class="col-md-1">
-                        <button type="button" class="btn btn-danger btn-remove-item-group mt-4">X</button>
+                        <button type="button" class="btn btn-danger btn-remove-item-group mt-4">×</button>
                     </div>
                 </div>
                 <div class="productos-container"></div>
@@ -651,8 +693,8 @@ $(document).ready(function() {
                             $selectProducto,
                             productoData.almacen,
                             productoData.producto,
-                            productoData.precio,
-                            productoData.nombre_producto
+                            productoData.nombre_producto,
+                            productoData.cantidad
                         );
                     }
                 });
