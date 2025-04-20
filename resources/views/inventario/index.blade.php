@@ -20,7 +20,7 @@
 
                         <div class="float-right">
                             <a href="{{ route('inventarios.create') }}" class="btn btn-primary btn-sm float-right" data-placement="left">
-                                {{ __('Create New') }}
+                                {{ __('Crear Inventario') }}
                             </a>
                         </div>
                     </div>
@@ -33,11 +33,11 @@
 
                 <div class="card-body bg-white">
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
+                    <table class="table table-striped table-bordered dataTable">
                             <thead class="thead">
                                 <tr>
-                                    <th class="text-center align-middle">#</th>
-                                    <th class="text-center align-middle">ID Inventario</th>
+
+                                    <th class="text-center align-middle">ID Producto</th>
                                     <th class="text-center align-middle">Producto</th>
                                     <th class="text-center align-middle">Almacén</th>
                                     <th class="text-center align-middle">Cantidad</th>
@@ -48,9 +48,7 @@
                             <tbody>
                                 @foreach ($inventarios1 as $inventario)
                                 <tr>
-                                    <td>{{ ++$i }}</td>
-
-                                    <td class="text-center align-middle">{{ $inventario->id_inventario }}</td>
+                                    <td class="text-center align-middle">{{ $inventario->producto->id_producto}}</td>
                                     <td class="text-center align-middle">{{ $inventario->producto->item }}</td>
                                     <td class="text-center align-middle">{{ $inventario->almacene->nombre }}</td>
                                     <td class="text-center align-middle">{{ $inventario->cantidad }}</td>
@@ -85,12 +83,53 @@
 @stop
 
 @section('css')
-{{-- Add here extra stylesheets --}}
-{{-- <link rel="stylesheet" href="/css/admin_custom.css"> --}}
-@stop
+<style>
+        .dataTable {
+            width: 100% !important;
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
 
-@section('js')
-<script>
-    console.log("Hi, I'm using the Laravel-AdminLTE package!");
-</script>
-@stop
+        .dataTable th,
+        .dataTable td {
+            padding: 12px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .dataTable thead th {
+            color: black;
+            font-weight: bold;
+        }
+
+        .dataTable tbody tr:nth-of-type(odd) {
+            background-color: rgba(0, 0, 0, 0.05); 
+        }
+
+        .btn-sm {
+            margin: 2px;
+        }
+
+        .dt-buttons .btn {
+            margin-right: 5px;
+        }
+    </style>
+
+@endsection
+
+@push('js')
+    <script>
+        $(document).ready(function() {
+            $('.dataTable').DataTable({
+                responsive: true, 
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json' 
+                },
+                dom: 'Bfrtip', 
+                buttons: [
+                    'copy', 'csv', 'excel', 'pdf', 'print' 
+                ]
+            });
+        });
+    </script>
+@endpush

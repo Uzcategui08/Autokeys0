@@ -3,7 +3,7 @@
 @section('title', 'Dashboard')
 
 @section('content_header')
-<h1>Dashboard</h1>
+<h1>Productos</h1>
 @stop
 
 @section('content')
@@ -21,7 +21,7 @@
 
                         <div class="float-right">
                             <a href="{{ route('productos.create') }}" class="btn btn-primary btn-sm float-right" data-placement="left">
-                                {{ __('Create New') }}
+                                {{ __('Crear Producto') }}
                             </a>
                         </div>
                     </div>
@@ -34,10 +34,10 @@
 
                 <div class="card-body bg-white">
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
+                    <table class="table table-striped table-bordered dataTable">
                             <thead class="thead">
                                 <tr>
-                                    <th>No</th>
+                                
 
                                     <th>Id Producto</th>
                                     <th>Item</th>
@@ -52,7 +52,7 @@
                             <tbody>
                                 @foreach ($productos as $producto)
                                 <tr>
-                                    <td>{{ ++$i }}</td>
+                              
 
                                     <td>{{ $producto->id_producto }}</td>
                                     <td>{{ $producto->item }}</td>
@@ -84,12 +84,53 @@
 @stop
 
 @section('css')
-{{-- Add here extra stylesheets --}}
-{{-- <link rel="stylesheet" href="/css/admin_custom.css"> --}}
-@stop
+<style>
+        .dataTable {
+            width: 100% !important;
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+
+        .dataTable th,
+        .dataTable td {
+            padding: 12px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .dataTable thead th {
+            color: black;
+            font-weight: bold;
+        }
+
+        .dataTable tbody tr:nth-of-type(odd) {
+            background-color: rgba(0, 0, 0, 0.05); 
+        }
+
+        .btn-sm {
+            margin: 2px;
+        }
+
+        .dt-buttons .btn {
+            margin-right: 5px;
+        }
+    </style>
+
+@endsection
 
 @section('js')
-<script>
-    console.log("Hi, I'm using the Laravel-AdminLTE package!");
-</script>
+    <script>
+        $(document).ready(function() {
+            $('.dataTable').DataTable({
+                responsive: true, 
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json' 
+                },
+                dom: 'Bfrtip', 
+                buttons: [
+                    'copy', 'csv', 'excel', 'pdf', 'print' 
+                ]
+            });
+        });
+    </script>
 @stop

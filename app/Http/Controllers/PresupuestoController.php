@@ -64,6 +64,7 @@ class PresupuestoController extends Controller
                                     'producto' => $producto['producto'],
                                     'cantidad' => $producto['cantidad'],
                                     'almacen' => $producto['almacen'],
+
                                 ];
                             }
                         }
@@ -220,6 +221,7 @@ class PresupuestoController extends Controller
                     'id_producto' => $item->id_producto,
                     'item' => $item->producto->item,
                     'cantidad' => $item->cantidad,
+                    'precio' => $item->producto ? $item->producto->precio : 0,
                 ];
             });
 

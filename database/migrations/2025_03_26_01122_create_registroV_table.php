@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('estatus');
             $table->string('metodo_p');
             $table->string('titular_c');
-            $table->string('cobro');
+            $table->json('pagos')->nullable();
             $table->string('descripcion_ce');
             $table->decimal('monto_ce');
             $table->string('metodo_pce');

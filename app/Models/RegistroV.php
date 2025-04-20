@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property $estatus
  * @property $metodo_p
  * @property $titular_c
- * @property $cobro
+ * @property $pagos
  * @property $descripcion_ce
  * @property $monto_ce
  * @property $metodo_pce
@@ -37,13 +37,27 @@ class RegistroV extends Model
 
     protected $table = 'registroV'; // or whatever your actual table name is
     public $timestamps = false;
-
     /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
      */
-    protected $fillable = ['fecha_h', 'tecnico', 'trabajo', 'cliente', 'telefono', 'valor_v', 'estatus', 'metodo_p', 'titular_c', 'cobro', 'descripcion_ce', 'monto_ce', 'metodo_pce', 'porcentaje_c', 'marca', 'modelo', 'año', 'items'];
+    protected $fillable = ['fecha_h', 'tecnico', 'trabajo', 'cliente', 'telefono', 'valor_v', 'estatus', 'metodo_p', 'titular_c', 'pagos', 'descripcion_ce', 'monto_ce', 'metodo_pce', 'porcentaje_c', 'marca', 'modelo', 'año', 'items'];
+
+    protected $casts = [
+        'pagos' => 'array',
+        'fecha_h' => 'datetime'
+    ];
+
+    public function setPagosAttribute($value)
+    {
+        $this->attributes['pagos'] = is_array($value) ? json_encode($value) : $value;
+    }
+
+    public function getPagosAttribute($value)
+    {
+        return json_decode($value, true) ?? [];
+    }
 
     public function inventarios()
     {
@@ -53,5 +67,10 @@ class RegistroV extends Model
     public function registroVs()
     {
         return $this->belongsTo(RegistroV::class);
+    }
+
+    public function cliente()
+    {
+        return $this->belongsTo(Cliente::class);
     }
 }

@@ -1,9 +1,9 @@
 @extends('adminlte::page')
 
-@section('title', 'Dashboard')
+@section('title', 'Presupuestos')
 
 @section('content_header')
-<h1>Clientes</h1>
+<h1>Almacenes</h1>
 @stop
 
 @section('content')
@@ -15,12 +15,12 @@
                         <div style="display: flex; justify-content: space-between; align-items: center;">
 
                             <span id="card_title">
-                                {{ __('Clientes') }}
+                                {{ __('Almacenes') }}
                             </span>
 
                              <div class="float-right">
-                                <a href="{{ route('clientes.create') }}" class="btn btn-primary btn-sm float-right"  data-placement="left">
-                                  {{ __('Crear Cliente') }}
+                                <a href="{{ route('almacenes.create') }}" class="btn btn-primary btn-sm float-right"  data-placement="left">
+                                  {{ __('Create New') }}
                                 </a>
                               </div>
                         </div>
@@ -36,30 +36,24 @@
                         <table class="table table-striped table-bordered dataTable">
                                 <thead class="thead">
                                     <tr>
-                                        <th>No</th>
+                                       
                                         
-									<th >Id Cliente</th>
+									<th >Id Almacen</th>
 									<th >Nombre</th>
-									<th >Telefono</th>
-									<th >Direccion</th>
 
                                         <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($clientes as $cliente)
+                                    @foreach ($almacenes as $almacene)
                                         <tr>
-                                            <td>{{ ++$i }}</td>
                                             
-										<td >{{ $cliente->id_cliente }}</td>
-										<td >{{ $cliente->nombre }}</td>
-										<td >{{ $cliente->telefono }}</td>
-										<td >{{ $cliente->direccion }}</td>
+										<td >{{ $almacene->id_almacen }}</td>
+										<td >{{ $almacene->nombre }}</td>
 
                                             <td>
-                                                <form action="{{ route('clientes.destroy', $cliente->id_cliente) }}" method="POST">
-                                                    <a class="btn btn-sm btn-primary " href="{{ route('clientes.show', $cliente->id_cliente) }}"><i class="fa fa-fw fa-eye"></i> {{ __('Show') }}</a>
-                                                    <a class="btn btn-sm btn-success" href="{{ route('clientes.edit', $cliente->id_cliente) }}"><i class="fa fa-fw fa-edit"></i> {{ __('Edit') }}</a>
+                                                <form action="{{ route('almacenes.destroy', $almacene->id_almacen) }}" method="POST">
+                                                    <a class="btn btn-sm btn-success" href="{{ route('almacenes.edit', $almacene->id_almacen) }}"><i class="fa fa-fw fa-edit"></i> {{ __('Edit') }}</a>
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-danger btn-sm" onclick="event.preventDefault(); confirm('Are you sure to delete?') ? this.closest('form').submit() : false;"><i class="fa fa-fw fa-trash"></i> {{ __('Delete') }}</button>
@@ -72,11 +66,11 @@
                         </div>
                     </div>
                 </div>
-                {!! $clientes->withQueryString()->links() !!}
+                {!! $almacenes->withQueryString()->links() !!}
             </div>
         </div>
     </div>
-@stop
+@endsection
 
 @section('css')
 <style>

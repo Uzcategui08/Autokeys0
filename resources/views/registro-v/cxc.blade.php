@@ -15,14 +15,8 @@
                     <div style="display: flex; justify-content: space-between; align-items: center;">
 
                         <span id="card_title">
-                            {{ __('Registro Vs') }}
+                            {{ __('Registro Cuentas por Cobrar') }}
                         </span>
-
-                        <div class="float-right">
-                            <a href="{{ route('registro-vs.create') }}" class="btn btn-primary btn-sm float-right" data-placement="left">
-                                {{ __('Crear Registro de Venta') }}
-                            </a>
-                        </div>
                     </div>
                 </div>
                 @if ($message = Session::get('success'))

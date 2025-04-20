@@ -257,7 +257,7 @@ return [
     */
 
     'use_route_url' => false,
-    'dashboard_url' => 'home',
+    'dashboard_url' => 'dashboard',
     'logout_url' => 'logout',
     'login_url' => 'login',
     'register_url' => 'register',
@@ -335,6 +335,11 @@ return [
             'icon' => 'fas fa-fw fa-cash-register',
         ],
         [
+            'text' => 'Cuentas por Cobrar',
+            'url' => 'cxc',
+            'icon' => 'fas fa-fw fa-cash-register',
+        ],
+        [
             'text' => 'Presupuestos',
             'url' => 'presupuestos',
             'icon' => 'fas fa-fw fa-receipt',
@@ -403,7 +408,6 @@ return [
             'url' => 'gastos',
             'icon' => 'fas fa-fw fa-receipt',
         ],
-
         ['header' => 'Usuarios'],
         [
             'text' => 'Usuario',
@@ -488,7 +492,7 @@ return [
             ],
         ],
         'Chartjs' => [
-            'active' => false,
+            'active' => true,
             'files' => [
                 [
                     'type' => 'js',
@@ -498,7 +502,7 @@ return [
             ],
         ],
         'Sweetalert2' => [
-            'active' => false,
+            'active' => true,
             'files' => [
                 [
                     'type' => 'js',

@@ -7,29 +7,32 @@
 @stop
 
 @section('content')
+    <section class="content container-fluid">
+        <div class="">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="float-left">
+                            <span class="card-title">{{ __('registroV') }}</span>
+                        </div>
+                        <div class="ml-auto">
+                            <a class="btn btn-secondary btn-sm" href="{{ route('registro-vs.index') }}"> {{ __('Volver') }}</a>
+                        </div>
+                    </div>
+                    <div class="card-body bg-white">
+                        <form method="POST" action="{{ route('registro-vs.update', $registroV->id) }}"  role="form" enctype="multipart/form-data">
+                            {{ method_field('PATCH') }}
+                            @csrf
 
-<section class="content container-fluid">
-    <div class="">
-        <div class="col-md-12">
+                            @include('registro-v.form')
 
-            <div class="card card-default">
-                <div class="card-header">
-                    <span class="card-title">{{ __('Update') }} Registro V</span>
-                </div>
-                <div class="card-body bg-white">
-                    <form method="POST" action="{{ route('registro-vs.update', $registroV->id) }}" role="form" enctype="multipart/form-data">
-                        {{ method_field('PATCH') }}
-                        @csrf
-
-                        @include('registro-v.form')
-
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</section>
-@stop
+    </section>
+@endsection
 
 @section('css')
 {{-- Add here extra stylesheets --}}
