@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Dashboard')
+@section('title', 'Abono')
 
 @section('content_header')
 <h1>Crear</h1>
@@ -14,17 +14,17 @@
                 <div class="card card-default">
                     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="float-left">
-                            <span class="card-title">{{ __('Presupuesto') }}</span>
+                            <span class="card-title">{{ __('Abono') }}</span>
                         </div>
                         <div class="ml-auto">
-                            <a class="btn btn-secondary btn-sm" href="{{ route('presupuestos.index') }}"> {{ __('Volver') }}</a>
+                            <a class="btn btn-secondary btn-sm" href="{{ route('abonos.index') }}"> {{ __('Volver') }}</a>
                         </div>
                     </div>
                     <div class="card-body bg-white">
-                        <form method="POST" action="{{ route('presupuestos.store') }}"  role="form" enctype="multipart/form-data">
+                        <form method="POST" action="{{ route('abonos.store') }}"  role="form" enctype="multipart/form-data">
                             @csrf
 
-                            @include('presupuesto.form')
+                            @include('abono.form')
 
                         </form>
                     </div>
@@ -33,6 +33,7 @@
         </div>
     </section>
 @endsection
+
 
 @section('css')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />

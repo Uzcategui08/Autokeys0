@@ -303,24 +303,19 @@ return [
         [
             'type' => 'navbar-search',
             'text' => 'search',
-            'topnav_right' => true,
+            'topnav_right' => false,
         ],
         [
             'type' => 'fullscreen-widget',
-            'topnav_right' => true,
+            'topnav_right' => false,
         ],
 
         // Sidebar items:
 
-        ['header' => 'account_settings'],
+        ['header' => 'Productos/Almacen'],
         [
-            'text' => 'Registro de Ventas',
-            'url' => 'registro-vs',
-            'icon' => 'fas fa-fw fa-cash-register',
-        ],
-        [
-            'text' => 'Inventario',
-            'url' => 'inventarios',
+            'text' => 'Almacenes',
+            'url' => 'almacenes',
             'icon' => 'fas fa-fw fa-warehouse',
         ],
         [
@@ -329,19 +324,86 @@ return [
             'icon' => 'fas fa-fw fa-key',
         ],
         [
-            'text' => 'Ventas',
-            'icon' => 'fas fa-fw fa-receipt',
-            'submenu' => [
-                [
-                    'text' => 'Presupuesto',
-                    'url' => 'presupuestos',
-                ],
-                [
-                    'text' => 'level_one',
-                    'url' => '#',
-                ],
-            ],
+            'text' => 'Inventario',
+            'url' => 'inventarios',
+            'icon' => 'fas fa-fw fa-box',
         ],
+        ['header' => 'Ventas'],
+        [
+            'text' => 'Registro de Ventas',
+            'url' => 'registro-vs',
+            'icon' => 'fas fa-fw fa-cash-register',
+        ],
+        [
+            'text' => 'Presupuestos',
+            'url' => 'presupuestos',
+            'icon' => 'fas fa-fw fa-receipt',
+        ],
+        [
+            'text' => 'Orden',
+            'url' => 'ordens',
+            'icon' => 'fas fa-fw fa-receipt',
+        ],
+        ['header' => '-'],
+        [
+            'text' => 'Clientes',
+            'url' => 'clientes',
+            'icon' => 'fas fa-fw fa-users',
+        ],
+        ['header' => 'NÓMINA'],
+        [
+            'text' => 'Generar Nómina',
+            'url' => 'pnominas',
+            'icon' => 'fas fa-fw fa-calculator',
+        ],
+        [
+            'text' => 'Tipos de Nómina',
+            'url' => 'tnominas',
+            'icon' => 'fas fa-fw fa-tasks',
+        ],
+        [
+            'text' => 'Reportes',
+            'url' => 'nempleados/generar-reporte',
+            'icon' => 'fas fa-fw fa-chart-bar',
+        ],
+        [
+            'text' => 'Empleados',
+            'url' => 'empleados',
+            'icon' => 'fas fa-fw fa-user-tie',
+        ],
+        [
+            'text' => 'Tipos de Pago',
+            'url' => ' ',
+            'icon' => 'fas fa-fw fa-money-check-alt',
+        ],
+        [
+            'text' => 'Préstamos',
+            'url' => 'prestamos',
+            'icon' => 'fas fa-fw fa-hand-holding-usd',
+        ],
+        [
+            'text' => 'Descuentos',
+            'url' => 'descuentos',
+            'icon' => 'fas fa-fw fa-tag',
+        ],
+        [
+            'text' => 'Abonos',
+            'url' => 'abonos',
+            'icon' => 'fas fa-fw fa-money-bill-wave',
+        ],
+
+        ['header' => 'CONTABILIDAD'],
+        [
+            'text' => 'Registro de Costos',
+            'url' => 'costos',
+            'icon' => 'fas fa-fw fa-dollar-sign',
+        ],
+        [
+            'text' => 'Registro de Gastos',
+            'url' => 'gastos',
+            'icon' => 'fas fa-fw fa-receipt',
+        ],
+
         ['header' => 'Usuarios'],
         [
             'text' => 'Usuario',
@@ -508,4 +570,11 @@ return [
     */
 
     'livewire' => false,
+
+    'custom_js' => [
+    asset('js/global.js'),
+    ],
+    'custom_css' => [
+        asset('css/global.css'),
+    ],
 ];

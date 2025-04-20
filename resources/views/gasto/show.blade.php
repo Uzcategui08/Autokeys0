@@ -1,0 +1,178 @@
+@extends('adminlte::page')
+
+@section('title', 'Detalle del Gasto')
+
+@section('content_header')
+    <h1>Detalle del Gasto</h1>
+@stop
+
+@section('content')
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span id="card_title">
+                                {{ __('Detalle del Gasto') }}
+                            </span>
+                            <div class="float-right">
+                                <a href="{{ route('gastos.index') }}" class="btn btn-secondary btn-sm float-right"  data-placement="left">
+                                  {{ __('Volver a la Lista') }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-body bg-white">
+                        <!-- Sección de información básica del Gasto -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Información del Gasto</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <!-- Fecha -->
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-3">
+                                            <label for="f_gastos" class="form-label">{{ __('Fecha') }}</label>
+                                            <input type="date" class="form-control" value="{{ $gasto->f_gastos }}" readonly>
+                                        </div>
+                                    </div>
+
+                                    <!-- Técnico -->
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-3">
+                                            <label for="id_tecnico" class="form-label">{{ __('ID Técnico') }}</label>
+                                            <input type="number" class="form-control" value="{{ $gasto->id_tecnico }}" readonly>
+                                        </div>
+                                    </div>
+
+                                    <!-- Valor -->
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-3">
+                                            <label for="valor" class="form-label">{{ __('Valor Total') }}</label>
+                                            <input type="number" step="0.01" class="form-control" value="{{ $gasto->valor }}" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Descripción -->
+                                <div class="form-group mb-3">
+                                    <label for="descripcion" class="form-label">{{ __('Descripción') }}</label>
+                                    <textarea class="form-control" rows="3" readonly>{{ $gasto->descripcion }}</textarea>
+                                </div>
+
+                                <!-- Subcategoría y Estatus -->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label for="subcategoria" class="form-label">{{ __('Subcategoría') }}</label>
+                                            <input type="text" class="form-control" value="{{ $gasto->subcategoria }}" readonly>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label for="estatus" class="form-label">{{ __('Estatus') }}</label>
+                                            <input type="text" class="form-control" value="{{ $gasto->estatus }}" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección de Pagos Parciales -->
+                        <div class="card mt-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Registro de Pagos Parciales</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Resumen de Pagos -->
+                                <div class="alert alert-info mb-4">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <strong>Valor Total:</strong>
+                                            <span>${{ number_format($gasto->valor ?? 0, 2) }}</span>
+                                        </div>
+                                        <div>
+                                            <strong>Total Pagado:</strong>
+                                            <span>${{ number_format($total_pagado ?? 0, 2) }}</span>
+                                        </div>
+                                        <div>
+                                            <strong>Saldo Pendiente:</strong>
+                                            <span>${{ number_format($saldo_pendiente ?? 0, 2) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Lista de pagos registrados -->
+                                <div class="mt-4" id="lista-pagos">
+                                    @if(!empty($gasto->pagos) && is_array($gasto->pagos))
+                                        @foreach($gasto->pagos as $index => $pago)
+                                            <div class="pago-item card mb-2">
+                                                <div class="card-body py-2">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <span class="fw-bold">${{ number_format($pago['monto'], 2) }}</span>
+                                                            <span class="text-muted ms-2">({{ $pago['metodo_pago'] }})</span>
+                                                            <small class="text-muted ms-2">{{ $pago['fecha'] }}</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    @else
+                                        <div class="alert alert-warning">No hay pagos registrados</div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+@stop
+
+@section('css')
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.4.24/sweetalert2.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <style>
+        .card-body {
+            background-color: #f9f9f9; /* Fondo claro */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        #card_title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+@stop
+
+@section('js')
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.4.24/sweetalert2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        // Configura Toastr
+        toastr.options = {
+            "closeButton": true,
+            "progressBar": true,
+            "positionClass": "toast-bottom-right",
+            "timeOut": 5000
+        };
+
+        // Mostrar mensaje de éxito si existe
+        @if(Session::has('success'))
+            toastr.success("{{ Session::get('success') }}");
+        @endif
+    </script>
+@stop

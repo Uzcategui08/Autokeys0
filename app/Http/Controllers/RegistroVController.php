@@ -41,6 +41,7 @@ class RegistroVController extends Controller
 
         return view('registro-v.create', compact('registroV', 'clientes', 'inventario', 'almacenes'));
     }
+
     public function obtenerProductosV(Request $request)
     {
         $idAlmacen = $request->input('id_almacen');
