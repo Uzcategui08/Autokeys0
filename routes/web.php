@@ -39,6 +39,8 @@ Route::resource('presupuestos', PresupuestoController::class);
 
 Route::resource('registro-vs', RegistroVController::class);
 
+Route::get('/cxc', [RegistroVController::class, 'cxc'])->name('registroV.cxc');
+
 Route::resource('almacenes', AlmaceneController::class);
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

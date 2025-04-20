@@ -36,7 +36,7 @@
                     <table class="table table-striped table-bordered dataTable">
                             <thead class="thead">
                                 <tr>
-                                    <th class="text-center align-middle">ID Inventario</th>
+
                                     <th class="text-center align-middle">ID Producto</th>
                                     <th class="text-center align-middle">Producto</th>
                                     <th class="text-center align-middle">Almacén</th>
@@ -48,7 +48,6 @@
                             <tbody>
                                 @foreach ($inventarios1 as $inventario)
                                 <tr>
-                                    <td class="text-center align-middle">{{ $inventario->id_inventario }}</td>
                                     <td class="text-center align-middle">{{ $inventario->producto->id_producto}}</td>
                                     <td class="text-center align-middle">{{ $inventario->producto->item }}</td>
                                     <td class="text-center align-middle">{{ $inventario->almacene->nombre }}</td>

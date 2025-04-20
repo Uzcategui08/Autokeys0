@@ -23,12 +23,25 @@ class RegistroVController extends Controller
      */
     public function index(Request $request): View
     {
-        $registroVs = RegistroV::with('cliente')->paginate(20);
-
+        $registroVs = RegistroV::with('cliente')
+            ->where('estatus', 'pagado')  
+            ->paginate(20);
+    
         return view('registro-v.index', compact('registroVs'))
             ->with('i', ($request->input('page', 1) - 1) * $registroVs->perPage());
     }
 
+    public function cxc(Request $request): View
+    {
+        $registroVs = RegistroV::with('cliente')
+            ->where('estatus', '!=', 'pagado')  
+            ->paginate(20);
+    
+        return view('registro-v.cxc', compact('registroVs'))
+            ->with('i', ($request->input('page', 1) - 1) * $registroVs->perPage());
+    }
+    
+    
     /**
      * Show the form for creating a new resource.
      */
@@ -76,6 +89,7 @@ class RegistroVController extends Controller
                     if (isset($item['productos'])) {
                         foreach ($item['productos'] as $producto) {
                             if (!empty($producto['producto'])) {
+                                $this->restarInventario($producto['producto'], $producto['cantidad']);
                                 $productos[] = [
                                     'producto' => $producto['producto'],
                                     'cantidad' => $producto['cantidad'],
@@ -148,7 +162,6 @@ class RegistroVController extends Controller
             ->with('success', 'RegistroV creado exitosamente.');
     }
     
-
     /**
      * Display the specified resource.
      */
@@ -167,6 +180,7 @@ class RegistroVController extends Controller
                             if ($productoDetalle) {
                                 $producto['nombre_producto'] = $productoDetalle->item;
                                 $producto['precio_producto'] = $productoDetalle->precio;
+                                $producto['id_producto'] = $productoDetalle->id_producto;
                             } else {
                                 $producto['nombre_producto'] = 'Producto no encontrado';
                                 $producto['precio_producto'] = 0;
@@ -220,13 +234,136 @@ class RegistroVController extends Controller
         
         return view('registro-v.edit', compact('registroV', 'almacenes', 'clientes'));
     }
+    
+ // Método para ajustar el inventario
+ private function ajustarInventario($itemsAntiguos, $itemsNuevos)
+ {
+     // Recorrer los items nuevos
+     foreach ($itemsNuevos as $trabajoNuevo) {
+         if (isset($trabajoNuevo['productos'])) {
+             foreach ($trabajoNuevo['productos'] as $productoNuevo) {
+                 // Buscar el producto en los items antiguos
+                 $productoAntiguo = $this->buscarProductoAntiguo($itemsAntiguos, $trabajoNuevo['trabajo'], $productoNuevo['producto']);
+ 
+                 if ($productoAntiguo) {
+                     // Ajustar el inventario según la diferencia
+                     $diferencia = $productoAntiguo['cantidad'] - $productoNuevo['cantidad'];
+                     if ($diferencia != 0) {
+                         $this->actualizarInventario($productoNuevo['producto'], $diferencia, $productoNuevo['almacen']);
+                     }
+                 } else {
+                     // Si no se encontró el producto antiguo, restar la cantidad nueva del inventario
+                     $this->actualizarInventario($productoNuevo['producto'], -$productoNuevo['cantidad'], $productoNuevo['almacen']);
+                 }
+             }
+         }
+     }
+ 
+     // Recorrer los items antiguos para verificar si se eliminaron productos
+     foreach ($itemsAntiguos as $trabajoAntiguo) {
+         if (isset($trabajoAntiguo['productos'])) {
+             foreach ($trabajoAntiguo['productos'] as $productoAntiguo) {
+                 // Buscar el producto en los items nuevos
+                 $productoNuevo = $this->buscarProductoNuevo($itemsNuevos, $trabajoAntiguo['trabajo'], $productoAntiguo['producto']);
+ 
+                 if (!$productoNuevo) {
+                     // Si no se encontró el producto nuevo, sumar la cantidad antigua al inventario
+                     $this->actualizarInventario($productoAntiguo['producto'], $productoAntiguo['cantidad'], $productoAntiguo['almacen']);
+                 }
+             }
+         }
+     }
+ }
+ 
+     
+     // Método para buscar un producto antiguo
+     private function buscarProductoAntiguo($itemsAntiguos, $trabajo, $producto)
+     {
+         foreach ($itemsAntiguos as $trabajoAntiguo) {
+             if ($trabajoAntiguo['trabajo'] == $trabajo) {
+                 foreach ($trabajoAntiguo['productos'] as $p) {
+                     if ($p['producto'] == $producto) {
+                         return [
+                             'cantidad' => $p['cantidad'],
+                             'almacen' => $p['almacen'],
+                         ];
+                     }
+                 }
+             }
+         }
+         return null;
+     }
+     
+     // Método para buscar un producto nuevo
+     private function buscarProductoNuevo($itemsNuevos, $trabajo, $producto)
+     {
+         foreach ($itemsNuevos as $trabajoNuevo) {
+             if ($trabajoNuevo['trabajo'] == $trabajo) {
+                 foreach ($trabajoNuevo['productos'] as $p) {
+                     if ($p['producto'] == $producto) {
+                         return [
+                             'cantidad' => $p['cantidad'],
+                             'almacen' => $p['almacen'],
+                         ];
+                     }
+                 }
+             }
+         }
+         return null;
+     }
+     
+     // Método para actualizar el inventario
+     private function actualizarInventario($productoId, $cantidad, $almacen)
+     {
+         $inventario = Inventario::where('id_producto', $productoId)
+             ->first();
+     
+         if ($inventario) {
+             $nuevaCantidad = $inventario->cantidad + $cantidad;
+             if ($nuevaCantidad < 0) {
+                 // Manejar el caso cuando la cantidad resultante es negativa
+                 throw new \Exception("No hay suficiente stock para el producto $productoId");
+             }
+     
+             $inventario->update(['cantidad' => $nuevaCantidad]);
+         } else {
+             // Manejar el caso cuando no se encuentra el producto en el inventario
+             throw new \Exception("El producto $productoId no existe en el inventario");
+         }
+     }
+     private function restarInventario($productoId, $cantidad)
+{
+    $inventario = Inventario::where('id_producto', $productoId)
+        ->first();
 
+    if ($inventario) {
+        $nuevaCantidad = $inventario->cantidad - $cantidad;
+        if ($nuevaCantidad < 0) {
+            // Manejar el caso cuando la cantidad a restar es mayor que la existente
+            // Puedes lanzar una excepción o mostrar un mensaje
+            throw new \Exception("No hay suficiente stock para el producto $productoId");
+        }
+
+        $inventario->update(['cantidad' => $nuevaCantidad]);
+    } else {
+        // Manejar el caso cuando no se encuentra el producto en el inventario
+        // Puedes lanzar una excepción o mostrar un mensaje
+        throw new \Exception("El producto $productoId no existe en el inventario");
+    }
+}
     /**
      * Update the specified resource in storage.
      */
     public function update(RegistroVRequest $request, RegistroV $registroV): RedirectResponse
     {
         $validatedData = $request->validated();
+
+        $items = $request->input('items');
+        // Obtener los datos antiguos
+        $itemsAntiguos = json_decode($registroV->items, true) ?? [];
+    
+        // Ajustar el inventario según sea necesario
+        $this->ajustarInventario($itemsAntiguos, $items);
 
         $trabajos = [];
         if ($request->has('items')) {

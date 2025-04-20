@@ -37,7 +37,7 @@
                     <table class="table table-striped table-bordered dataTable">
                             <thead class="thead">
                                 <tr>
-                                    <th>No</th>
+                                
 
                                     <th>Id Producto</th>
                                     <th>Item</th>
@@ -52,7 +52,7 @@
                             <tbody>
                                 @foreach ($productos as $producto)
                                 <tr>
-                                    <td>{{ ++$i }}</td>
+                              
 
                                     <td>{{ $producto->id_producto }}</td>
                                     <td>{{ $producto->item }}</td>

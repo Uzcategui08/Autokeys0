@@ -37,7 +37,6 @@ class RegistroV extends Model
 
     protected $table = 'registroV'; // or whatever your actual table name is
     public $timestamps = false;
-
     /**
      * The attributes that are mass assignable.
      *

@@ -51,7 +51,7 @@
 
                 <div class="small-box bg-warning">
                     <div class="inner">
-                        <h3>71</h3>
+                        <h3>{{$registros}}</h3>
                         <p>Ventas del mes</p>
                     </div>
                     <div class="icon">

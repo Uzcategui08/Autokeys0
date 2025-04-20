@@ -119,6 +119,7 @@
                                                 <table class="table table-bordered table-striped">
                                                     <thead>
                                                         <tr>
+                                                            <th>ID</th>
                                                             <th>Producto</th>
                                                             <th>Cantidad</th>
                                                             <th>Precio Unitario</th>
@@ -135,6 +136,7 @@
                                                                 $groupTotal += $subtotal;
                                                             @endphp
                                                             <tr>
+                                                                <td>{{$producto['id_producto'] ?? 'N/A' }}</td>
                                                                 <td>{{ $producto['nombre_producto'] ?? 'N/A' }}</td>
                                                                 <td>{{ $producto['cantidad'] ?? 'N/A' }}</td>
                                                                 <td>{{ number_format($producto['precio_producto'], 2) }}</td>

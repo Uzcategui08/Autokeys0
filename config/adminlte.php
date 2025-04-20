@@ -335,6 +335,11 @@ return [
             'icon' => 'fas fa-fw fa-cash-register',
         ],
         [
+            'text' => 'Cuentas por Cobrar',
+            'url' => 'cxc',
+            'icon' => 'fas fa-fw fa-cash-register',
+        ],
+        [
             'text' => 'Presupuestos',
             'url' => 'presupuestos',
             'icon' => 'fas fa-fw fa-receipt',

@@ -3,10 +3,11 @@
     namespace App\Http\Controllers;
 
     use Illuminate\Http\Request;
-    use App\Models\Producto; // Asegúrate de importar el modelo Producto
-    use App\Models\Presupuesto; // Asumo que necesitas estos modelos también
+    use App\Models\Producto; 
+    use App\Models\Presupuesto; 
     use App\Models\Inventario;
-    use DB; // Necesario para usar DB::raw()
+    use App\Models\RegistroV;
+    use Carbon\Carbon;
     
     class DashboardController extends Controller
     {
@@ -14,12 +15,16 @@
         {
             $producto = Producto::count();
             
+            // Registros del mes actual
+            $registros_mes_actual = RegistroV::whereMonth('fecha_h', now()->month)
+                ->whereYear('fecha_h', now()->year)
+                ->count();
+    
             return view('dashboard', [
-                'productos' => $producto, 
-
+                'productos' => $producto,
+                'registros' => $registros_mes_actual,
             ]);
         }
     }
-    
 
 
