@@ -24,6 +24,19 @@
                                 value="{{ old('tecnico', $registroV?->tecnico) }}" id="tecnico" placeholder="Tecnico">
                             {!! $errors->first('tecnico', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                         </div>
+                        <div class="form-group mb-3">
+                            <label for="lugarventa" class="form-label">{{ __('Lugar de Venta') }}</label>
+                            <select name="lugarventa" class="form-control select2 @error('lugarventa') is-invalid @enderror" id="lugarventa">
+                                <option value="">{{ __('Seleccione el Lugar de Venta') }}</option>
+                                <option value="Local" {{ old('lugarventa', $registroV?->lugarventa) == 'Local' ? 'selected' : '' }}>Local</option>
+                                <option value="Van Grande" {{ old('lugarventa', $registroV?->lugarventa) == 'Van Grande' ? 'selected' : '' }}>Van Grande</option>
+                                <option value="Van Grande-Pulga" {{ old('lugarventa', $registroV?->lugarventa) == 'Van Grande-Pulga' ? 'selected' : '' }}>Van Grande-Pulga</option>
+                                <option value="Van Pequeña" {{ old('lugarventa', $registroV?->lugarventa) == 'Van Pequeña' ? 'selected' : '' }}>Van Pequeña</option>
+                                <option value="Van Pequeña-Pulga" {{ old('lugarventa', $registroV?->lugarventa) == 'Van Pequeña-Pulga' ? 'selected' : '' }}>Van Pequeña-Pulga</option>
+
+                            </select>
+                            {!! $errors->first('trabajo', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
+                        </div>
 
                         <div class="form-group mb-3">
                             <label for="trabajo" class="form-label">{{ __('Trabajo') }}</label>

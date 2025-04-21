@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property $modelo
  * @property $año
  * @property $items
+ * @property $lugarVenta
  *
  * @package App
  * @mixin \Illuminate\Database\Eloquent\Builder
@@ -42,7 +43,7 @@ class RegistroV extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['fecha_h', 'tecnico', 'trabajo', 'cliente', 'telefono', 'valor_v', 'estatus', 'metodo_p', 'titular_c', 'pagos', 'descripcion_ce', 'monto_ce', 'metodo_pce', 'porcentaje_c', 'marca', 'modelo', 'año', 'items'];
+    protected $fillable = ['fecha_h', 'tecnico', 'trabajo', 'cliente', 'telefono', 'valor_v', 'estatus', 'metodo_p', 'titular_c', 'pagos', 'descripcion_ce', 'monto_ce', 'metodo_pce', 'porcentaje_c', 'marca', 'modelo', 'año', 'items','lugarventa'];
 
     protected $casts = [
         'pagos' => 'array',

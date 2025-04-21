@@ -23,9 +23,10 @@ return new class extends Migration
             $table->string('metodo_p');
             $table->string('titular_c');
             $table->json('pagos')->nullable();
-            $table->string('descripcion_ce');
-            $table->decimal('monto_ce');
-            $table->string('metodo_pce');
+            $table->string('descripcion_ce')->nullable();
+            $table->string('lugarventa')->default('Local'); 
+            $table->decimal('monto_ce')->nullable();
+            $table->string('metodo_pce')->nullable();
             $table->string('porcentaje_c');
             $table->string('marca');
             $table->string('modelo');
