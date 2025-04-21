@@ -355,13 +355,59 @@ return [
             'url' => 'clientes',
             'icon' => 'fas fa-fw fa-users',
         ],
-        ['header' => 'Nomina'],
+        ['header' => 'NÓMINA'],
         [
-            'text' => 'Nomina',
-            'url' => 'nomina',
-            'icon' => 'fas fa-fw fa-money',
+            'text' => 'Generar Nómina',
+            'url' => 'pnominas',
+            'icon' => 'fas fa-fw fa-calculator',
+        ],
+        [
+            'text' => 'Tipos de Nómina',
+            'url' => 'tnominas',
+            'icon' => 'fas fa-fw fa-tasks',
+        ],
+        [
+            'text' => 'Reportes',
+            'url' => 'nempleados/generar-reporte',
+            'icon' => 'fas fa-fw fa-chart-bar',
+        ],
+        [
+            'text' => 'Empleados',
+            'url' => 'empleados',
+            'icon' => 'fas fa-fw fa-user-tie',
+        ],
+        [
+            'text' => 'Tipos de Pago',
+            'url' => ' ',
+            'icon' => 'fas fa-fw fa-money-check-alt',
+        ],
+        [
+            'text' => 'Préstamos',
+            'url' => 'prestamos',
+            'icon' => 'fas fa-fw fa-hand-holding-usd',
+        ],
+        [
+            'text' => 'Descuentos',
+            'url' => 'descuentos',
+            'icon' => 'fas fa-fw fa-tag',
+        ],
+        [
+            'text' => 'Abonos',
+            'url' => 'abonos',
+            'icon' => 'fas fa-fw fa-money-bill-wave',
         ],
 
+        ['header' => 'CONTABILIDAD'],
+        [
+            'text' => 'Registro de Costos',
+            'url' => 'costos',
+            'icon' => 'fas fa-fw fa-dollar-sign',
+        ],
+        [
+            'text' => 'Registro de Gastos',
+            'url' => 'gastos',
+            'icon' => 'fas fa-fw fa-receipt',
+        ],
         ['header' => 'Usuarios'],
         [
             'text' => 'Usuario',
@@ -528,4 +574,11 @@ return [
     */
 
     'livewire' => false,
+
+    'custom_js' => [
+    asset('js/global.js'),
+    ],
+    'custom_css' => [
+        asset('css/global.css'),
+    ],
 ];

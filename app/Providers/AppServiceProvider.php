@@ -6,6 +6,11 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
+    protected $listen = [
+        \App\Events\PeriodoCreado::class => [
+            \App\Listeners\AsignarEmpleadosAlPeriodo::class,
+        ],
+    ];
     /**
      * Register any application services.
      */
@@ -21,4 +26,6 @@ class AppServiceProvider extends ServiceProvider
     {
         //
     }
+
+    
 }
