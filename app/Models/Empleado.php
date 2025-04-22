@@ -30,8 +30,8 @@ class Empleado extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['id_empleado', 'nombre', 'cedula', 'cargo', 'salario_base', 'metodo_pago', 'id_tnomina'];
 
+    protected $fillable = ['id_empleado', 'nombre', 'cedula', 'cargo', 'salario_base', 'metodo_pago', 'id_tnomina'];
 
     public function tipoNomina()
     {

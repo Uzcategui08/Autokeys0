@@ -30,7 +30,7 @@ class Producto extends Model
      */
     protected $primaryKey = 'id_producto';
 
-    protected $fillable = ['item', 'marca', 't_llave', 'sku', 'precio'];
+    protected $fillable = ['id_producto','item', 'marca', 't_llave', 'sku', 'precio'];
 
     /**
      * Get the inventory records associated with the product.

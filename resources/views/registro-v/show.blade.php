@@ -1,167 +1,187 @@
 @extends('adminlte::page')
 
-@section('title', 'Registro V')
+@section('title', 'Registro de Ventas')
 
 @section('content_header')
-<h1>Detalle del Registro V</h1>
+<div class="container-fluid">
+    <div class="row mb-2">
+        <div class="col-sm-6">
+            <h1>Registro de Ventas V #{{ $registroV->id }}</h1>
+        </div>
+    </div>
+</div>
 @stop
 
 @section('content')
-    <section class="content container-fluid">
-        <div class="row">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header" style="display: flex; justify-content: space-between; align-productos: center;">
-                        <div class="float-left">
-                            <span class="card-title">{{ __('Registro V') }}</span>
-                        </div>
-                        <div class="ml-auto">
-                            <a class="btn btn-secondary btn-sm" href="{{ route('registro-vs.index') }}"> {{ __('Volver') }}</a>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Main content -->
+            <div class="invoice p-3 mb-3">
+                <!-- title row -->
+                <div class="row">
+                    <div class="col-12">
+                        <h4>
+                            Venta: <i class="fas "> {{ $registroV->lugarventa }}</i>
+                            <small class="float-right">Fecha: {{ \Carbon\Carbon::parse($registroV->fecha_h)->format('m/d/Y') }}</small>
+                        </h4>
+                    </div>
+                </div>
+
+                <!-- info row -->
+                <div class="row invoice-info">
+                    <div class="col-sm-4 invoice-col">
+                        <strong>Técnico</strong>
+                        <address>
+                            {{ $registroV->tecnico }}<br>
+                            {{ $registroV->trabajo }}<br>
+                            Estatus: <span class="badge 
+                                @if($registroV->estatus == 'pagado') badge-success 
+                                @elseif($registroV->estatus == 'parcialementep') badge-warning 
+                                @elseif($registroV->estatus == 'pendiente') badge-danger 
+                                @else badge-secondary 
+                                @endif">
+                                {{ ucfirst($registroV->estatus) }}
+                            </span>
+                        </address>
+                    </div>
+
+                    <div class="col-sm-4 invoice-col">
+                        <strong>Cliente</strong>
+                        <address>
+                            {{ $registroV->cliente }}<br>
+                            Teléfono: {{ $registroV->telefono }}<br>
+                            Vehículo: {{ $registroV->marca }} {{ $registroV->modelo }} ({{ $registroV->año }})
+                        </address>
+                    </div>
+
+                    <div class="col-sm-4 invoice-col">
+                        <b>Registro V #{{ $registroV->id }}</b><br>
+                        
+                        <b>Valor Total:</b> ${{ number_format($registroV->valor_v, 2) }}<br>
+                        <b>Método Pago:</b> {{ $registroV->metodo_p }}<br>
+                        <b>Titular:</b> {{ $registroV->titular_c }}
+                    </div>
+                </div>
+
+                <!-- Table row -->
+                <div class="row">
+                    <div class="col-12 table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Cantidad</th>
+                                    <th>Producto</th>
+                                    <th>Código</th>
+                                    <th>Precio Unitario</th>
+                                    <th>Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php $total = 0; @endphp
+                                @foreach($registroV->items as $itemGroup)
+                                    @foreach($itemGroup['productos'] as $producto)
+                                        @php
+                                            $subtotal = $producto['cantidad'] * $producto['precio_producto'];
+                                            $total += $subtotal;
+                                        @endphp
+                                        <tr>
+                                            <td>{{ $producto['cantidad'] }}</td>
+                                            <td>{{ $producto['nombre_producto'] ?? 'N/A' }}</td>
+                                            <td>{{ $producto['id_producto'] ?? 'N/A' }}</td>
+                                            <td>${{ number_format($producto['precio_producto'], 2) }}</td>
+                                            <td>${{ number_format($subtotal, 2) }}</td>
+                                        </tr>
+                                    @endforeach
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Costos extras y totales -->
+                <div class="row">
+                    <div class="col-6">
+                        <p class="lead">Costos Extras:</p>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <tr>
+                                    <th>Descripción</th>
+                                    <td>{{ $registroV->descripcion_ce ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Monto</th>
+                                    <td>${{ number_format($registroV->monto_ce, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Método Pago</th>
+                                    <td>{{ $registroV->metodo_pce ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>% Cerrajero</th>
+                                    <td>{{ $registroV->porcentaje_c }}%</td>
+                                </tr>
+                            </table>
                         </div>
                     </div>
 
-                    <div class="card-body bg-white">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-4">
-                                    <strong>{{ __('Fecha') }}:</strong>
-                                    <p class="form-control-static">
-                                        {{ \Carbon\Carbon::parse($registroV->fecha_h)->format('d/m/Y H:i') }}
-                                    </p>
-                                </div>
-                                <div class="form-group mb-4">
-                                    <strong>{{ __('Técnico') }}:</strong>
-                                    <p class="form-control-static">{{ $registroV->tecnico }}</p>
-                                </div>
-                                <div class="form-group mb-4">
-                                    <strong>{{ __('Trabajo') }}:</strong>
-                                    <p class="form-control-static">{{ $registroV->trabajo }}</p>
-                                </div>
-                                <div class="form-group mb-4">
-                                    <strong>{{ __('Cliente') }}:</strong>
-                                    <p class="form-control-static">{{ $registroV->cliente }}</p>
-                                </div>
-                                <div class="form-group mb-4">
-                                    <strong>{{ __('Teléfono') }}:</strong>
-                                    <p class="form-control-static">{{ $registroV->telefono }}</p>
-                                </div>
-                                <div class="form-group mb-4">
-                                    <strong>{{ __('Valor V') }}:</strong>
-                                    <p class="form-control-static">{{ number_format($registroV->valor_v, 2) }}</p>
-                                </div>
-                                <div class="form-group mb-4">
-                                    <strong>{{ __('estatus') }}:</strong>
-                                    <p class="form-control-static">
-                                        <span class="badge 
-                                            @if($registroV->estatus == 'pagado') badge-success 
-                                            @elseif($registroV->estatus == 'parcialmentep') badge-warning 
-                                            @elseif($registroV->estatus == 'pendiente') badge-danger 
-                                            @else badge-secondary 
-                                            @endif">
-                                            {{ ucfirst($registroV->estatus) }} <!-- Mostrar estatus con estilo -->
-                                        </span>
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="form-group mb-4">
-                                    <strong>{{ __('Método de Pago') }}:</strong>
-                                    <p class="form-control-static">{{ $registroV->metodo_p }}</p>
-                                </div>
-                                <div class="form-group mb-4">
-                                    <strong>{{ __('Titular de Cuenta') }}:</strong>
-                                    <p class="form-control-static">{{ $registroV->titular_c }}</p>
-                                </div>
-                                <div class="form-group mb-4">
-                                    <strong>{{ __('Cobro') }}:</strong>
-                                    <p class="form-control-static">{{ $registroV->cobro }}</p>
-                                </div>
-                                <div class="form-group mb-4">
-                                    <strong>{{ __('Descripción CE') }}:</strong>
-                                    <p class="form-control-static">{{ $registroV->descripcion_ce }}</p>
-                                </div>
-                                <div class="form-group mb-4">
-                                    <strong>{{ __('Monto CE') }}:</strong>
-                                    <p class="form-control-static">{{ number_format($registroV->monto_ce, 2) }}</p>
-                                </div>
-                                <div class="form-group mb-4">
-                                    <strong>{{ __('Método PCE') }}:</strong>
-                                    <p class="form-control-static">{{ $registroV->metodo_pce }}</p>
-                                </div>
-                                <div class="form-group mb-4">
-                                    <strong>{{ __('Porcentaje C') }}:</strong>
-                                    <p class="form-control-static">{{ $registroV->porcentaje_c }}%</p>
-                                </div>
-                            </div>
+                    <div class="col-6">
+                        <p class="lead">Resumen Financiero</p>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <tr>
+                                    <th>Costos Extras:</th>
+                                    <td>${{ number_format($registroV->monto_ce, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Total:</th>
+                                    <td>${{ number_format($registroV->valor_v, 2) }}</td>
+                                </tr>
+                            </table>
                         </div>
+                    </div>
+                </div>
 
-                        <div class="row mt-4">
-                            <div class="col-md-12">
-                                <div class="form-group mb-4">
-                                    <strong>{{ __('Vehículo') }}:</strong>
-                                    <p class="form-control-static">
-                                        {{ $registroV->marca }} {{ $registroV->modelo }} ({{ $registroV->año }})
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-group mb-4">
-                                <strong>{{ __('Ítems del registroV') }}:</strong>
-                                    @if (is_array($registroV->items) && count($registroV->items) > 0)
-                                        <div class="table-responsive">
-                                            @foreach ($registroV->items as $groupIndex => $itemGroup)
-                                                <h5 class="mt-4">{{ __('Trabajo') }}: {{ $itemGroup['trabajo'] ?? 'N/A' }}</h5>
-                                                {{-- <h6>{{ __('Almacén') }}: {{ $itemGroup['almacen'] ?? 'N/A' }}</h6> --}}
-                                                <table class="table table-bordered table-striped">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>ID</th>
-                                                            <th>Producto</th>
-                                                            <th>Cantidad</th>
-                                                            <th>Precio Unitario</th>
-                                                            <th>Subtotal</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @php
-                                                            $groupTotal = 0;
-                                                        @endphp
-                                                        @foreach ($itemGroup['productos'] as $producto)
-                                                            @php
-                                                                $subtotal = $producto['cantidad'] * $producto['precio_producto'];
-                                                                $groupTotal += $subtotal;
-                                                            @endphp
-                                                            <tr>
-                                                                <td>{{$producto['id_producto'] ?? 'N/A' }}</td>
-                                                                <td>{{ $producto['nombre_producto'] ?? 'N/A' }}</td>
-                                                                <td>{{ $producto['cantidad'] ?? 'N/A' }}</td>
-                                                                <td>{{ number_format($producto['precio_producto'], 2) }}</td>
-                                                                <td>{{ number_format($subtotal, 2) }}</td>
-                                                            </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                    <tfoot>
-                                                        <tr>
-                                                            <td colspan="3" class="text-right"><strong>Total del grupo:</strong></td>
-                                                            <td>{{ number_format($groupTotal, 2) }}</td>
-                                                        </tr>
-                                                    </tfoot>
-                                                </table>
-                                            @endforeach
-                                        </div>
-                                    @else
-                                        <p class="text-muted">No hay ítems registrados.</p>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
+                <!-- this row will not appear when printing -->
+                <div class="row no-print">
+                    <div class="col-12">
+                        <a href="javascript:window.print()" class="btn btn-default"><i class="fas fa-print"></i> Imprimir</a>
+                        <a href="{{ route('registro-vs.index') }}" class="btn btn-secondary float-right">
+                            <i class="fas fa-arrow-left"></i> Volver
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
-@endsection
+    </div>
+</div>
+@stop
+
+@section('css')
+<style>
+    .invoice {
+        background: #fff;
+        border: 1px solid #eee;
+        position: relative;
+    }
+    .invoice-header {
+        border-bottom: 1px solid #eee;
+        padding-bottom: 15px;
+        margin-bottom: 15px;
+    }
+    .table-responsive {
+        overflow-x: auto;
+    }
+</style>
+@stop
+
+@section('js')
+<script>
+    $(document).ready(function() {
+        // Botón para imprimir
+        $('.btn-print').click(function() {
+            window.print();
+        });
+    });
+</script>
+@stop

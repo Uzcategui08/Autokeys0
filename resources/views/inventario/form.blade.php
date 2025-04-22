@@ -1,12 +1,5 @@
 <div class="row padding-1 p-1">
     <div class="col-md-12">
-
-        <div class="form-group mb-2 mb20">
-            <label for="id_inventario" class="form-label">{{ __('Id Inventario') }}</label>
-            <input type="text" name="id_inventario" class="form-control @error('id_inventario') is-invalid @enderror" value="{{ old('id_inventario', $inventario?->id_inventario) }}" id="id_inventario" placeholder="Id Inventario">
-            {!! $errors->first('id_inventario', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
-        </div>
-
         <div class="form-group mb-2 mb20">
             <label for="id_producto" class="form-label">{{ __('Producto') }}</label>
             <select name="id_producto" class="form-control @error('id_producto') is-invalid @enderror" id="id_producto">

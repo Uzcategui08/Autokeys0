@@ -22,7 +22,6 @@ class InventarioRequest extends FormRequest
     public function rules(): array
     {
         return [
-			'id_inventario' => 'required',
 			'id_producto' => 'required',
 			'id_almacen' => 'required',
 			'cantidad' => 'required',

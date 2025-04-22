@@ -59,7 +59,20 @@
                                 <div class="invalid-feedback d-block"><strong>{{ $message }}</strong></div>
                             @enderror
                         </div>
-                        
+                        <div class="form-group mb-3">
+                            <label for="lugarventa" class="form-label">{{ __('Lugar de Venta') }}</label>
+                            <select name="lugarventa" class="form-control select2 @error('lugarventa') is-invalid @enderror" id="lugarventa">
+                                <option value="">{{ __('Seleccione el Lugar de Venta') }}</option>
+                                <option value="Local" {{ old('lugarventa', $registroV?->lugarventa) == 'Local' ? 'selected' : '' }}>Local</option>
+                                <option value="Van Grande" {{ old('lugarventa', $registroV?->lugarventa) == 'Van Grande' ? 'selected' : '' }}>Van Grande</option>
+                                <option value="Van Grande-Pulga" {{ old('lugarventa', $registroV?->lugarventa) == 'Van Grande-Pulga' ? 'selected' : '' }}>Van Grande-Pulga</option>
+                                <option value="Van Pequeña" {{ old('lugarventa', $registroV?->lugarventa) == 'Van Pequeña' ? 'selected' : '' }}>Van Pequeña</option>
+                                <option value="Van Pequeña-Pulga" {{ old('lugarventa', $registroV?->lugarventa) == 'Van Pequeña-Pulga' ? 'selected' : '' }}>Van Pequeña-Pulga</option>
+
+                            </select>
+                            {!! $errors->first('trabajo', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
+                        </div>
+
                         <div class="form-group mb-3">
                             <label for="trabajo" class="form-label">{{ __('Trabajo') }}</label>
                             <select name="trabajo" class="form-control select2 @error('trabajo') is-invalid @enderror" id="trabajo">
@@ -208,10 +221,10 @@
                             
                             <div class="col-md-3">
                                 <div class="form-group mb-3">
-                                    <label for="metodo_pce" class="form-label">{{ __('Método Pago') }}</label>
-                                    <input type="text" name="metodo_pce" class="form-control @error('metodo_pce') is-invalid @enderror" 
-                                        value="{{ old('metodo_pce', $registroV?->metodo_pce) }}" id="metodo_pce" placeholder="Método">
-                                    {!! $errors->first('metodo_pce', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
+                                    <label for="cobro" class="form-label">{{ __('Cobro') }}</label>
+                                    <input type="text" name="cobro" class="form-control @error('cobro') is-invalid @enderror" 
+                                        value="{{ old('cobro', $registroV?->cobro) }}" id="cobro" placeholder="Cobro">
+                                    {!! $errors->first('cobro', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                                 </div>
                             </div>
                             
@@ -238,7 +251,7 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-2">
+                            <div class="col-md-4">
                                 <div class="form-group mb-3">
                                     <label for="valor_v" class="form-label">{{ __('Valor') }}</label>
                                     <input type="text" name="valor_v" class="form-control @error('valor_v') is-invalid @enderror" 
@@ -246,30 +259,7 @@
                                     {!! $errors->first('valor_v', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                                 </div>
                             </div>
-                            
-                            <div class="col-md-2">
-                                <div class="form-group mb-3">
-                                    <label for="estatus" class="form-label">{{ __('Estatus') }}</label>
-                                    <select name="estatus" id="estatus" class="form-control @error('estatus') is-invalid @enderror">
-                                        <option value="">Estado</option>
-                                        <option value="pagado" {{ old('estatus', $registroV?->estatus) == 'pagado' ? 'selected' : '' }}>Pagado</option>
-                                        <option value="pendiente" {{ old('estatus', $registroV?->estatus) == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
-                                        <option value="parcialementep" {{ old('estatus', $registroV?->estatus) == 'parcialementep' ? 'selected' : '' }}>Parcial</option>
-                                    </select>
-                                    {!! $errors->first('estatus', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-2">
-                                <div class="form-group mb-3">
-                                    <label for="metodo_p" class="form-label">{{ __('Método') }}</label>
-                                    <input type="text" name="metodo_p" class="form-control @error('metodo_p') is-invalid @enderror" 
-                                        value="{{ old('metodo_p', $registroV?->metodo_p) }}" id="metodo_p" placeholder="Método">
-                                    {!! $errors->first('metodo_p', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <div class="form-group mb-3">
                                     <label for="titular_c" class="form-label">{{ __('Titular') }}</label>
                                     <input type="text" name="titular_c" class="form-control @error('titular_c') is-invalid @enderror" 
@@ -277,13 +267,17 @@
                                     {!! $errors->first('titular_c', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                                 </div>
                             </div>
-                            
-                            <div class="col-md-3">
+                                                        
+                            <div class="col-md-4">
                                 <div class="form-group mb-3">
-                                    <label for="cobro" class="form-label">{{ __('Cobro') }}</label>
-                                    <input type="text" name="cobro" class="form-control @error('cobro') is-invalid @enderror" 
-                                        value="{{ old('cobro', $registroV?->cobro) }}" id="cobro" placeholder="Cobro">
-                                    {!! $errors->first('cobro', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
+                                    <label for="estatus" class="form-label">{{ __('Estatus') }}</label>
+                                    <select name="estatus" id="estatus" class="form-control @error('estatus') is-invalid @enderror" readonly>
+                                        <option value="">Estado</option>
+                                        <option value="pagado" {{ old('estatus', $registroV?->estatus) == 'pagado' ? 'selected' : '' }}>Pagado</option>
+                                        <option value="pendiente" {{ old('estatus', $registroV?->estatus) == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
+                                        <option value="parcialementep" {{ old('estatus', $registroV?->estatus) == 'parcialementep' ? 'selected' : '' }}>Parcial</option>
+                                    </select>
+                                    {!! $errors->first('estatus', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                                 </div>
                             </div>
                         </div>
@@ -381,6 +375,15 @@
         </div>
     </div>
 </div>
+<script>
+$(document).ready(function() {
+    $('.select2').select2({
+        width: '100%',
+        dropdownAutoWidth: true,
+    });
+    
+});
+</script>
 <style>
 .select2-container .select2-selection--single {
     height: 38px !important;

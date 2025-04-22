@@ -59,7 +59,6 @@
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
-            
         </div>
         <div class="row">
             <div class="col-md-12 mt20 mt-2">
