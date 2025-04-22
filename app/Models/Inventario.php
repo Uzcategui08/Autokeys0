@@ -23,15 +23,15 @@ class Inventario extends Model
 {
 
     protected $perPage = 20;
-
+    protected $primaryKey = 'id_inventario';
+    public $incrementing = true;  
+    
     /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
      */
-    protected $primaryKey = 'id_inventario';
-
-    protected $fillable = ['id_inventario', 'id_producto', 'id_almacen', 'cantidad'];
+    protected $fillable = ['id_producto', 'id_almacen', 'cantidad'];
 
 
     /**

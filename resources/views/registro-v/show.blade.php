@@ -22,8 +22,8 @@
                 <div class="row">
                     <div class="col-12">
                         <h4>
-                            <i class="fas fa-car"></i> {{ config('app.name') }}
-                            <small class="float-right">Fecha: {{ \Carbon\Carbon::parse($registroV->fecha_h)->format('d/m/Y H:i') }}</small>
+                            Venta: <i class="fas "> {{ $registroV->lugarventa }}</i>
+                            <small class="float-right">Fecha: {{ \Carbon\Carbon::parse($registroV->fecha_h)->format('m/d/Y') }}</small>
                         </h4>
                     </div>
                 </div>
@@ -57,7 +57,7 @@
 
                     <div class="col-sm-4 invoice-col">
                         <b>Registro V #{{ $registroV->id }}</b><br>
-                        <br>
+                        
                         <b>Valor Total:</b> ${{ number_format($registroV->valor_v, 2) }}<br>
                         <b>Método Pago:</b> {{ $registroV->metodo_p }}<br>
                         <b>Titular:</b> {{ $registroV->titular_c }}
@@ -130,10 +130,6 @@
                         <div class="table-responsive">
                             <table class="table">
                                 <tr>
-                                    <th style="width:50%">Subtotal:</th>
-                                    <td>${{ number_format($total, 2) }}</td>
-                                </tr>
-                                <tr>
                                     <th>Costos Extras:</th>
                                     <td>${{ number_format($registroV->monto_ce, 2) }}</td>
                                 </tr>
@@ -153,11 +149,6 @@
                         <a href="{{ route('registro-vs.index') }}" class="btn btn-secondary float-right">
                             <i class="fas fa-arrow-left"></i> Volver
                         </a>
-                        @if($registroV->estatus != 'pagado')
-                        <button type="button" class="btn btn-success float-right mr-2">
-                            <i class="far fa-credit-card"></i> Registrar Pago
-                        </button>
-                        @endif
                     </div>
                 </div>
             </div>

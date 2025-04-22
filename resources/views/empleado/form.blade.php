@@ -45,6 +45,14 @@
                     {!! $errors->first('metodo_pago', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
                 </div>
             </div>
+            <div class="col-md-4">
+                <div class="form-group mb-2 mb20">
+                    <label for="id_tnomina" class="form-label">{{ __('id_tnomina') }}</label>
+                    <input name="id_tnomina" id="id_tnomina" class="form-control @error('frecuencia') is-invalid @enderror">
+</input>
+                    {!! $errors->first('id_tnomina', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
+                </div>
+            </div>
         </div>
         <div class="row">
             <div class="col-md-12 mt20 mt-2">

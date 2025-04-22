@@ -69,18 +69,18 @@
                                             <td>
                                                 <form action="{{ route('presupuestos.destroy', $presupuesto->id_presupuesto) }}" method="POST">
                                                     <a class="btn btn-sm btn-primary" href="{{ route('presupuestos.show', $presupuesto->id_presupuesto) }}">
-                                                        <i class="fa fa-fw fa-eye"></i> {{ __('Show') }}
+                                                        <i class="fa fa-fw fa-eye"></i> 
                                                     </a>
                                                     <a class="btn btn-sm btn-success" href="{{ route('presupuestos.edit', $presupuesto->id_presupuesto) }}">
-                                                        <i class="fa fa-fw fa-edit"></i> {{ __('Edit') }}
+                                                        <i class="fa fa-fw fa-edit"></i> 
                                                     </a>
                                                     <a class="btn btn-sm btn-warning" href="{{ route('presupuestos.pdf', $presupuesto->id_presupuesto) }}" target="_blank">
-                                                        <i class="fa fa-fw fa-print"></i> {{ __('PDF') }}
+                                                        <i class="fa fa-fw fa-print"></i> 
                                                     </a>
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-danger btn-sm" onclick="event.preventDefault(); confirm('¿Estás seguro de eliminar este presupuesto?') ? this.closest('form').submit() : false;">
-                                                        <i class="fa fa-fw fa-trash"></i> {{ __('Delete') }}
+                                                        <i class="fa fa-fw fa-trash"></i> 
                                                     </button>
                                                 </form>
                                             </td>
@@ -95,7 +95,9 @@
         </div>
     </div>
 
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.0/css/responsive.dataTables.min.css">
     <style>
+         
         .dataTable {
             width: 100% !important;
             margin: 0 auto;
@@ -130,6 +132,7 @@
 @endsection
 
 @push('js')
+<script src="https://cdn.datatables.net/responsive/2.4.0/js/dataTables.responsive.min.js"></script>
     <script>
         $(document).ready(function() {
             $('.dataTable').DataTable({

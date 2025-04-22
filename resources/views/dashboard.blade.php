@@ -37,8 +37,8 @@
 
                 <div class="small-box bg-success">
                     <div class="inner">
-                        <h3>53<sup style="font-size: 20px">%</sup></h3>
-                        <p>porcentaje de compra</p>
+                        <h3>{{$diferencia_porcentual}}<sup style="font-size: 20px">%</sup></h3>
+                        <p>Evolucion de Facturación</p>
                     </div>
                     <div class="icon">
                         <i class="ion ion-stats-bars"></i>
@@ -65,8 +65,8 @@
 
                 <div class="small-box bg-danger">
                     <div class="inner">
-                        <h3>111</h3>
-                        <p>Productos registrados</p>
+                        <h3>{{$valorV}}</h3>
+                        <p>Facturación Mensual</p>
                     </div>
                     <div class="icon">
                         <i class="ion ion-pie-graph"></i>

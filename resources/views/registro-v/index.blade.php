@@ -65,15 +65,15 @@
                                             <td>
                                                 <form action="{{ route('registro-vs.destroy', $registroV->id) }}" method="POST" style="display: flex; flex-direction: column; gap: 5px;">
                                                     <a class="btn btn-sm btn-primary" href="{{ route('registro-vs.show', $registroV->id) }}">
-                                                        <i class="fa fa-fw fa-eye"></i> {{ __('Ver') }}
+                                                        <i class="fa fa-fw fa-eye"></i>
                                                     </a>
                                                     <a class="btn btn-sm btn-success" href="{{ route('registro-vs.edit', $registroV->id) }}">
-                                                        <i class="fa fa-fw fa-edit"></i> {{ __('Editar') }}
+                                                        <i class="fa fa-fw fa-edit"></i> 
                                                     </a>
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-danger btn-sm" onclick="event.preventDefault(); confirm('¿Estás seguro de eliminar?') ? this.closest('form').submit() : false;">
-                                                        <i class="fa fa-fw fa-trash"></i> {{ __('Eliminar') }}
+                                                        <i class="fa fa-fw fa-trash"></i> 
                                                     </button>
                                                 </form>
                                             </td>
@@ -91,6 +91,7 @@
 @stop
 
 @section('css')
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.0/css/responsive.dataTables.min.css">
     <style>
         .dataTable {
             width: 100% !important;
@@ -149,6 +150,7 @@
 @stop
 
 @section('js')
+<script src="https://cdn.datatables.net/responsive/2.4.0/js/dataTables.responsive.min.js"></script>
     <script>
         $(document).ready(function() {
             $('.dataTable').DataTable({
@@ -157,38 +159,7 @@
                 language: {
                     url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json'
                 },
-                dom: '<"top"Bf>rt<"bottom"lip><"clear">',
-                buttons: [
-                    {
-                        extend: 'copy',
-                        text: '<i class="fas fa-copy"></i> Copiar',
-                        className: 'btn btn-secondary'
-                    },
-                    {
-                        extend: 'csv',
-                        text: '<i class="fas fa-file-csv"></i> CSV',
-                        className: 'btn btn-info'
-                    },
-                    {
-                        extend: 'excel',
-                        text: '<i class="fas fa-file-excel"></i> Excel',
-                        className: 'btn btn-success'
-                    },
-                    {
-                        extend: 'pdf',
-                        text: '<i class="fas fa-file-pdf"></i> PDF',
-                        className: 'btn btn-danger'
-                    },
-                    {
-                        extend: 'print',
-                        text: '<i class="fas fa-print"></i> Imprimir',
-                        className: 'btn btn-warning'
-                    }
-                ],
-                columnDefs: [
-                    { responsivePriority: 1, targets: 0 },
-                    { responsivePriority: 2, targets: -1 }
-                ]
+   
             });
         });
     </script>
