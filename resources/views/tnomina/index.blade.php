@@ -76,7 +76,6 @@
                         </div>
                     </div>
                 </div>
-                {!! $tnominas->withQueryString()->links() !!}
             </div>
         </div>
     </div>

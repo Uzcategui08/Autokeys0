@@ -17,12 +17,47 @@
                                    id="fecha_h" placeholder="Fecha H">
                             {!! $errors->first('fecha_h', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                         </div>
-
                         <div class="form-group mb-3">
-                            <label for="tecnico" class="form-label">{{ __('Técnico') }}</label>
-                            <input type="text" name="tecnico" class="form-control @error('tecnico') is-invalid @enderror" 
-                                value="{{ old('tecnico', $registroV?->tecnico) }}" id="tecnico" placeholder="Tecnico">
-                            {!! $errors->first('tecnico', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
+                            <label for="select_empleado" class="form-label">{{ __('Técnico') }}</label>
+                            <input 
+                                type="hidden" 
+                                name="id_empleado" 
+                                id="id_empleado"
+                            >
+                            <input 
+                                type="hidden" 
+                                name="tecnico" 
+                                id="tecnico" 
+                                value="{{ old('tecnico', $registroV?->tecnico ?? '') }}"
+                            >
+                            <select 
+                                id="select_empleado"
+                                class="form-control @error('tecnico') is-invalid @enderror"
+                                onchange="
+                                    const empleadoId = this.value;
+                                    const empleadoNombre = this.options[this.selectedIndex].text;
+                                    
+                                    document.getElementById('id_empleado').value = empleadoId;
+                                    document.getElementById('tecnico').value = empleadoNombre;
+                                "
+                            >
+                                <option value="">Seleccionar...</option>
+                                @foreach($empleados as $empleado)
+                                    <option 
+                                        value="{{ $empleado->id_empleado }}"
+                                        @selected(
+                                            old('tecnico', $registroV?->tecnico) == $empleado->nombre ||
+                                            old('id_empleado') == $empleado->id_empleado
+                                        )
+                                    >
+                                        {{ $empleado->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            
+                            @error('tecnico')
+                                <div class="invalid-feedback d-block"><strong>{{ $message }}</strong></div>
+                            @enderror
                         </div>
                         <div class="form-group mb-3">
                             <label for="lugarventa" class="form-label">{{ __('Lugar de Venta') }}</label>
@@ -833,4 +868,3 @@ $(document).ready(function() {
     }
 });
 </script>
-

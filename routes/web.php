@@ -88,7 +88,13 @@ Route::prefix('nempleados')->group(function () {
         ->name('nempleados.pdf');
     Route::get('/general/{periodoId}', [NempleadoController::class, 'generarReciboGeneral'])
         ->name('nempleados.general');
+
 });
+Route::get('/empleados-por-tnomina/{id_tnomina}', function($id_tnomina) {
+    $empleados = App\Models\Empleado::where('id_tnomina', $id_tnomina)->get();
+    return response()->json(['empleados' => $empleados]);
+});
+
 
 Route::resource('prestamos', PrestamoController::class);
 Route::get('prestamos/empleado/{id}', [PrestamoController::class, 'porEmpleado'])

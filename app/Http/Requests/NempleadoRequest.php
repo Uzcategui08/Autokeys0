@@ -29,6 +29,7 @@ class NempleadoRequest extends FormRequest
 			'total_abonos' => 'required',
 			'total_prestamos' => 'required',
 			'total_pagado' => 'required',
+            'metodo_pago' => 'required',
         ];
     }
 }

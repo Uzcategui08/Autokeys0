@@ -74,4 +74,9 @@ class RegistroV extends Model
     {
         return $this->belongsTo(Cliente::class);
     }
+
+    public function abono()
+    {
+        return $this->hasMany(Abono::class);
+    }
 }

@@ -45,13 +45,19 @@
                     {!! $errors->first('metodo_pago', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="form-group mb-2 mb20">
-                    <label for="id_tnomina" class="form-label">{{ __('id_tnomina') }}</label>
-                    <input name="id_tnomina" id="id_tnomina" class="form-control @error('frecuencia') is-invalid @enderror">
-</input>
-                    {!! $errors->first('id_tnomina', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
-                </div>
+            <div class="form-group mb-3">
+                <label for="id_tnomina">Tipo de Nómina</label>
+                <select name="id_tnomina" id="id_tnomina" class="form-control @error('id_tnomina') is-invalid @enderror">
+                    <option value="">Seleccione una opción</option>
+                    @foreach($tnominas as $tnomina)
+                        <option value="{{ $tnomina->id_tnomina }}" {{ old('id_tnomina') == $tnomina->id_tnomina ? 'selected' : '' }}>
+                            {{ $tnomina->nombre }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('id_tnomina')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
         </div>
         <div class="row">

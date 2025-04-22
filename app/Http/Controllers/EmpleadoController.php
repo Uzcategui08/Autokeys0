@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Empleado;
+use App\Models\Tnomina;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use App\Http\Requests\EmpleadoRequest;
@@ -28,8 +29,9 @@ class EmpleadoController extends Controller
     public function create(): View
     {
         $empleado = new Empleado();
+        $tnominas = Tnomina::all();
 
-        return view('empleado.create', compact('empleado'));
+        return view('empleado.create', compact('empleado', 'tnominas'));
     }
 
     /**

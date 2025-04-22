@@ -20,6 +20,7 @@ return new class extends Migration
             $table->decimal('total_prestamos', 10, 2)->default(0);
             $table->decimal('total_costos', 10, 2)->default(0);
             $table->decimal('total_pagado', 10, 2);
+            $table->integer('metodo_pago');
             $table->timestamps();
         });
     }
