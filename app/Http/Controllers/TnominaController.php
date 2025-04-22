@@ -18,8 +18,7 @@ class TnominaController extends Controller
     {
         $tnominas = Tnomina::paginate();
 
-        return view('tnomina.index', compact('tnominas'))
-            ->with('i', ($request->input('page', 1) - 1) * $tnominas->perPage());
+        return view('tnomina.index', compact('tnominas'));
     }
 
     /**
@@ -35,13 +34,24 @@ class TnominaController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(TnominaRequest $request): RedirectResponse
+    public function store(Request $request)
     {
-        Tnomina::create($request->validated());
+        $validated = $request->validate([
+            'id_tnomina' => 'required|string|max:255|unique:tnominas,id_tnomina',
+            'nombre' => 'required|string|max:255',
+            'frecuencia' => 'required|in:1,2,3',
+        ]);
+    
+        Tnomina::create($validated);
 
-        return Redirect::route('tnominas.index')
-            ->with('success', 'Tnomina created successfully.');
+        $tnominas = Tnomina::all();
+
+        return view('tnomina.index', [
+            'tnominas' => $tnominas,
+            'success' => 'Nómina guardada correctamente.'
+        ]);
     }
+    
 
     /**
      * Display the specified resource.

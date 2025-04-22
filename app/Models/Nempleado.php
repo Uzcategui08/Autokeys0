@@ -33,7 +33,7 @@ class Nempleado extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['id_nempleado', 'id_pnomina', 'id_empleado', 'total_descuentos', 'total_abonos', 'total_prestamos', 'total_costos', 'total_pagado'];
+    protected $fillable = ['id_nempleado', 'id_pnomina', 'id_empleado', 'total_descuentos', 'total_abonos', 'total_prestamos', 'total_costos', 'total_pagado', 'metodo_pago'];
 
 
     /**

@@ -27,7 +27,7 @@
 
                 <div class="card-body bg-white">
                     <div class="table-responsive">
-                    <table class="table table-striped table-bordered dataTable">
+                        <table class="table table-bordered table-striped dataTable">
                             <thead class="thead">
                                 <tr>
                                     <th>No</th>
@@ -78,6 +78,7 @@
 @stop
 
 @section('css')
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.0/css/responsive.dataTables.min.css">
 <style>
         .dataTable {
             width: 100% !important;
@@ -113,6 +114,7 @@
 @endsection
 
 @section('js')
+<script src="https://cdn.datatables.net/responsive/2.4.0/js/dataTables.responsive.min.js"></script>
     <script>
         $(document).ready(function() {
             $('.dataTable').DataTable({

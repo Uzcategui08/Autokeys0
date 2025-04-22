@@ -40,5 +40,10 @@ class Abono extends Model
     {
         return $this->belongsTo(\App\Models\Empleado::class, 'id_empleado', 'id_empleado');
     }
+
+    public function registroV()
+    {
+        return $this->hasMany(RegistroV::class);
+    }
     
 }

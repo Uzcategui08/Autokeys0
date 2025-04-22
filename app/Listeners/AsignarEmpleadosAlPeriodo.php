@@ -90,13 +90,16 @@ class AsignarEmpleadosAlPeriodo
                         continue;
                     }
                 }
+
+            $metodoPago = $event->metodosPago[$empleado->id_empleado] ?? 1;    
     
             $event->periodo->empleados()->attach($empleado->id_empleado, [
                 'total_descuentos' => $totalDescuentos,
                 'total_abonos' => $totalAbonos,
                 'total_prestamos' => $totalPrestamos,
                 'total_costos' => $totalCostos,
-                'total_pagado' => $totalPagado - $totalPrestamos - $totalDescuentos - $totalCostos + $totalAbonos
+                'total_pagado' => $totalPagado - $totalPrestamos - $totalDescuentos - $totalCostos + $totalAbonos,
+                'metodo_pago' => $metodoPago
             ]);
         }
     }

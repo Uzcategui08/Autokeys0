@@ -22,6 +22,7 @@ class EmpleadoRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'id_tnomina' => 'required|exists:tnominas,id_tnomina',
 			'id_empleado' => 'required',
 			'nombre' => 'required|string',
 			'cedula' => 'required',

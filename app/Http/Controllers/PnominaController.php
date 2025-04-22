@@ -41,11 +41,21 @@ class PnominaController extends Controller
      */
     public function store(PnominaRequest $request): RedirectResponse
     {
+        $validated = $request->validate([
+            'id_tnomina' => 'required|exists:tnominas,id_tnomina',
+            'inicio' => 'required|date',
+            'fin' => 'required|date|after_or_equal:inicio',
+            'metodos_pago' => 'required|array',
+            'metodos_pago.*' => 'required|in:1,2,3,4'
+        ]);
+    
         $periodo = Pnomina::create([
-            ...$request->validated(),
+            'id_tnomina' => $validated['id_tnomina'],
+            'inicio' => $validated['inicio'],
+            'fin' => $validated['fin'],
             'activo' => true 
         ]);
-        event(new PeriodoCreado($periodo));
+        event(new PeriodoCreado($periodo, $validated['metodos_pago']));
     
         return Redirect::route('pnominas.index')
             ->with('success', 'Pnomina created successfully.');

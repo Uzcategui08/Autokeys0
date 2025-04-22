@@ -16,9 +16,11 @@ class PeriodoCreado
     use Dispatchable, SerializesModels;
 
     public $periodo;
+    public $metodosPago;
 
-    public function __construct(Pnomina $periodo)
+    public function __construct(Pnomina $periodo, $metodosPago)
     {
         $this->periodo = $periodo;
+        $this->metodosPago = $metodosPago;
     }
 }

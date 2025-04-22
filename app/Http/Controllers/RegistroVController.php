@@ -8,6 +8,8 @@ use Illuminate\Support\Arr;
 use App\Models\RegistroV;
 use App\Models\Cliente;
 use App\Models\Producto;
+use App\Models\Empleado;
+use App\Models\Abono;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use App\Http\Requests\RegistroVRequest;
@@ -25,8 +27,8 @@ class RegistroVController extends Controller
     {
         $registroVs = RegistroV::with('cliente')
             ->where('estatus', 'pagado')  
-            ->paginate(20);
-    
+            ->paginate(20);    
+            
         return view('registro-v.index', compact('registroVs'))
             ->with('i', ($request->input('page', 1) - 1) * $registroVs->perPage());
     }
@@ -51,8 +53,9 @@ class RegistroVController extends Controller
         $inventario = Inventario::with('producto')->get();
         $almacenes = Almacene::all();
         $registroV = new RegistroV();
+        $empleados = Empleado::all();
 
-        return view('registro-v.create', compact('registroV', 'clientes', 'inventario', 'almacenes'));
+        return view('registro-v.create', compact('registroV', 'clientes', 'inventario', 'almacenes', 'empleados'));
     }
     /**
      * Obtener productos por almacén (AJAX)
@@ -79,6 +82,7 @@ class RegistroVController extends Controller
      */
     public function store(RegistroVRequest $request): RedirectResponse
     {
+
         $validatedData = $request->validated();
 
         $trabajos = [];
@@ -156,7 +160,15 @@ class RegistroVController extends Controller
             $validatedData['pagos'] = json_encode([]);
         }
 
-        RegistroV::create($validatedData);
+        $empleado = request('id_empleado');
+        $registroV = RegistroV::create($validatedData);
+
+        Abono::create([
+            'a_fecha' => $registroV->fecha_h,
+            'id_empleado' => $empleado,
+            'concepto' => $registroV->descripcion_ce,
+            'valor' => $registroV->porcentaje_c,
+        ]);
     
         return Redirect::route('registro-vs.index')
             ->with('success', 'RegistroV creado exitosamente.');
