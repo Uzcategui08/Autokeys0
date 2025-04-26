@@ -22,11 +22,9 @@ class PrestamoRequest extends FormRequest
     public function rules(): array
     {
         return [
-			'id_prestamos' => 'required',
 			'id_empleado' => 'required',
-			'valor' => 'required',
-			'cuotas' => 'required',
-			'cuota_actual' => 'required',
+            'valor' => 'required|numeric|min:0',
+            'cuotas' => 'required|integer|min:1',
         ];
     }
 }

@@ -30,7 +30,7 @@ class Descuento extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['id_descuentos', 'id_empleado', 'concepto', 'valor', 'd_fecha'];
+    protected $fillable = ['id_empleado', 'concepto', 'valor', 'd_fecha', 'fecha_pago', 'status'];
 
 
     /**

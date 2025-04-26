@@ -40,7 +40,7 @@ class ClienteController extends Controller
         Cliente::create($request->validated());
 
         return Redirect::route('clientes.index')
-            ->with('success', 'Cliente created successfully.');
+            ->with('success', 'Cliente creado satisfactoriamente.');
     }
 
     /**
@@ -71,7 +71,7 @@ class ClienteController extends Controller
         $cliente->update($request->validated());
 
         return Redirect::route('clientes.index')
-            ->with('success', 'Cliente updated successfully');
+            ->with('success', 'Cliente actualizado satisfactoriamente.');
     }
 
     public function destroy($id): RedirectResponse
@@ -79,6 +79,6 @@ class ClienteController extends Controller
         Cliente::find($id)->delete();
 
         return Redirect::route('clientes.index')
-            ->with('success', 'Cliente deleted successfully');
+            ->with('success', 'Cliente eliminado satisfactoriamente.');
     }
 }

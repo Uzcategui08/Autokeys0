@@ -12,12 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('prestamos', function (Blueprint $table) {
-            $table->id('id_prestamos');
-            $table->foreignId('id_empleado')->constrained('empleados', 'id_empleado')->onDelete('cascade');
+            $table->id('id_prestamo');
+            $table->date('f_prestamo');
+            $table->unsignedBigInteger('id_empleado');
+            $table->foreign('id_empleado')
+                ->references('id_empleado')
+                ->on('empleados')
+                ->cascadeOnDelete();
+            $table->text('descripcion');
+            $table->string('subcategoria');
             $table->decimal('valor', 10, 2);
-            $table->integer('cuotas');
-            $table->integer('cuota_actual')->default(1); 
-            $table->boolean('activo')->default(true);
+            $table->enum('estatus', ['pagado', 'pendiente', 'parcialmente_pagado']);
+            $table->json('pagos')->nullable(); 
             $table->timestamps();
         });
         

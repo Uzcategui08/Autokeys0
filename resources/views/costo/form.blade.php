@@ -17,10 +17,18 @@
 
                     <div class="col-md-4">
                         <div class="form-group mb-3">
-                            <label for="id_tecnico" class="form-label">{{ __('ID Técnico') }}</label>
-                            <input type="number" name="id_tecnico" class="form-control @error('id_tecnico') is-invalid @enderror"
-                                value="{{ old('id_tecnico', $costo?->id_tecnico) }}" id="id_tecnico" placeholder="Ej: 123">
-                            {!! $errors->first('id_tecnico', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
+                            <label for="id_tecnico" class="form-label fw-bold">{{ __('Técnico') }}</label>
+                            <select name="id_tecnico" class="form-control select2" id="id_tecnico" required>
+                                <option value="" selected>{{ __('Seleccionar Técnico') }}</option>
+                                @foreach($empleado as $tecnico)
+                                    <option value="{{ $tecnico->id_empleado }}" {{ old('id_tecnico', $costo?->id_tecnico) == $tecnico->id_empleado ? 'selected' : '' }}>
+                                        {{ $tecnico->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('id_tecnico')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
 
@@ -47,14 +55,15 @@
                             <label for="subcategoria" class="form-label">{{ __('Subcategoría') }}</label>
                             <select name="subcategoria" id="subcategoria" class="form-control @error('subcategoria') is-invalid @enderror">
                                 <option value="">-- Seleccione --</option>
-                                <option value="mantenimiento" {{ old('subcategoria', $costo?->subcategoria) == 'mantenimiento' ? 'selected' : '' }}>Mantenimiento de equipos</option>
-                                <option value="repuestos" {{ old('subcategoria', $costo?->subcategoria) == 'repuestos' ? 'selected' : '' }}>Repuestos y componentes</option>
-                                <option value="herramientas" {{ old('subcategoria', $costo?->subcategoria) == 'herramientas' ? 'selected' : '' }}>Herramientas</option>
-                                <option value="software" {{ old('subcategoria', $costo?->subcategoria) == 'software' ? 'selected' : '' }}>Licencias de software</option>
-                                <option value="consumibles" {{ old('subcategoria', $costo?->subcategoria) == 'consumibles' ? 'selected' : '' }}>Materiales consumibles</option>
-                                <option value="combustible" {{ old('subcategoria', $costo?->subcategoria) == 'combustible' ? 'selected' : '' }}>Combustible y viáticos</option>
-                                <option value="capacitacion" {{ old('subcategoria', $costo?->subcategoria) == 'capacitacion' ? 'selected' : '' }}>Capacitación</option>
-                                <option value="otros" {{ old('subcategoria', $costo?->subcategoria) == 'otros' ? 'selected' : '' }}>Otros costos</option>
+                                <option value="compras_insumos" {{ old('subcategoria', $costo?->subcategoria) == 'compras_insumos' ? 'selected' : '' }}>Compras de insumos</option>
+                                <option value="gasolina" {{ old('subcategoria', $costo?->subcategoria) == 'gasolina' ? 'selected' : '' }}>Gasolina</option>
+                                <option value="mantenimiento_vanes" {{ old('subcategoria', $costo?->subcategoria) == 'mantenimiento_vanes' ? 'selected' : '' }}>Mantenimiento a Vanes</option>
+                                <option value="salario_cerrajero" {{ old('subcategoria', $costo?->subcategoria) == 'salario_cerrajero' ? 'selected' : '' }}>Salario Cerrajero</option>
+                                <option value="depreciacion_maquinas" {{ old('subcategoria', $costo?->subcategoria) == 'depreciacion_maquinas' ? 'selected' : '' }}>Depreciación de Máquinas</option>
+                                <option value="seguros_vehiculos" {{ old('subcategoria', $costo?->subcategoria) == 'seguros_vehiculos' ? 'selected' : '' }}>Seguros de Vehículos</option>
+                                <option value="alquiler_pulga" {{ old('subcategoria', $costo?->subcategoria) == 'alquiler_pulga' ? 'selected' : '' }}>Alquiler Pulga</option>
+                                <option value="codigos" {{ old('subcategoria', $costo?->subcategoria) == 'codigos' ? 'selected' : '' }}>Códigos</option>
+                                <option value="servicios_subcontratados" {{ old('subcategoria', $costo?->subcategoria) == 'servicios_subcontratados' ? 'selected' : '' }}>Servicios Subcontratados</option>
                             </select>
                             {!! $errors->first('subcategoria', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
                         </div>
@@ -249,7 +258,7 @@ $(document).ready(function() {
 
         $('#pago_monto').val('').focus();
 
-        alert('Pago de $' + monto.toFixed(2) + ' agregado correctamente');
+
     });
 
     function actualizarListaPagos() {

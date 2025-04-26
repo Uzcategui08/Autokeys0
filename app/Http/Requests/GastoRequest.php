@@ -22,7 +22,6 @@ class GastoRequest extends FormRequest
     public function rules(): array
     {
         return [
-			'id_gastos' => 'required',
 			'f_gastos' => 'required',
 			'id_tecnico' => 'required',
 			'descripcion' => 'required|string',

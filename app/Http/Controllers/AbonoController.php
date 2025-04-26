@@ -42,7 +42,7 @@ class AbonoController extends Controller
         Abono::create($request->validated());
 
         return Redirect::route('abonos.index')
-            ->with('success', 'Abono created successfully.');
+            ->with('success', 'Abono creado satisfactoriamente.');
     }
 
     /**
@@ -74,7 +74,7 @@ class AbonoController extends Controller
         $abono->update($request->validated());
 
         return Redirect::route('abonos.index')
-            ->with('success', 'Abono updated successfully');
+            ->with('success', 'Abono actualizado satifactoriamente.');
     }
 
     public function destroy($id): RedirectResponse
@@ -82,6 +82,6 @@ class AbonoController extends Controller
         Abono::find($id)->delete();
 
         return Redirect::route('abonos.index')
-            ->with('success', 'Abono deleted successfully');
+            ->with('success', 'Abono eliminado satisfactoriamente.');
     }
 }

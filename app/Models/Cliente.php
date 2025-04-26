@@ -30,7 +30,7 @@ class Cliente extends Model
 
     protected $primaryKey = 'id_cliente';
 
-    protected $fillable = ['id_cliente', 'nombre', 'telefono', 'direccion'];
+    protected $fillable = ['nombre', 'telefono', 'direccion'];
 
 
 }

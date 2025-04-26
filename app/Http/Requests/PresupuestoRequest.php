@@ -22,14 +22,12 @@ class PresupuestoRequest extends FormRequest
     public function rules(): array
     {
         return [
-			'id_presupuesto' => 'required',
-			'id_cliente' => 'required',
-			'f_presupuesto' => 'required',
-			'validez' => 'required',
-			'descuento' => 'required',
-			'iva' => 'required',
-			'estado' => 'required|string',
-			'items' => 'required',
+			'f_prestamo' => 'required',
+			'id_empleado' => 'required',
+			'descripcion' => 'required|string',
+			'subcategoria' => 'required|string',
+			'valor' => 'required',
+			'estatus' => 'required',
         ];
     }
 }

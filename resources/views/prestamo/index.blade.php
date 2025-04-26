@@ -1,9 +1,9 @@
 @extends('adminlte::page')
 
-@section('title', 'Prestamos')
+@section('title', 'Préstamos')
 
 @section('content_header')
-<h1>Registro de Préstamos por Empleado</h1>
+<h1>Registro</h1>
 @stop
 
 @section('content')
@@ -14,54 +14,53 @@
                     <div class="card-header">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <span id="card_title">
-                                {{ __('Préstamos por Empleado') }}
+                                {{ __('Préstamos') }}
                             </span>
                             <div class="float-right">
-                                <a href="{{ route('prestamos.create') }}" class="btn btn-secondary btn-sm float-right" data-placement="left">
-                                    {{ __('Crear Nuevo Préstamo') }}
+                                <a href="{{ route('prestamos.create') }}" class="btn btn-secondary btn-m float-right" data-placement="left">
+                                    {{ __('Crear Nuevo') }}
                                 </a>
                             </div>
                         </div>
                     </div>
-                    @if ($message = Session::get('success'))
-                        <div class="alert alert-success m-4">
-                            <p>{{ $message }}</p>
-                        </div>
-                    @endif
 
                     <div class="card-body bg-white">
                         <div class="table-responsive">
                             <table class="table table-striped table-bordered dataTable">
                                 <thead class="thead">
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Empleado</th>
-                                        <th>Total Préstamos</th>
-                                        <th>Préstamos Activos</th>
-                                        <th>Acciones</th>
-                                    </tr>
+                                    <th>ID</th>
+                                    <th>Fecha</th>
+                                    <th>Técnico</th>
+                                    <th>Descripción</th>
+                                    <th>Subcategoría</th>
+                                    <th>Valor</th>
+                                    <th>Estatus</th>
+                                    <th>Acciones</th>
                                 </thead>
                                 <tbody>
-                                    @php
-                                        $empleadosConPrestamos = $prestamos->groupBy('id_empleado');
-                                        $counter = 1;
-                                    @endphp
-                                    
-                                    @foreach ($empleadosConPrestamos as $idEmpleado => $prestamosEmpleado)
-                                        @php
-                                            $empleado = $prestamosEmpleado->first()->empleado;
-                                            $totalPrestamos = $prestamosEmpleado->count();
-                                            $prestamosActivos = $prestamosEmpleado->where('activo', 1)->count();
-                                        @endphp
+                                    @foreach ($prestamos as $prestamo)
                                         <tr>
-                                            <td>{{ $empleado->id_empleado }}</td>
-                                            <td>{{ $empleado->nombre }}</td>
-                                            <td>{{ $totalPrestamos }}</td>
-                                            <td>{{ $prestamosActivos }}</td>
+                                            <td>{{ $prestamo->id_prestamo }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($prestamo->f_prestamos)->format('m/d/Y') }}</td>
+                                            <td>{{ $prestamo->empleado->nombre }}</td>
+                                            <td>{{ $prestamo->descripcion }}</td>
+                                            <td>{{ $prestamo->subcategoria }}</td>
+                                            <td>{{ $prestamo->valor }}</td>
+                                            <td>{{ $prestamo->estatus }}</td>
                                             <td>
-                                                <a class="btn btn-sm btn-primary" href="{{ route('prestamos.empleado', $idEmpleado) }}">
-                                                    <i class="fa fa-fw fa-eye"></i> Ver Detalles
-                                                </a>
+                                                <form onsubmit="return confirmDelete(this)" action="{{ route('prestamos.destroy', $prestamo->id_prestamo) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
+                                                    <a class="btn btn-sm btn-primary" href="{{ route('prestamos.show', $prestamo->id_prestamo) }}">
+                                                        <i class="fa fa-fw fa-eye"></i>
+                                                    </a>
+                                                    <a class="btn btn-sm btn-success" href="{{ route('prestamos.edit', $prestamo->id_prestamo) }}">
+                                                        <i class="fa fa-fw fa-edit"></i>
+                                                    </a>
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-danger btn-sm">
+                                                        <i class="fa fa-fw fa-trash"></i>
+                                                    </button>
+                                                </form>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -70,51 +69,7 @@
                         </div>
                     </div>
                 </div>
-                {!! $prestamos->withQueryString()->links() !!}
             </div>
         </div>
     </div>
-
-    <style>
-        .dataTable {
-            width: 100% !important;
-            margin: 0 auto;
-            border-collapse: collapse;
-        }
-        .dataTable th, .dataTable td {
-            padding: 12px;
-            text-align: center;
-            vertical-align: middle;
-        }
-        .dataTable thead th {
-            color: black;
-            font-weight: bold;
-        }
-        .dataTable tbody tr:nth-of-type(odd) {
-            background-color: rgba(0, 0, 0, 0.05); 
-        }
-        .btn-sm {
-            margin: 2px;
-        }
-        .dt-buttons .btn {
-            margin-right: 5px;
-        }
-    </style>
 @endsection
-
-@push('js')
-    <script>
-        $(document).ready(function() {
-            $('.dataTable').DataTable({
-                responsive: true,
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json'
-                },
-                dom: 'Bfrtip',
-                buttons: [
-                    'copy', 'csv', 'excel', 'pdf', 'print'
-                ]
-            });
-        });
-    </script>
-@endpush

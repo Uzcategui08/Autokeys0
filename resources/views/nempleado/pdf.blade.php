@@ -328,35 +328,112 @@
             color: #555;
         }
 
+        .compact-info-card {
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        .compact-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .compact-info-section {
+            padding: 5px;
+        }
+        
+        .compact-info-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #1a5276;
+            font-size: 13px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 5px;
+        }
+        
+        .payment-methods-table {
+            width: 100%;
+            margin-top: 8px;
+            border-collapse: collapse;
+        }
+        
+        .payment-methods-table th {
+            text-align: left;
+            padding: 3px 0;
+            border-bottom: 1px solid #ddd;
+            font-weight: normal;
+            font-size: 11px;
+            color: #555;
+        }
+        
+        .payment-methods-table td {
+            padding: 3px 0;
+            vertical-align: top;
+        }
+        
+        .payment-methods-table .amount {
+            text-align: right;
+            font-family: monospace;
+        }
+        
+        .payment-total {
+            border-top: 1px solid #ddd;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div class="recibo-container">
-
         <div class="header">
-            <div class="logo-placeholder">LOGO AUTOKEYS</div>
-            <div class="company-name">AUTOKEYS</div>
             <div class="recibo-title">RECIBO DE PAGO DE NÓMINA</div>
-            <div class="periodo">Período: {{ date('d/m/Y', strtotime($periodo->inicio)) }} al {{ date('d/m/Y', strtotime($periodo->fin)) }}</div>
+            <div class="periodo">
+                Período: {{ date('d/m/Y', strtotime($fecha_desde)) }} al {{ date('d/m/Y', strtotime($fecha_hasta)) }}
+            </div>
+        </div>
+
+        <div class="compact-info-card">
+            <div class="compact-info-grid">
+                <div class="compact-info-section">
+                    <div class="compact-info-title">INFORMACIÓN</div>
+                    <div><strong>Nombre:</strong> {{ $empleado->nombre }}</div>
+                    <div><strong>Cédula:</strong> {{ $empleado->cedula }}</div>
+                    <div><strong>Fecha de Pago:</strong> {{ $fecha_pago->format('d/m/Y') }}</div>
+
+                    @if(count($metodos_pago) > 0)
+                    <div style="margin-top: 8px;">
+                        <table class="payment-methods-table">
+                            <thead>
+                                <tr>
+                                    <th>Método</th>
+                                    <th class="amount">Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($metodos_pago as $metodo)
+                                <tr>
+                                    <td>{{ $metodo['nombre'] }}</td>
+                                    <td class="amount">${{ number_format($metodo['monto'], 2) }}</td>
+                                </tr>
+                                @endforeach
+                                @if(count($metodos_pago) > 1)
+                                <tr class="payment-total">
+                                    <td>Total</td>
+                                    <td class="amount">${{ number_format(array_sum(array_column($metodos_pago, 'monto')), 2) }}</td>
+                                </tr>
+                                @endif
+                            </tbody>
+                        </table>
+                    </div>
+                    @endif
+                </div>
+            </div>
         </div>
         
-        <table class="employee-info-table" cellspacing="0" cellpadding="0">
-            <tr>
-                <td class="info-box">
-                    <div class="info-title">INFORMACIÓN DEL EMPLEADO</div>
-                    <div><strong>Nombre:</strong> {{ $empleado->nombre }}</div>
-                    <div><strong>ID Empleado:</strong> {{ $empleado->id_empleado }}</div>
-                    <div><strong>Tipo de Nómina:</strong> {{ $empleado->tipoNomina->nombre ?? 'N/A' }}</div>
-                </td>
-                <td class="info-box">
-                    <div class="info-title">DETALLES DEL PAGO</div>
-                    <div><strong>Fecha de Pago:</strong> {{ now()->format('d/m/Y') }}</div>
-                    <div><strong>Frecuencia:</strong> {{ $periodo->tipo->frecuencia_nombre }}</div>
-                    <div><strong>Método de Pago:</strong> Transferencia Bancaria</div>
-                </td>
-            </tr>
-        </table>
-
         <table class="table">
             <thead>
                 <tr>
@@ -366,79 +443,60 @@
                 </tr>
             </thead>
             <tbody>
-
                 <tr>
                     <td>Sueldo Base</td>
-                    <td>Salario base según contrato</td>
-                    <td class="text-right">{{ number_format($empleado->salario_base, 2) }}</td>
+                    <td>Salario base del empleado</td>
+                    <td class="text-right">${{ number_format($sueldo_base, 2) }}</td>
                 </tr>
-
-                <tr>
-                    <td>Devengado</td>
-                    <td>Total devengado (Sueldo Base * Factor)</td>
-                    <td class="text-right">{{ number_format($totalPagado, 2) }}</td>
-                </tr>
-
-                @if($totalDescuentos > 0 && $descuentos instanceof \Illuminate\Support\Collection && $descuentos->isNotEmpty())
-                <tr>
-                    <td colspan="3" class="section-title">DESCUENTOS</td>
-                </tr>
-                @foreach($descuentos as $descuento)
-                <tr>
-                    <td>Descuento</td>
-                    <td>{{ $descuento->concepto }} ({{ $descuento->d_fecha }})</td>
-                    <td class="text-right negative">-{{ number_format($descuento->valor, 2) }}</td>
-                </tr>
-                @endforeach
-                @endif
-
-                @if($totalCostos > 0 && $costos instanceof \Illuminate\Support\Collection && $costos->isNotEmpty())
-                <tr>
-                    <td colspan="3" class="section-title">COSTOS</td>
-                </tr>
-                @foreach($costos as $costo)
-                <tr>
-                    <td>Costo</td>
-                    <td>{{ $costo->descripcion }} ({{ $costo->f_costos }})</td>
-                    <td class="text-right negative">-{{ number_format($costo->valor, 2) }}</td>
-                </tr>
-                @endforeach
-                @endif
-
-                @if($totalAbonos > 0 && $abonos instanceof \Illuminate\Support\Collection && $abonos->isNotEmpty())
+                
+                @if($total_abonos > 0 && count($abonos) > 0)
                 <tr>
                     <td colspan="3" class="section-title">ABONOS</td>
                 </tr>
                 @foreach($abonos as $abono)
                 <tr>
                     <td>Abono</td>
-                    <td>{{ $abono->concepto }} ({{ $abono->a_fecha}})</td>
-                    <td class="text-right positive">+{{ number_format($abono->valor, 2) }}</td>
+                    <td>{{ $abono->concepto }} ({{ date('d/m/Y', strtotime($abono->a_fecha)) }})</td>
+                    <td class="text-right positive">+${{ number_format($abono->valor, 2) }}</td>
                 </tr>
                 @endforeach
                 @endif
-
-                @if(count($prestamos) > 0)
-                <div style="margin: 12px 0; border-left: 3px solid #1a5276; padding-left: 12px;">
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 11px;">
-                        <thead>
-                            <tr>
-                                <th style="background-color: #f8f9fa; padding: 6px 8px; text-align: left; border: 1px solid #e0e0e0; font-weight: bold; color: #1a5276;">PRÉSTAMO</th>
-                                <th style="background-color: #f8f9fa; padding: 6px 8px; text-align: center; border: 1px solid #e0e0e0; font-weight: bold; color: #1a5276;">CUOTA</th>
-                                <th style="background-color: #f8f9fa; padding: 6px 8px; text-align: right; border: 1px solid #e0e0e0; font-weight: bold; color: #1a5276;">VALOR</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($prestamos as $p)
-                            <tr>
-                                <td style="padding: 6px 8px; border: 1px solid #e0e0e0;">Préstamo #{{ $p['numero_prestamo'] }}</td>
-                                <td style="padding: 6px 8px; border: 1px solid #e0e0e0; text-align: center;">Cuota #{{ $p['cuota_actual'] }}</td>
-                                <td style="padding: 6px 8px; border: 1px solid #e0e0e0; text-align: right; color: #e74c3c;">-{{ number_format($p['monto_prestamo'], 2) }}</td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                
+                @if($total_descuentos > 0 && count($descuentos) > 0)
+                <tr>
+                    <td colspan="3" class="section-title">DESCUENTOS</td>
+                </tr>
+                @foreach($descuentos as $descuento)
+                <tr>
+                    <td>Descuento</td>
+                    <td>{{ $descuento->concepto }} ({{ date('d/m/Y', strtotime($descuento->d_fecha)) }})</td>
+                    <td class="text-right negative">-${{ number_format($descuento->valor, 2) }}</td>
+                </tr>
+                @endforeach
+                @endif
+                
+                @if($total_costos > 0 && count($costos) > 0)
+                <tr>
+                    <td colspan="3" class="section-title">COSTOS</td>
+                </tr>
+                @foreach($costos as $costo)
+                <tr>
+                    <td>Costo</td>
+                    <td>{{ $costo->descripcion }} ({{ date('d/m/Y', strtotime($costo->f_costos)) }})</td>
+                    <td class="text-right negative">-${{ number_format($costo->valor, 2) }}</td>
+                </tr>
+                @endforeach
+                @endif
+                
+                @if($total_prestamos > 0)
+                <tr>
+                    <td colspan="3" class="section-title">DEDUCCIÓN DE PRÉSTAMOS</td>
+                </tr>
+                <tr>
+                    <td>Préstamos</td>
+                    <td>Deducción por préstamos al empleado</td>
+                    <td class="text-right negative">-${{ number_format($total_prestamos, 2) }}</td>
+                </tr>
                 @endif
             </tbody>
         </table>
@@ -446,38 +504,38 @@
         <table class="totals-table" cellspacing="0" cellpadding="0">
             <tr>
                 <td class="total-box">
-                    <div class="info-title">RESUMEN DE DEVENGADOS</div>
-                    <div>Total Devengado: {{ number_format($totalPagado, 2) }}</div>
-                    @if($totalAbonos > 0)
-                    <div>Total Abonos: <span class="positive">+{{ number_format($totalAbonos, 2) }}</span></div>
+                    <div class="info-title">TOTAL DEVENGADO</div>
+                    <div>Sueldo Base: ${{ number_format($sueldo_base, 2) }}</div>
+                    @if($total_abonos > 0)
+                    <div>Abonos: <span class="positive">+${{ number_format($total_abonos, 2) }}</span></div>
                     @endif
                     <div class="text-bold" style="margin-top: 8px; border-top: 1px solid #e0e0e0; padding-top: 5px;">
-                        Total a Pagar: {{ number_format($totalPagado + $totalAbonos, 2) }}
+                        Total Devengado: ${{ number_format($sueldo_base + $total_abonos, 2) }}
                     </div>
                 </td>
                 <td class="total-box">
-                    <div class="info-title">RESUMEN DE DEDUCCIONES</div>
-                    @if($totalDescuentos > 0)
-                    <div>Total Descuentos: <span class="negative">-{{ number_format($totalDescuentos, 2) }}</span></div>
+                    <div class="info-title">TOTAL DEDUCCIONES</div>
+                    @if($total_descuentos > 0)
+                    <div>Descuentos: <span class="negative">-${{ number_format($total_descuentos, 2) }}</span></div>
                     @endif
-                    @if($totalPrestamos > 0)
-                    <div>Total Préstamos: <span class="negative">-{{ number_format($totalPrestamos, 2) }}</span></div>
+                    @if($total_costos > 0)
+                    <div>Costos: <span class="negative">-${{ number_format($total_costos, 2) }}</span></div>
                     @endif
-                    @if($totalCostos > 0)
-                    <div>Total Costos: <span class="negative">-{{ number_format($totalCostos, 2) }}</span></div>
+                    @if($total_prestamos > 0)
+                    <div>Préstamos: <span class="negative">-${{ number_format($total_prestamos, 2) }}</span></div>
                     @endif
                     <div class="text-bold" style="margin-top: 8px; border-top: 1px solid #e0e0e0; padding-top: 5px;">
-                        Total Deducciones: <span class="negative">-{{ number_format($totalDescuentos + $totalPrestamos + $totalCostos, 2) }}</span>
+                        Total Deducciones: <span class="negative">${{ number_format($total_descuentos + $total_costos + $total_prestamos, 2) }}</span>
                     </div>
                 </td>
             </tr>
         </table>
-
+        
         <div class="neto-box">
             <div class="neto-title">NETO A PAGAR</div>
-            <div class="neto-amount">${{ number_format($netoPagado, 2) }}</div>
+            <div class="neto-amount">${{ number_format($neto_pagado, 2) }}</div>
         </div>
-
+        
         <table class="signature-table" cellspacing="0" cellpadding="0">
             <tr>
                 <td class="signature-box">
@@ -490,9 +548,9 @@
                 </td>
             </tr>
         </table>
-
+        
         <div class="footer">
-            Documento generado electrónicamente por AutoKeys el {{ now()->format('d/m/Y H:i:s') }}<br>
+            Documento generado electrónicamente por AutoKeys el {{ date('d/m/Y H:i:s') }}
         </div>
     </div>
 </body>

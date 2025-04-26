@@ -22,7 +22,6 @@ class AlmaceneRequest extends FormRequest
     public function rules(): array
     {
         return [
-			'id_almacen' => 'required',
 			'nombre' => 'required|string',
         ];
     }

@@ -1,9 +1,9 @@
 @extends('adminlte::page')
 
-@section('title', 'Dashboard')
+@section('title', 'Productos')
 
 @section('content_header')
-<h1>Productos</h1>
+<h1>Registro</h1>
 @stop
 
 @section('content')
@@ -20,17 +20,12 @@
                         </span>
 
                         <div class="float-right">
-                            <a href="{{ route('productos.create') }}" class="btn btn-primary btn-sm float-right" data-placement="left">
-                                {{ __('Crear Producto') }}
+                            <a href="{{ route('productos.create') }}" class="btn btn-secondary btn-m float-right" data-placement="left">
+                                {{ __('Crear Nuevo') }}
                             </a>
                         </div>
                     </div>
                 </div>
-                @if ($message = Session::get('success'))
-                <div class="alert alert-success m-4">
-                    <p>{{ $message }}</p>
-                </div>
-                @endif
 
                 <div class="card-body bg-white">
                     <div class="table-responsive">
@@ -39,14 +34,14 @@
                                 <tr>
                                 
 
-                                    <th>Id Producto</th>
+                                    <th>ID Producto</th>
                                     <th>Item</th>
                                     <th>Marca</th>
-                                    <th>T Llave</th>
+                                    <th>Tipo de llave</th>
                                     <th>Sku</th>
                                     <th>Precio</th>
 
-                                    <th></th>
+                                    <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -62,12 +57,14 @@
                                     <td>{{ $producto->precio }}</td>
 
                                     <td>
-                                        <form action="{{ route('productos.destroy', $producto->id_producto) }}" method="POST">
+                                        <form onsubmit="return confirmDelete(this)" action="{{ route('productos.destroy', $producto->id_producto) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
                                             <a class="btn btn-sm btn-primary " href="{{ route('productos.show', $producto->id_producto) }}"><i class="fa fa-fw fa-eye"></i> </a>
                                             <a class="btn btn-sm btn-success" href="{{ route('productos.edit', $producto->id_producto) }}"><i class="fa fa-fw fa-edit"></i> </a>
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-danger btn-sm" onclick="event.preventDefault(); confirm('Are you sure to delete?') ? this.closest('form').submit() : false;"><i class="fa fa-fw fa-trash"></i></button>
+                                            <button type="submit" class="btn btn-danger btn-sm"> 
+                                                <i class="fa fa-fw fa-trash"></i>
+                                            </button>
                                         </form>
                                     </td>
                                 </tr>
@@ -77,62 +74,7 @@
                     </div>
                 </div>
             </div>
-            {!! $productos->withQueryString()->links() !!}
         </div>
     </div>
 </div>
-@stop
-
-@section('css')
-<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.0/css/responsive.dataTables.min.css">
-<style>
-        .dataTable {
-            width: 100% !important;
-            margin: 0 auto;
-            border-collapse: collapse;
-        }
-
-        .dataTable th,
-        .dataTable td {
-            padding: 12px;
-            text-align: center;
-            vertical-align: middle;
-        }
-
-        .dataTable thead th {
-            color: black;
-            font-weight: bold;
-        }
-
-        .dataTable tbody tr:nth-of-type(odd) {
-            background-color: rgba(0, 0, 0, 0.05); 
-        }
-
-        .btn-sm {
-            margin: 2px;
-        }
-
-        .dt-buttons .btn {
-            margin-right: 5px;
-        }
-    </style>
-
-@endsection
-
-@section('js')
-<script src="https://cdn.datatables.net/responsive/2.4.0/js/dataTables.responsive.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            $('.dataTable').DataTable({
-                responsive: true, 
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json' 
-                },
-                dom: 'Bfrtip', 
-                buttons: [
-                    'copy', 'csv', 'excel', 'pdf', 'print' 
-                ]
-            });
-        });
-    </script>
 @stop

@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Prestamo')
+@section('title', 'Préstamos')
 
 @section('content_header')
 <h1>Crear</h1>
@@ -13,7 +13,7 @@
 
                 <div class="card card-default">
                     <div class="card-header">
-                        <span class="card-title">{{ __('Create') }} Prestamo</span>
+                        <span class="card-title">Préstamo</span>
                     </div>
                     <div class="card-body bg-white">
                         <form method="POST" action="{{ route('prestamos.store') }}"  role="form" enctype="multipart/form-data">

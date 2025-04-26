@@ -24,15 +24,27 @@ class Prestamo extends Model
 {
     
     protected $perPage = 20;
-    protected $primaryKey = 'id_prestamos';
+    protected $primaryKey = 'id_prestamo';
 
     /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
      */
-    protected $fillable = ['id_prestamos', 'id_empleado', 'valor', 'cuotas', 'cuota_actual', 'activo'];
+    protected $fillable = [ 
+    'f_prestamo',
+    'id_empleado',
+    'descripcion',
+    'subcategoria',
+    'valor',
+    'estatus',
+    'pagos'
+    ];
 
+    protected $casts = [
+        'pagos' => 'array',
+        'fecha' => 'date',
+    ];
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo

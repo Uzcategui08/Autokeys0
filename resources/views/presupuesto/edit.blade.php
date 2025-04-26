@@ -15,9 +15,6 @@
                         <div class="float-left">
                             <span class="card-title">{{ __('Presupuesto') }}</span>
                         </div>
-                        <div class="ml-auto">
-                            <a class="btn btn-secondary btn-sm" href="{{ route('presupuestos.index') }}"> {{ __('Volver') }}</a>
-                        </div>
                     </div>
                     <div class="card-body bg-white">
                         <form method="POST" action="{{ route('presupuestos.update', $presupuesto->id_presupuesto) }}"  role="form" enctype="multipart/form-data">

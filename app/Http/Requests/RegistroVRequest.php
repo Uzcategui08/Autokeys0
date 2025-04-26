@@ -38,6 +38,7 @@ class RegistroVRequest extends FormRequest
 			'modelo' => 'required|string',
 			'año' => 'required',
 			'items' => 'required',
+            'metodo_pce' => 'required|string',
         ];
     }
 }

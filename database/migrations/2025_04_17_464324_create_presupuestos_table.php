@@ -16,8 +16,8 @@ return new class extends Migration
             $table->foreignId('id_cliente')->constrained('clientes', 'id_cliente')->onDelete('cascade');
             $table->date('f_presupuesto');
             $table->date('validez');
-            $table->integer('descuento');
-            $table->integer('iva');
+            $table->integer('descuento')->nullable();
+            $table->integer('iva')->nullable();
             $table->string('estado');
             $table->json('items');
             $table->timestamps();

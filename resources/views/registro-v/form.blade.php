@@ -210,7 +210,7 @@
                                 </div>
                             </div>
                             
-                            <div class="col-md-3">
+                            <div class="col-md-1">
                                 <div class="form-group mb-3">
                                     <label for="monto_ce" class="form-label">{{ __('Monto') }}</label>
                                     <input type="text" name="monto_ce" class="form-control @error('monto_ce') is-invalid @enderror" 
@@ -218,8 +218,17 @@
                                     {!! $errors->first('monto_ce', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                                 </div>
                             </div>
-                            
+
                             <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label for="metodo_pce" class="form-label">{{ __('Método de Pago') }}</label>
+                                    <input type="text" name="metodo_pce" class="form-control @error('metodo_pce') is-invalid @enderror" 
+                                        value="{{ old('metodo_pce', $registroV?->metodo_pce) }}" id="metodo_pce" placeholder="Método">
+                                    {!! $errors->first('metodo_pce', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-2">
                                 <div class="form-group mb-3">
                                     <label for="cobro" class="form-label">{{ __('Cobro') }}</label>
                                     <input type="text" name="cobro" class="form-control @error('cobro') is-invalid @enderror" 

@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Registro de Ventas')
+@section('title', 'Ventas')
 
 @section('content_header')
 <div class="container-fluid">
@@ -16,9 +16,7 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <!-- Main content -->
             <div class="invoice p-3 mb-3">
-                <!-- title row -->
                 <div class="row">
                     <div class="col-12">
                         <h4>
@@ -28,7 +26,6 @@
                     </div>
                 </div>
 
-                <!-- info row -->
                 <div class="row invoice-info">
                     <div class="col-sm-4 invoice-col">
                         <strong>Técnico</strong>
@@ -64,7 +61,6 @@
                     </div>
                 </div>
 
-                <!-- Table row -->
                 <div class="row">
                     <div class="col-12 table-responsive">
                         <table class="table table-striped">
@@ -99,7 +95,6 @@
                     </div>
                 </div>
 
-                <!-- Costos extras y totales -->
                 <div class="row">
                     <div class="col-6">
                         <p class="lead">Costos Extras:</p>
@@ -142,7 +137,6 @@
                     </div>
                 </div>
 
-                <!-- this row will not appear when printing -->
                 <div class="row no-print">
                     <div class="col-12">
                         <a href="javascript:window.print()" class="btn btn-default"><i class="fas fa-print"></i> Imprimir</a>

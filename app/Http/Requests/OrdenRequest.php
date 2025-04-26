@@ -22,7 +22,6 @@ class OrdenRequest extends FormRequest
     public function rules(): array
     {
         return [
-			'id_orden' => 'required',
             'id_cliente' => 'required',
 			'f_orden' => 'required',
 			'direccion' => 'required|string',

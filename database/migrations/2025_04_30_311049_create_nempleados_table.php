@@ -13,14 +13,19 @@ return new class extends Migration
     {
         Schema::create('nempleados', function (Blueprint $table) {
             $table->id('id_nempleado');
-            $table->foreignId('id_pnomina')->constrained('pnominas', 'id_pnomina')->onDelete('cascade');
             $table->foreignId('id_empleado')->constrained('empleados', 'id_empleado')->onDelete('cascade');
+            $table->json('id_abonos')->nullable();
+            $table->json('id_descuentos')->nullable();
+            $table->json('id_costos')->nullable();
+            $table->decimal('sueldo_base', 10, 2)->default(0);
             $table->decimal('total_descuentos', 10, 2)->default(0);
             $table->decimal('total_abonos', 10, 2)->default(0);
             $table->decimal('total_prestamos', 10, 2)->default(0);
             $table->decimal('total_costos', 10, 2)->default(0);
             $table->decimal('total_pagado', 10, 2);
-            $table->integer('metodo_pago');
+            $table->json('metodo_pago');
+            $table->date('fecha_desde');
+            $table->date('fecha_hasta');
             $table->timestamps();
         });
     }

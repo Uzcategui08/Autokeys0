@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Gasto;
+use App\Models\Empleado;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -20,9 +21,10 @@ class GastoController extends Controller
     public function create(): View
     {
         $gasto = new Gasto();
+        $empleado = Empleado::where('cargo', '1')->get();
         $gasto->f_gastos = now()->format('Y-m-d');
         $gasto->estatus = 'pendiente';
-        return view('gasto.create', compact('gasto'));
+        return view('gasto.create', compact('gasto', 'empleado'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -62,7 +64,7 @@ class GastoController extends Controller
             }
 
             return Redirect::route('gastos.index')
-                ->with('success', 'Gasto creado exitosamente.');
+                ->with('success', 'Gasto creado satisfactoriamente.');
 
         } catch (\Exception $e) {
             return back()
@@ -84,7 +86,8 @@ class GastoController extends Controller
     public function edit($id): View
     {
         $gasto = Gasto::findOrFail($id);
-        return view('gasto.edit', compact('gasto'));
+        $empleado = Empleado::where('cargo', '1')->get();
+        return view('gasto.edit', compact('gasto', 'empleado'));
     }
 
     public function update(Request $request, $id): RedirectResponse
@@ -121,7 +124,7 @@ class GastoController extends Controller
             ]);
 
             return Redirect::route('gastos.index')
-                ->with('success', 'Gasto actualizado exitosamente');
+                ->with('success', 'Gasto actualizado satisfactoriamente.');
 
         } catch (\Exception $e) {
             return back()->withInput()->withErrors(['error' => $e->getMessage()]);
@@ -152,7 +155,7 @@ class GastoController extends Controller
             $gasto = Gasto::findOrFail($id);
             $gasto->delete();
             return Redirect::route('gastos.index')
-                ->with('success', 'Gasto eliminado exitosamente');
+                ->with('success', 'Gasto eliminado satisfactoriamente.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Ocurrió un error al eliminar el gasto']);
         }

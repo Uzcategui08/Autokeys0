@@ -59,6 +59,11 @@ Route::get('/obtener-productos-registroV', [RegistroVController::class, 'obtener
 
 Route::get('/obtener-productos', [PresupuestoController::class, 'obtenerProductos']);
 Route::get('/presupuesto/{id}/pdf', [PresupuestoController::class, 'generarPdf'])->name('presupuestos.pdf');
+Route::get('/budget/{id}/pdf', [PresupuestoController::class, 'generatePdf'])->name('budget.pdf');
+
+Route::get('/registro-vs/pdf/{id}', [RegistroVController::class, 'generarPdf'])->name('registro-vs.pdf');
+Route::get('/invoice/pdf/{id}', [RegistroVController::class, 'generatePdf'])->name('invoice.pdf');
+
 
 Route::resource('ordens', OrdenController::class);
 Route::get('/obtener-productos-orden', [OrdenController::class, 'obtenerProductos']);
@@ -84,16 +89,19 @@ Route::prefix('nempleados')->group(function () {
         ->name('nempleados.show');
     
 
-    Route::get('/recibo/{periodoId}/{empleadoId}', [NempleadoController::class, 'generarRecibo'])
-        ->name('nempleados.pdf');
-    Route::get('/general/{periodoId}', [NempleadoController::class, 'generarReciboGeneral'])
-        ->name('nempleados.general');
+});
+Route::get('/nomina/registros', [NempleadoController::class, 'getRegistros'])->name('nomina.getRegistros');
 
-});
-Route::get('/empleados-por-tnomina/{id_tnomina}', function($id_tnomina) {
-    $empleados = App\Models\Empleado::where('id_tnomina', $id_tnomina)->get();
-    return response()->json(['empleados' => $empleados]);
-});
+// PDF Individual
+Route::get('/nempleados/pdf/{id}', [NempleadoController::class, 'generarReciboIndividual'])->name('nempleados.pdf');
+
+// PDF General
+Route::get('/nomina/generar-recibo-general/{fechaDesde}/{fechaHasta}', [NempleadoController::class, 'generarReciboGeneral'])
+     ->name('nempleados.general')
+     ->where(['fechaDesde' => '^[0-9]{4}-[0-9]{2}-[0-9]{2}$', 
+              'fechaHasta' => '^[0-9]{4}-[0-9]{2}-[0-9]{2}$']);
+
+Route::get('/nempleados/reporte', [NempleadoController::class, 'reporte'])->name('nempleados.reporte');
 
 
 Route::resource('prestamos', PrestamoController::class);

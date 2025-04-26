@@ -34,7 +34,7 @@ class Presupuesto extends Model
      */
 
     protected $primaryKey = 'id_presupuesto';
-    protected $fillable = ['id_presupuesto', 'id_cliente', 'f_presupuesto', 'validez', 'descuento', 'iva', 'estado', 'items'];
+    protected $fillable = ['id_cliente', 'f_presupuesto', 'validez', 'descuento', 'iva', 'estado', 'items'];
 
 
     /**

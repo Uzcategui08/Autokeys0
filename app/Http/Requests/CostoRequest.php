@@ -22,7 +22,6 @@ class CostoRequest extends FormRequest
     public function rules(): array
     {
         return [
-			'id_costos' => 'required',
 			'f_costos' => 'required',
 			'id_tecnico' => 'required',
 			'descripcion' => 'required|string',

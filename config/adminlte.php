@@ -299,7 +299,7 @@ return [
     */
 
     'menu' => [
-        // Navbar items:
+        // Navbar items (top right)
         [
             'type' => 'navbar-search',
             'text' => 'search',
@@ -310,9 +310,15 @@ return [
             'topnav_right' => false,
         ],
 
-        // Sidebar items:
+        // Sidebar items
+        [
+            'text' => 'Dashboard',
+            'url' => 'dashboard',
+            'icon' => 'fas fa-fw fa-tachometer-alt',
+        ],
 
-        ['header' => 'Productos/Almacen'],
+        // INVENTARIO Y PRODUCTOS
+        ['header' => 'INVENTARIO'],
         [
             'text' => 'Almacenes',
             'url' => 'almacenes',
@@ -321,103 +327,110 @@ return [
         [
             'text' => 'Productos',
             'url' => 'productos',
-            'icon' => 'fas fa-fw fa-key',
+            'icon' => 'fas fa-fw fa-box-open',
         ],
         [
             'text' => 'Inventario',
             'url' => 'inventarios',
-            'icon' => 'fas fa-fw fa-box',
+            'icon' => 'fas fa-fw fa-clipboard-check',
         ],
-        ['header' => 'Ventas'],
+
+        // VENTAS Y CLIENTES
+        ['header' => 'VENTAS'],
         [
-            'text' => 'Registro de Ventas',
-            'url' => 'registro-vs',
-            'icon' => 'fas fa-fw fa-cash-register',
-        ],
-        [
-            'text' => 'Cuentas por Cobrar',
-            'url' => 'cxc',
-            'icon' => 'fas fa-fw fa-cash-register',
+            'text' => 'Clientes',
+            'url' => 'clientes',
+            'icon' => 'fas fa-fw fa-user-friends',
         ],
         [
             'text' => 'Presupuestos',
             'url' => 'presupuestos',
-            'icon' => 'fas fa-fw fa-receipt',
+            'icon' => 'fas fa-fw fa-file-invoice',
         ],
         [
-            'text' => 'Orden',
+            'text' => 'Órdenes',
             'url' => 'ordens',
-            'icon' => 'fas fa-fw fa-receipt',
-        ],
-        ['header' => '-'],
-        [
-            'text' => 'Clientes',
-            'url' => 'clientes',
-            'icon' => 'fas fa-fw fa-users',
-        ],
-        ['header' => 'NÓMINA'],
-        [
-            'text' => 'Generar Nómina',
-            'url' => 'pnominas',
-            'icon' => 'fas fa-fw fa-calculator',
-        ],
-        [
-            'text' => 'Tipos de Nómina',
-            'url' => 'tnominas',
             'icon' => 'fas fa-fw fa-tasks',
         ],
         [
-            'text' => 'Reportes',
-            'url' => 'nempleados/generar-reporte',
-            'icon' => 'fas fa-fw fa-chart-bar',
+            'text' => 'Registro de Ventas',
+            'url' => 'registro-vs',
+            'icon' => 'fas fa-fw fa-shopping-cart',
         ],
+        [
+            'text' => 'Cuentas por Cobrar',
+            'url' => 'cxc',
+            'icon' => 'fas fa-fw fa-file-invoice-dollar',
+        ],
+
+        // NÓMINA
+        ['header' => 'NÓMINA'],
         [
             'text' => 'Empleados',
             'url' => 'empleados',
-            'icon' => 'fas fa-fw fa-user-tie',
+            'icon' => 'fas fa-fw fa-id-badge',
         ],
         [
-            'text' => 'Tipos de Pago',
-            'url' => ' ',
-            'icon' => 'fas fa-fw fa-money-check-alt',
+            'text' => 'Movimientos',
+            'icon' => 'fas fa-fw fa-random',
+            'submenu' => [
+                [
+                    'text' => 'Préstamos',
+                    'url' => 'prestamos',
+                ],
+                [
+                    'text' => 'Descuentos',
+                    'url' => 'descuentos',
+                ],
+                [
+                    'text' => 'Abonos',
+                    'url' => 'abonos',
+                ],
+            ],
         ],
         [
-            'text' => 'Préstamos',
-            'url' => 'prestamos',
-            'icon' => 'fas fa-fw fa-hand-holding-usd',
-        ],
-        [
-            'text' => 'Descuentos',
-            'url' => 'descuentos',
-            'icon' => 'fas fa-fw fa-tag',
-        ],
-        [
-            'text' => 'Abonos',
-            'url' => 'abonos',
-            'icon' => 'fas fa-fw fa-money-bill-wave',
+            'text' => 'Procesos de Nómina',
+            'icon' => 'fas fa-fw fa-calculator',
+            'submenu' => [
+                [
+                    'text' => 'Generar Pagos',
+                    'url' => 'nempleados',
+                ],
+                [
+                    'text' => 'Reportes',
+                    'url' => 'nempleados/generar-reporte',
+                ],
+            ],
         ],
 
+        // CONTABILIDAD
         ['header' => 'CONTABILIDAD'],
         [
             'text' => 'Registro de Costos',
             'url' => 'costos',
-            'icon' => 'fas fa-fw fa-dollar-sign',
+            'icon' => 'fas fa-fw fa-money-bill-wave',
         ],
         [
             'text' => 'Registro de Gastos',
             'url' => 'gastos',
             'icon' => 'fas fa-fw fa-receipt',
         ],
-        ['header' => 'Usuarios'],
         [
-            'text' => 'Usuario',
+            'text' => 'Tipos de Pago',
+            'url' => '#',
+        ],
+
+        // ADMINISTRACIÓN
+        ['header' => 'ADMINISTRACIÓN'],
+        [
+            'text' => 'Usuarios',
             'url' => 'profile',
-            'icon' => 'far fa-fw fa-user',
+            'icon' => 'fas fa-fw fa-user-cog',
         ],
         [
-            'text' => 'Permisos de usuarios',
+            'text' => 'Permisos',
             'url' => '#',
-            'icon' => 'fas fa-fw fa-lock',
+            'icon' => 'fas fa-fw fa-key',
         ],
     ],
 

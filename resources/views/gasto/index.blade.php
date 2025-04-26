@@ -17,8 +17,8 @@
                                 {{ __('Gastos') }}
                             </span>
                             <div class="float-right">
-                                <a href="{{ route('gastos.create') }}" class="btn btn-secondary btn-sm float-right"  data-placement="left">
-                                  {{ __('Crear Nuevo Gasto') }}
+                                <a href="{{ route('gastos.create') }}" class="btn btn-secondary btn-m float-right"  data-placement="left">
+                                  {{ __('Crear Nuevo') }}
                                 </a>
                             </div>
                         </div>
@@ -44,23 +44,23 @@
                                         <tr>
                                             <td>{{ $gasto->id_gastos }}</td>
                                             <td>{{ \Carbon\Carbon::parse($gasto->f_gastos)->format('m/d/Y') }}</td>
-                                            <td>{{ $gasto->id_tecnico }}</td>
+                                            <td>{{ $gasto->empleado->nombre }}</td>
                                             <td>{{ $gasto->descripcion }}</td>
                                             <td>{{ $gasto->subcategoria }}</td>
                                             <td>{{ $gasto->valor }}</td>
                                             <td>{{ $gasto->estatus }}</td>
                                             <td>
-                                                <form action="{{ route('gastos.destroy', $gasto->id_gastos) }}" method="POST" class="delete-form">
+                                                <form onsubmit="return confirmDelete(this)" action="{{ route('gastos.destroy', $gasto->id_gastos) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
                                                     <a class="btn btn-sm btn-primary" href="{{ route('gastos.show', $gasto->id_gastos) }}">
-                                                        <i class="fa fa-fw fa-eye"></i> {{ __('Show') }}
+                                                        <i class="fa fa-fw fa-eye"></i>
                                                     </a>
                                                     <a class="btn btn-sm btn-success" href="{{ route('gastos.edit', $gasto->id_gastos) }}">
-                                                        <i class="fa fa-fw fa-edit"></i> {{ __('Edit') }}
+                                                        <i class="fa fa-fw fa-edit"></i>
                                                     </a>
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-danger btn-sm">
-                                                        <i class="fa fa-fw fa-trash"></i> {{ __('Delete') }}
+                                                        <i class="fa fa-fw fa-trash"></i>
                                                     </button>
                                                 </form>
                                             </td>
@@ -71,101 +71,7 @@
                         </div>
                     </div>
                 </div>
-                {!! $gastos->withQueryString()->links() !!}
             </div>
         </div>
     </div>
 @stop
-
-@section('css')
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.4.24/sweetalert2.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-@stop
-
-@section('js')
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.4.24/sweetalert2.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    <script>
-        toastr.options = {
-            "closeButton": true,
-            "progressBar": true,
-            "positionClass": "toast-bottom-right",
-            "timeOut": 5000
-        };
-
-        @if(Session::has('success'))
-            toastr.success("{{ Session::get('success') }}");
-        @endif
-
-        $(document).ready(function() {
-            $('.delete-form').on('submit', function(e) {
-                e.preventDefault();
-                
-                Swal.fire({
-                    title: '¿Estás seguro?',
-                    text: "¡No podrá revertir esta acción!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Sí, eliminar',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        this.submit();
-                    }
-                });
-            });
-        });
-    </script>
-@stop
-
-
-<style>
-    .dataTable {
-        width: 100% !important;
-        margin: 0 auto;
-        border-collapse: collapse;
-    }
-
-    .dataTable th,
-    .dataTable td {
-        padding: 12px;
-        text-align: center;
-        vertical-align: middle;
-    }
-
-    .dataTable thead th {
-        color: black;
-        font-weight: bold;
-    }
-
-    .dataTable tbody tr:nth-of-type(odd) {
-        background-color: rgba(0, 0, 0, 0.05); 
-    }
-
-    .btn-sm {
-        margin: 2px;
-    }
-
-    .dt-buttons .btn {
-        margin-right: 5px;
-    }
-</style>
-
-@push('js')
-<script>
-    $(document).ready(function() {
-        $('.dataTable').DataTable({
-            responsive: true, 
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json' 
-            },
-            dom: 'Bfrtip', 
-            buttons: [
-                'copy', 'csv', 'excel', 'pdf', 'print' 
-            ]
-        });
-    });
-</script>
-@endpush

@@ -17,7 +17,7 @@
                             <span class="card-title">{{ __('Empleado') }}</span>
                         </div>
                         <div class="ml-auto">
-                            <a class="btn btn-secondary btn-sm" href="{{ route('empleados.index') }}"> {{ __('Volver') }}</a>
+                            <a class="btn btn-secondary btn-m" href="{{ route('empleados.index') }}"> {{ __('Volver') }}</a>
                         </div>
                     </div>
                     <div class="card-body bg-white">
