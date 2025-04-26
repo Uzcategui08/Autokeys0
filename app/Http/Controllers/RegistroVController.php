@@ -207,7 +207,7 @@ class RegistroVController extends Controller
         }
 
         $registroV->items = $items;
-
+        
         return view('registro-v.show', compact('registroV'));
     }
 
@@ -216,6 +216,7 @@ class RegistroVController extends Controller
      */
     public function edit($id): View
     {
+        $empleados = Empleado::all();
         $registroV = registroV::findOrFail($id);
         $almacenes = Almacene::all();
         $clientes = Cliente::all();
@@ -244,7 +245,7 @@ class RegistroVController extends Controller
         
         $registroV->items = $items;
         
-        return view('registro-v.edit', compact('registroV', 'almacenes', 'clientes'));
+        return view('registro-v.edit', compact('registroV', 'almacenes', 'clientes','empleados'));
     }
     
  // Método para ajustar el inventario

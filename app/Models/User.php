@@ -6,12 +6,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable,HasRoles;
 
+    protected static function booted()
+    {
+        static::saving(function ($user) {
+            // Solo si el campo 'rol' cambió
+            if ($user->isDirty('rol')) {
+                // Elimina todos los roles actuales
+                $user->syncRoles([$user->rol]);
+            }
+        });
+    }
     /**
      * The attributes that are mass assignable.
      *

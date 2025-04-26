@@ -9,6 +9,7 @@ use App\Http\Requests\InventarioRequest;
 use App\Models\Almacene;
 use App\Models\Producto;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class InventarioController extends Controller
@@ -94,4 +95,7 @@ class InventarioController extends Controller
         return Redirect::route('inventarios.index')
             ->with('success', 'Inventario deleted successfully');
     }
-}
+
+
+  }
+

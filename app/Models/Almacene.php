@@ -31,5 +31,5 @@ class Almacene extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['id_almacen', 'nombre'];
+    protected $fillable = [ 'nombre'];
 }
