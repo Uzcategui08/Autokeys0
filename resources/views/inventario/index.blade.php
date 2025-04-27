@@ -56,14 +56,10 @@
                                                 <i class="fa fa-fw fa-eye"></i> 
                                             </a>
                                             <a class="btn btn-sm btn-success" href="{{ route('inventarios.edit', $inventario->id_inventario) }}">
-                                                <i class="fa fa-fw fa-edit"></i> 
+                                            <i class="fas fa-exchange-alt"></i>
     
                                             </a>
-                                            <a href="{{ route('ajustar-inventarios.create', ['id_inventario' => $inventario->id_inventario]) }}" 
-   class="btn btn-primary">
-   Crear Ajuste
-</a>
-                                            @csrf
+                                 @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-danger btn-sm">
                                                 <i class="fa fa-fw fa-trash"></i> 

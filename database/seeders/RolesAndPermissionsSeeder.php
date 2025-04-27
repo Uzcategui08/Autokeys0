@@ -30,7 +30,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $admin->syncPermissions(Permission::all());
 
                 // Asignar rol admin a un usuario específico
-                $user = User::where('rol', 'admin')->first();
+                $user = User::where('name', 'admin')->first();
                 if ($user) {
                     $user->assignRole('admin');
                     $user->rol = 'admin';

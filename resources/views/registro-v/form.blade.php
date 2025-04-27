@@ -222,9 +222,12 @@
                             <div class="col-md-3">
                                 <div class="form-group mb-3">
                                     <label for="metodo_pce" class="form-label">{{ __('Método de Pago') }}</label>
-                                    <input type="text" name="metodo_pce" class="form-control @error('metodo_pce') is-invalid @enderror" 
-                                        value="{{ old('metodo_pce', $registroV?->metodo_pce) }}" id="metodo_pce" placeholder="Método">
-                                    {!! $errors->first('metodo_pce', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
+                                    <select id="metodo_pce" name="metodo_pce" class="form-control">
+                                        <option value="">Seleccione método de pago</option>
+                                            @foreach($tiposDePago as $tipo)
+                                        <option value="{{ $tipo->id }}">{{ $tipo->name }}</option>
+                                            @endforeach
+                                    </select>
                                 </div>
                             </div>
                             
@@ -284,7 +287,7 @@
                                         <option value="">Estado</option>
                                         <option value="pagado" {{ old('estatus', $registroV?->estatus) == 'pagado' ? 'selected' : '' }}>Pagado</option>
                                         <option value="pendiente" {{ old('estatus', $registroV?->estatus) == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
-                                        <option value="parcialementep" {{ old('estatus', $registroV?->estatus) == 'parcialementep' ? 'selected' : '' }}>Parcial</option>
+                                        <option value="parcialemente pagado" {{ old('estatus', $registroV?->estatus) == 'parcialemente pagado' ? 'selected' : '' }}>Parcial</option>
                                     </select>
                                     {!! $errors->first('estatus', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                                 </div>
@@ -327,14 +330,15 @@
                                 <small class="text-muted">Monto máximo: <span id="maximo-pago">${{ number_format($registroV->valor_v ?? 0, 2) }}</span></small>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">Método de Pago</label>
-                                <select id="pago_metodo" class="form-control">
-                                    <option value="efectivo">Efectivo</option>
-                                    <option value="transferencia">Transferencia</option>
-                                    <option value="tarjeta">Tarjeta</option>
-                                    <option value="cheque">Cheque</option>
-                                </select>
-                            </div>
+    <label class="form-label">Método de Pago</label>
+    <select id="pago_metodo" name="pago_metodo" class="form-control">
+        <option value="">Seleccione método de pago</option>
+        @foreach($tiposDePago as $tipo)
+            <option value="{{ $tipo->id }}">{{ $tipo->name }}</option>
+        @endforeach
+    </select>
+</div>
+
                             <div class="col-md-4">
                                 <label class="form-label">Fecha</label>
                                 <input type="date" id="pago_fecha" class="form-control" value="{{ date('Y-m-d') }}">
@@ -487,7 +491,7 @@ $(document).ready(function() {
         if (saldoPendiente <= 0.01) { 
             $('#estatus').val('pagado');
         } else if (totalPagado > 0) {
-            $('#estatus').val('parcialementep'); 
+            $('#estatus').val('parcialemente pagado'); 
         } else {
             $('#estatus').val('pendiente');
         }
@@ -716,8 +720,7 @@ $(document).ready(function() {
                 $select.html('<option value="">{{ __('Select Producto') }}</option>').prop('disabled', true);
             }
         }
-    }
-
+    };
 
    function addNewProductRow(itemGroup, productoData = null) {
         const productoIndex = itemGroup.find('.producto-row').length;

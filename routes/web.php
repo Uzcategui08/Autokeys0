@@ -10,17 +10,14 @@ use App\Http\Controllers\PresupuestoController;
 use App\Http\Controllers\OrdenController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegistroVController;
-use App\Http\Controllers\TnominaController;
-use App\Http\Controllers\PnominaController;
 use App\Http\Controllers\NempleadoController;
 use App\Http\Controllers\PrestamoController;
-use App\Http\Controllers\CuotaController;
 use App\Http\Controllers\AbonoController;
 use App\Http\Controllers\DescuentoController;
 use App\Http\Controllers\CostoController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\AjustarInventarioController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\TiposDePagoController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -31,7 +28,7 @@ Route::get('/dashboard', [DashboardController::class, "index"])->middleware(['au
 
 
 // Permisos (opcional, si quieres gestionarlos por separado)
-Route::resource('permissions', PermissionController::class)->middleware(['auth', 'role:admin']);
+//Route::resource('permissions', PermissionController::class)->middleware(['auth', 'role:admin']);
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -40,19 +37,24 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__ . '/auth.php';
 
-Route::resource('ajustar-inventarios', AjustarInventarioController::class);
+//Route::resource('ajustar-inventarios', AjustarInventarioController::class);
 
 Route::resource('clientes', ClienteController::class);
+
+Route::resource('productos', ProductoController::class);
 
 route::get('admin/dashboard', [DashboardController::class, "index"])->name('admin.dashboard');
 
 Route::resource('inventarios', InventarioController::class);
+Route::get('/cargas', [InventarioController::class, 'cargas'])->name('inventario.cargas');
 
 Route::resource('almacenes', AlmaceneController::class);
 
 Route::resource('presupuestos', PresupuestoController::class);
 
 Route::resource('registro-vs', RegistroVController::class);
+
+Route::resource('tipos-de-pagos', TiposDePagoController::class);
 
 Route::get('/cxc', [RegistroVController::class, 'cxc'])->name('registroV.cxc');
 
@@ -76,9 +78,6 @@ Route::get('/orden/{id}/pdf', [OrdenController::class, 'generarPdf'])->name('ord
 
 Route::resource('empleados', EmpleadoController::class);
 
-Route::resource('tnominas', TnominaController::class);
-
-Route::resource('pnominas', PnominaController::class);
 
 Route::prefix('nempleados')->group(function () {
     Route::get('/', [NempleadoController::class, 'index'])->name('nempleados.index');
@@ -115,7 +114,6 @@ Route::get('prestamos/empleado/{id}', [PrestamoController::class, 'porEmpleado']
 Route::get('prestamos/{id}/cuotas', [PrestamoController::class, 'showCuotas'])
 ->name('prestamos.cuotas');
 
-Route::resource('cuotas', CuotaController::class);
 
 Route::resource('abonos', AbonoController::class);
 

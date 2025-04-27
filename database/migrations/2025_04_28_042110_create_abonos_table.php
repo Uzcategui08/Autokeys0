@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('abonos', function (Blueprint $table) {
             $table->id('id_abonos');
             $table->foreignId('id_empleado')->constrained('empleados', 'id_empleado')->onDelete('cascade');
-            $table->string('concepto');
+            $table->string('concepto')->nullable();
             $table->decimal('valor', 10, 2);
             $table->date('a_fecha');
             $table->date('fecha_pago')->nullable();

@@ -26,7 +26,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property $modelo
  * @property $año
  * @property $items
- * @property $lugarVenta
+ * @property $lugarventa
  *
  * @package App
  * @mixin \Illuminate\Database\Eloquent\Builder

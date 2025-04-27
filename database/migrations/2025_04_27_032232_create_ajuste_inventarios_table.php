@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ajustar_inventarios', function (Blueprint $table) {
+        Schema::create('ajuste_inventarios', function (Blueprint $table) {
             $table->id();
             $table->foreignId('id_producto')->constrained('productos', 'id_producto')->onDelete('cascade');
             $table->foreignId('id_almacen')->constrained('almacenes', 'id_almacen')->onDelete('cascade');
-            $table->enum('tipo_ajuste', ['compra', 'resta', 'ajuste']); // Tipos específicos
+            $table->enum('tipo_ajuste', ['compra', 'resta', 'ajuste','ajuste2']); // Tipos específicos
             $table->integer('cantidad_anterior');
             $table->integer('cantidad_nueva');
             $table->integer('diferencia')->storedAs('cantidad_nueva - cantidad_anterior'); // Campo calculado
@@ -30,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('ajustar_inventarios');
+        Schema::dropIfExists('ajuste_inventarios');
     }
 };

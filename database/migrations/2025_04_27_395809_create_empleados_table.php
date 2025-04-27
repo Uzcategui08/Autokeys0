@@ -17,7 +17,7 @@ return new class extends Migration
             $table->integer('cedula');
             $table->integer('tipo');
             $table->string('cargo');
-            $table->decimal('salario_base', 10,2);
+            $table->decimal('salario_base', 10,2)->nullable();
             $table->timestamps();
         });
     }

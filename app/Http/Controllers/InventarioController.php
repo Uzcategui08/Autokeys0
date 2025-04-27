@@ -11,6 +11,8 @@ use App\Models\Producto;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use App\Models\AjusteInventario;
+
 
 class InventarioController extends Controller
 {
@@ -60,32 +62,72 @@ class InventarioController extends Controller
 
         return view('inventario.show', compact('inventario'));
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id): View
+    public function cargas(Request $request)
     {
-        // Obtén el inventario a editar
-        $inventario = Inventario::findOrFail($id);
+        $cargas = AjusteInventario::with(['producto', 'almacene','user'])
+                        ->orderBy('created_at', 'desc')
+                        ->paginate(10);
+        
+        return view('inventario.cargas', [
+            'cargas' => $cargas,
+            'i' => ($request->input('page', 1) - 1) * $cargas->perPage()
+        ]);
+    }
 
-        // Obtén todos los productos y almacenes
-        $productos = Producto::all();
-        $almacenes = Almacene::all();
-
-        // Pasa los datos a la vista
-        return view('inventario.edit', compact('inventario', 'productos', 'almacenes'));
+    public function edit($id_inventario): View
+    {
+        $inventario = Inventario::with(['producto', 'almacene'])->findOrFail($id_inventario);
+        return view('inventario.edit', compact('inventario')); // Changed from 'inventarios.edit' to 'inventario.edit'
     }
 
     /**
-     * Update the specified resource in storage.
+     * Actualizar cantidad con ajuste y registrar el ajuste.
      */
-    public function update(InventarioRequest $request, Inventario $inventario): RedirectResponse
+    public function update(Request $request, $id_inventario)
     {
-        $inventario->update($request->validated());
+        $request->validate([
+            'tipo_ajuste' => 'required|in:compra,resta,ajuste,ajuste2',
+            'cantidad_ajuste' => 'required|integer|min:1',
+            'descripcion' => 'nullable|string|max:500',
+        ]);
 
-        return Redirect::route('inventarios.index')
-            ->with('success', 'Inventario actualizado satisfactoriamente.');
+        $inventario = Inventario::findOrFail($id_inventario);
+
+        $cantidadAnterior = $inventario->cantidad;
+        $cantidadNueva = $cantidadAnterior;
+
+        // Calcular nueva cantidad según tipo de ajuste
+        switch ($request->tipo_ajuste) {
+            case 'compra':
+            case 'ajuste':
+                $cantidadNueva += $request->cantidad_ajuste;
+                break;
+            case 'ajuste2':
+            case 'resta':
+                $cantidadNueva -= $request->cantidad_ajuste;
+                if ($cantidadNueva < 0) {
+                    return back()->withErrors(['cantidad_ajuste' => 'La cantidad no puede ser negativa después del ajuste.']);
+                }
+                break;
+        }
+
+        // Actualizar inventario
+        $inventario->cantidad = $cantidadNueva;
+        $inventario->save();
+
+        // Registrar ajuste en tabla ajustes_inventario
+        AjusteInventario::create([
+            'id_producto' => $inventario->id_producto,
+            'id_almacen' => $inventario->id_almacen,
+            'tipo_ajuste' => $request->tipo_ajuste,
+            'cantidad_anterior' => $cantidadAnterior,
+            'cantidad_nueva' => $cantidadNueva,
+            'descripcion' => $request->descripcion,
+            'user_id' => Auth::id(),
+        ]);
+
+        return redirect()->route('inventarios.edit', $inventario->id_inventario)
+                         ->with('success', 'Inventario actualizado y ajuste registrado correctamente.');
     }
 
     public function destroy($id): RedirectResponse

@@ -10,6 +10,7 @@ use App\Models\Cliente;
 use App\Models\Producto;
 use App\Models\Empleado;
 use App\Models\Abono;
+use App\Models\TiposDePago;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use App\Http\Requests\RegistroVRequest;
@@ -49,13 +50,14 @@ class RegistroVController extends Controller
      */
     public function create(): View
     {
+        $tiposDePago = TiposDePago::all();
         $clientes = Cliente::all();
         $inventario = Inventario::with('producto')->get();
         $almacenes = Almacene::all();
         $registroV = new RegistroV();
         $empleados = Empleado::where('cargo', '1')->get();
 
-        return view('registro-v.create', compact('registroV', 'clientes', 'inventario', 'almacenes', 'empleados'));
+        return view('registro-v.create', compact('registroV', 'clientes', 'inventario', 'almacenes', 'empleados','tiposDePago'));
     }
     /**
      * Obtener productos por almacén (AJAX)
@@ -148,7 +150,7 @@ class RegistroVController extends Controller
                 if ($totalPagado >= $valorTotal) {
                     $validatedData['estatus'] = 'pagado';
                 } elseif ($totalPagado > 0) {
-                    $validatedData['estatus'] = 'parcialementep';
+                    $validatedData['estatus'] = 'parcialemente pagado';
                 } else {
                     $validatedData['estatus'] = 'pendiente';
                 }
@@ -166,7 +168,7 @@ class RegistroVController extends Controller
         Abono::create([
             'a_fecha' => $registroV->fecha_h,
             'id_empleado' => $empleado,
-            'concepto' => $registroV->descripcion_ce,
+            'concepto' => $registroV->trabajo,
             'valor' => $registroV->porcentaje_c,
         ]);
     
@@ -180,6 +182,8 @@ class RegistroVController extends Controller
     public function show($id): View
     {
         $registroV = RegistroV::find($id);
+        $almacenes = Almacene::all();
+        $tiposDePago = TiposDePago::all();
 
         $items = json_decode($registroV->items, true);
 
@@ -208,7 +212,7 @@ class RegistroVController extends Controller
 
         $registroV->items = $items;
         
-        return view('registro-v.show', compact('registroV'));
+        return view('registro-v.show', compact('registroV','almacenes','tiposDePago'));
     }
 
     /**
@@ -216,6 +220,7 @@ class RegistroVController extends Controller
      */
     public function edit($id): View
     {
+        $tiposDePago = TiposDePago::all();
         $empleados = Empleado::all();
         $registroV = registroV::findOrFail($id);
         $almacenes = Almacene::all();
@@ -246,7 +251,7 @@ class RegistroVController extends Controller
         
         $registroV->items = $items;
         
-        return view('registro-v.edit', compact('registroV', 'almacenes', 'clientes', 'empleados'));
+        return view('registro-v.edit', compact('registroV', 'almacenes', 'clientes', 'empleados','tiposDePago'));
     }
     
  // Método para ajustar el inventario
@@ -440,7 +445,7 @@ class RegistroVController extends Controller
                 if ($totalPagado >= $valorTotal) {
                     $validatedData['estatus'] = 'pagado';
                 } elseif ($totalPagado > 0) {
-                    $validatedData['estatus'] = 'parcialementep';
+                    $validatedData['estatus'] = 'parcialemente pagado';
                 } else {
                     $validatedData['estatus'] = 'pendiente';
                 }
