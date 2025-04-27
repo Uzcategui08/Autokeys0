@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Orden')
+@section('title', 'Órdenes')
 
 @section('content_header')
 <h1>Editar</h1>
@@ -14,9 +14,6 @@
                     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="float-left">
                             <span class="card-title">{{ __('Orden') }}</span>
-                        </div>
-                        <div class="ml-auto">
-                            <a class="btn btn-secondary btn-sm" href="{{ route('ordens.index') }}"> {{ __('Volver') }}</a>
                         </div>
                     </div>
                     <div class="card-body bg-white">
@@ -34,18 +31,3 @@
     </section>
 @endsection
 
-@section('css')
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-@stop
-
-@section('js')
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            if (typeof $().select2 === 'function') {
-                $('.select2').select2();
-            }
-        });
-    </script>
-@stop

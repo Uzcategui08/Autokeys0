@@ -47,42 +47,26 @@ class PresupuestoController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(presupuestoRequest $request): RedirectResponse
+    public function store(PresupuestoRequest $request): RedirectResponse
     {
-
         $validatedData = $request->validated();
 
-        $trabajos = [];
-        if ($request->has('items')) {
-            foreach ($request->input('items') as $item) {
-                if (!empty($item['trabajo'])) {
-                    $productos = [];
-                    if (isset($item['productos'])) {
-                        foreach ($item['productos'] as $producto) {
-                            if (!empty($producto['producto'])) {
-                                $productos[] = [
-                                    'producto' => $producto['producto'],
-                                    'cantidad' => $producto['cantidad'],
-                                    'almacen' => $producto['almacen'],
-
-                                ];
-                            }
-                        }
-                    }
-                    $trabajos[] = [
-                        'trabajo' => $item['trabajo'],
-                        'productos' => $productos,
-                    ];
-                }
+        $items = [];
+        foreach ($request->input('items', []) as $item) {
+            if (!empty($item['descripcion'])) {
+                $items[] = [
+                    'descripcion' => $item['descripcion'],
+                    'precio' => (float)($item['precio'] ?? 0),
+                ];
             }
-        }
-   
-        $validatedData['items'] = json_encode($trabajos);
-    
+        }    
+
+        $validatedData['items'] = json_encode($items);
+
         Presupuesto::create($validatedData);
     
         return Redirect::route('presupuestos.index')
-            ->with('success', 'Presupuesto creado exitosamente.');
+            ->with('success', 'Presupuesto creado satisfactoriamente.');
     }
 
     /**
@@ -90,39 +74,20 @@ class PresupuestoController extends Controller
      */
     public function show($id): View
     {
-        $presupuesto = Presupuesto::find($id);
+        $presupuesto = Presupuesto::findOrFail($id);
+
+        $items = is_string($presupuesto->items) ? json_decode($presupuesto->items, true) : ($presupuesto->items ?? []);
+
+        $presupuesto->items = is_array($items) ? array_map(function($item) {
+            return [
+                'descripcion' => $item['descripcion'] ?? 'Descripción no disponible',
+                'precio' => (float)($item['precio'] ?? 0)
+            ];
+        }, $items) : [];
     
-        $items = json_decode($presupuesto->items, true);
-    
-        if (is_array($items)) {
-
-            foreach ($items as &$itemGroup) {
-
-                if (isset($itemGroup['productos']) && is_array($itemGroup['productos'])) {
-
-                    foreach ($itemGroup['productos'] as &$producto) {
-                        if (isset($producto['producto'])) {
-                            $productoDetalle = Producto::find($producto['producto']);
-                            if ($productoDetalle) {
-                                $producto['nombre_producto'] = $productoDetalle->item;
-                                $producto['precio_producto'] = $productoDetalle->precio;
-                            } else {
-                                $producto['nombre_producto'] = 'Producto no encontrado';
-                                $producto['precio_producto'] = 0;
-                            }
-                        } else {
-                            $producto['nombre_producto'] = 'Producto no especificado';
-                            $producto['precio_producto'] = 0;
-                        }
-                    }
-                }
-            }
-        }
-
-        $presupuesto->items = $items;
-
         return view('presupuesto.show', compact('presupuesto'));
     }
+
 
     /**
      * Show the form for editing the specified resource.
@@ -130,74 +95,54 @@ class PresupuestoController extends Controller
     public function edit($id): View
     {
         $presupuesto = Presupuesto::findOrFail($id);
-        $almacenes = Almacene::all();
         $clientes = Cliente::all();
-
         $items = json_decode($presupuesto->items, true) ?? [];
-        
-        foreach ($items as &$trabajo) {
-            if (isset($trabajo['productos'])) {
-                foreach ($trabajo['productos'] as &$producto) {
-                    $producto['producto'] = $producto['producto'] ?? null;
-                    $producto['cantidad'] = $producto['cantidad'] ?? 1;
-                    $producto['almacen'] = $producto['almacen'] ?? null;
-                    
-                    if ($producto['producto']) {
-                        $productoModel = Producto::find($producto['producto']);
-                        $producto['nombre_producto'] = $productoModel ? $productoModel->item : 'Producto no encontrado';
-                    } else {
-                        $producto['nombre_producto'] = 'Producto no especificado';
-                    }
-                }
-            } else {
-                $trabajo['productos'] = [];
-            }
+
+        $itemsNormalizados = [];
+        foreach ($items as $item) {
+            $itemsNormalizados[] = [
+                'descripcion' => $item['descripcion'] ?? '',
+                'precio' => $item['precio'] ?? 0
+            ];
         }
         
-        $presupuesto->items = $items;
+        $presupuesto->items = $itemsNormalizados;
         
-        return view('presupuesto.edit', compact('presupuesto', 'almacenes', 'clientes'));
+        return view('presupuesto.edit', compact('presupuesto', 'clientes'));
     }
     
 
     /**
      * Update the specified resource in storage.
-
-    public function update(PresupuestoRequest $request, Presupuesto $presupuesto): RedirectResponse
-    {
-
-        $presupuesto->update($request->validated());
-    
-        if ($request->has('items')) {
-            foreach ($request->input('items') as $index => $itemData) {
-                $productoId = $itemData['producto'] ?? $presupuesto->items[$index]['producto'] ?? null;
-                $almacenId = $itemData['almacen'] ?? $presupuesto->items[$index]['almacen'] ?? null;
-                $cantidad = $itemData['cantidad'] ?? $presupuesto->items[$index]['cantidad'] ?? null;
-    
-            }
-        }
-    
-        return Redirect::route('presupuestos.index')
-            ->with('success', 'Presupuesto updated successfully');
-    }
      */
 
-    public function update(PresupuestoRequest $request, Presupuesto $presupuesto): RedirectResponse
-    {
-        $validatedData = $request->validated();
+     public function update(PresupuestoRequest $request, Presupuesto $presupuesto): RedirectResponse
+     {
+         $validatedData = $request->validated();
 
-        $items = $request->input('items');
+         $items = [];
+         foreach ($request->input('items', []) as $item) {
+             if (!empty($item['descripcion'])) {
+                 $items[] = [
+                     'descripcion' => $item['descripcion'],
+                     'precio' => (float)($item['precio'] ?? 0),
+                 ];
+             }
+         }
 
-        $presupuesto->update(Arr::except($validatedData, ['items']));
-
-        if ($request->has('items')) {
-            $presupuesto->items = json_encode($items);
-            $presupuesto->save();
-        }
-
-        return Redirect::route('presupuestos.index')
-            ->with('success', 'Presupuesto updated successfully');
-    }
+         $presupuesto->update([
+             'id_cliente' => $validatedData['id_cliente'],
+             'f_presupuesto' => $validatedData['f_presupuesto'],
+             'validez' => $validatedData['validez'],
+             'descuento' => $validatedData['descuento'],
+             'iva' => $validatedData['iva'],
+             'estado' => $validatedData['estado'],
+             'items' => $items
+         ]);
+     
+         return Redirect::route('presupuestos.index')
+             ->with('success', 'Presupuesto actualizado satisfactoriamente.');
+     }
     
     
 
@@ -206,7 +151,7 @@ class PresupuestoController extends Controller
         Presupuesto::find($id)->delete();
 
         return Redirect::route('presupuestos.index')
-            ->with('success', 'Presupuesto deleted successfully');
+            ->with('success', 'Presupuesto eliminado satisfactoriamente.');
     }
 
     public function obtenerProductos(Request $request)
@@ -230,37 +175,37 @@ class PresupuestoController extends Controller
 
     public function generarPdf($id)
     {
-        $presupuesto = Presupuesto::find($id);
+        $presupuesto = Presupuesto::findOrFail($id);
 
-        $items = json_decode($presupuesto->items, true);
-
-
-        if (is_array($items)) {
-            foreach ($items as &$itemGroup) {
-                if (isset($itemGroup['productos']) && is_array($itemGroup['productos'])) {
-                    foreach ($itemGroup['productos'] as &$producto) {
-                        if (isset($producto['producto'])) {
-                            $productoDetalle = Producto::find($producto['producto']);
-                            if ($productoDetalle) {
-                                $producto['nombre_producto'] = $productoDetalle->item;
-                                $producto['precio_producto'] = $productoDetalle->precio;
-                            } else {
-                                $producto['nombre_producto'] = 'Producto no encontrado';
-                                $producto['precio_producto'] = 0;
-                            }
-                        } else {
-                            $producto['nombre_producto'] = 'Producto no especificado';
-                            $producto['precio_producto'] = 0;
-                        }
-                    }
-                }
-            }
-        }
-
-        $presupuesto->items = $items;
-
+        $items = is_string($presupuesto->items) ? json_decode($presupuesto->items, true) : ($presupuesto->items ?? []);
+        
+        $presupuesto->items = is_array($items) ? array_map(function($item) {
+            return [
+                'descripcion' => $item['descripcion'] ?? 'Descripción no disponible',
+                'precio' => (float)($item['precio'] ?? 0)
+            ];
+        }, $items) : [];
+        
         $pdf = Pdf::loadView('presupuesto.pdf', compact('presupuesto'));
-
+        
         return $pdf->stream('presupuesto_' . $presupuesto->id_presupuesto . '.pdf');
+    }
+
+    public function generatePdf($id)
+    {
+        $presupuesto = Presupuesto::findOrFail($id);
+
+        $items = is_string($presupuesto->items) ? json_decode($presupuesto->items, true) : ($presupuesto->items ?? []);
+        
+        $presupuesto->items = is_array($items) ? array_map(function($item) {
+            return [
+                'descripcion' => $item['descripcion'] ?? 'Descripción no disponible',
+                'precio' => (float)($item['precio'] ?? 0)
+            ];
+        }, $items) : [];
+        
+        $pdf = Pdf::loadView('presupuesto.eng', compact('presupuesto'));
+        
+        return $pdf->stream('budget_' . $presupuesto->id_presupuesto . '.pdf');
     }
 }

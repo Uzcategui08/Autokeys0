@@ -40,7 +40,7 @@ class AlmaceneController extends Controller
         Almacene::create($request->validated());
 
         return Redirect::route('almacenes.index')
-            ->with('success', 'Almacene created successfully.');
+            ->with('success', 'Almacen creado satisfactoriamente.');
     }
 
     /**
@@ -71,7 +71,7 @@ class AlmaceneController extends Controller
         $almacene->update($request->validated());
 
         return Redirect::route('almacenes.index')
-            ->with('success', 'Almacene updated successfully');
+            ->with('success', 'Almacen actualizado satisfactoriamente.');
     }
 
     public function destroy($id): RedirectResponse
@@ -79,6 +79,6 @@ class AlmaceneController extends Controller
         Almacene::find($id)->delete();
 
         return Redirect::route('almacenes.index')
-            ->with('success', 'Almacene deleted successfully');
+            ->with('success', 'Almacene eliminado satifactoriamente.');
     }
 }

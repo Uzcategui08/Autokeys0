@@ -1,14 +1,7 @@
 <div class="row padding-1 p-1">
     <div class="col-md-12">
         <div class="row">
-            <div class="col-md-4">
-                <div class="form-group mb-2 mb20">
-                    <label for="id_descuentos" class="form-label">{{ __('ID Descuentos') }}</label>
-                    <input type="text" name="id_descuentos" class="form-control @error('id_descuentos') is-invalid @enderror" value="{{ old('id_descuentos', $descuento?->id_descuentos) }}" id="id_descuentos" placeholder="ID Descuentos">
-                    {!! $errors->first('id_descuentos', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
-                </div>
-            </div>
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <div class="form-group mb-2 mb20">
                     <label for="id_empleado" class="form-label">{{ __('Empleado') }}</label>
                     <select name="id_empleado"
@@ -24,7 +17,7 @@
                     {!! $errors->first('id_empleado', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <div class="form-group mb-2 mb20">
                     <label for="concepto" class="form-label">{{ __('Concepto') }}</label>
                     <input type="text" name="concepto" class="form-control @error('concepto') is-invalid @enderror" value="{{ old('concepto', $descuento?->concepto) }}" id="concepto" placeholder="Concepto">
@@ -33,14 +26,14 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <div class="form-group mb-2 mb20">
                     <label for="valor" class="form-label">{{ __('Valor') }}</label>
                     <input type="text" name="valor" class="form-control @error('valor') is-invalid @enderror" value="{{ old('valor', $descuento?->valor) }}" id="valor" placeholder="Valor">
                     {!! $errors->first('valor', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <div class="form-group mb-2 mb20">
                     <label for="d_fecha" class="form-label">{{ __('Fecha') }}</label>
                     <input type="date" name="d_fecha" class="form-control @error('d_fecha') is-invalid @enderror" value="{{ old('d_fecha', $descuento?->d_fecha) }}" id="d_fecha" placeholder="Fecha">

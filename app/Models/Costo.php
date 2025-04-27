@@ -33,7 +33,6 @@ class Costo extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'id_costos',
         'f_costos',
         'id_tecnico',
         'descripcion',
@@ -50,7 +49,7 @@ class Costo extends Model
 
     public function empleado()
     {
-        return $this->belongsTo(\App\Models\Empleado::class, 'id_empleado', 'id_tecnico');
+        return $this->belongsTo(\App\Models\Empleado::class, 'id_tecnico', 'id_empleado');
     }
     
 

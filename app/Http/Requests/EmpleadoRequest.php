@@ -22,13 +22,11 @@ class EmpleadoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_tnomina' => 'required|exists:tnominas,id_tnomina',
-			'id_empleado' => 'required',
 			'nombre' => 'required|string',
 			'cedula' => 'required',
 			'cargo' => 'required|string',
 			'salario_base' => 'required',
-			'metodo_pago' => 'required',
+            'tipo' => 'required',
         ];
     }
 }

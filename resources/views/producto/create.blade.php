@@ -1,9 +1,9 @@
 @extends('adminlte::page')
 
-@section('title', 'Dashboard')
+@section('title', 'Productos')
 
 @section('content_header')
-<h1>Dashboard</h1>
+<h1>Crear</h1>
 @stop
 
 @section('content')
@@ -12,8 +12,10 @@
         <div class="col-md-12">
 
             <div class="card card-default">
-                <div class="card-header">
-                    <span class="card-title">{{ __('Create') }} Producto</span>
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="float-left">
+                        <span class="card-title">{{ __('Producto') }}</span>
+                    </div>
                 </div>
                 <div class="card-body bg-white">
                     <form method="POST" action="{{ route('productos.store') }}" role="form" enctype="multipart/form-data">

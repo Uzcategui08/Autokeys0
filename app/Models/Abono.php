@@ -30,7 +30,7 @@ class Abono extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['id_abonos', 'id_empleado', 'concepto', 'valor', 'a_fecha'];
+    protected $fillable = ['id_abonos', 'id_empleado', 'concepto', 'valor', 'a_fecha', 'fecha_pago', 'status'];
 
 
     /**

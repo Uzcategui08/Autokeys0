@@ -1,9 +1,9 @@
 @extends('adminlte::page')
 
-@section('title', 'Detalle del Costo')
+@section('title', 'Gastos')
 
 @section('content_header')
-    <h1>Detalle del Costo</h1>
+    <h1>Mostrar</h1>
 @stop
 
 @section('content')
@@ -11,16 +11,14 @@
         <div class="row">
             <div class="col-sm-12">
                 <div class="card">
-                    <div class="card-header">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span id="card_title">
-                                {{ __('Detalle del Costo') }}
-                            </span>
-                            <div class="float-right">
-                                <a href="{{ route('costos.index') }}" class="btn btn-secondary btn-sm float-right"  data-placement="left">
-                                  {{ __('Volver a la Lista') }}
-                                </a>
-                            </div>
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="float-left">
+                            <span class="card-title">{{ __('Detalle del Costo') }}</span>
+                        </div>
+                        <div class="ml-auto">
+                            <a class="btn btn-secondary" href="{{ route('costos.index') }}">
+                                {{ __('Volver') }}
+                            </a>
                         </div>
                     </div>
 
@@ -41,7 +39,7 @@
                                     <div class="col-md-4">
                                         <div class="form-group mb-3">
                                             <label for="id_tecnico" class="form-label">{{ __('ID Técnico') }}</label>
-                                            <input type="number" class="form-control" value="{{ $costo->id_tecnico }}" readonly>
+                                            <input type="text" class="form-control" value="{{ $costo->empleado->nombre }}" readonly>
                                         </div>
                                     </div>
 
@@ -147,21 +145,4 @@
             font-weight: bold;
         }
     </style>
-@stop
-
-@section('js')
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.4.24/sweetalert2.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    <script>
-        toastr.options = {
-            "closeButton": true,
-            "progressBar": true,
-            "positionClass": "toast-bottom-right",
-            "timeOut": 5000
-        };
-
-        @if(Session::has('success'))
-            toastr.success("{{ Session::get('success') }}");
-        @endif
-    </script>
 @stop

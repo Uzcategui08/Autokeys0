@@ -22,11 +22,12 @@ class AbonoRequest extends FormRequest
     public function rules(): array
     {
         return [
-			'id_abonos' => 'required',
 			'id_empleado' => 'required',
 			'concepto' => 'required|string',
 			'valor' => 'required',
 			'a_fecha' => 'required',
+            'fecha_pago' => 'nullable|date',
+            'status' => 'nullable|integer',
         ];
     }
 }

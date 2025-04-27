@@ -43,7 +43,7 @@ class RegistroV extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['fecha_h', 'tecnico', 'trabajo', 'cliente', 'telefono', 'valor_v', 'estatus', 'metodo_p', 'titular_c', 'pagos', 'descripcion_ce', 'monto_ce', 'cobro', 'porcentaje_c', 'marca', 'modelo', 'año', 'items','lugarventa'];
+    protected $fillable = ['fecha_h', 'tecnico', 'trabajo', 'cliente', 'telefono', 'valor_v', 'estatus', 'metodo_p', 'titular_c', 'pagos', 'descripcion_ce', 'monto_ce', 'cobro', 'porcentaje_c', 'marca', 'modelo', 'año', 'items','lugarventa', 'id_cliente', 'metodo_pce'];
 
     protected $casts = [
         'pagos' => 'array',

@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('concepto');
             $table->decimal('valor', 10, 2);
             $table->date('d_fecha');
+            $table->date('fecha_pago')->nullable();
+            $table->integer('status')->default(0);
             $table->timestamps();
         });
     }

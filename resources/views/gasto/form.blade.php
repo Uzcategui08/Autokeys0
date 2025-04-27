@@ -1,13 +1,11 @@
 <div class="row padding-1 p-1">
     <div class="col-md-12">
-        <!-- Sección de información básica del gasto -->
         <div class="card mb-4">
             <div class="card-header bg-light">
                 <h5 class="mb-0">Información del Gasto</h5>
             </div>
             <div class="card-body">
                 <div class="row">
-                    <!-- f_gastos -->
                     <div class="col-md-4">
                         <div class="form-group mb-3">
                             <label for="f_gastos" class="form-label">{{ __('Fecha') }}</label>
@@ -17,17 +15,23 @@
                         </div>
                     </div>
 
-                    <!-- Técnico -->
                     <div class="col-md-4">
                         <div class="form-group mb-3">
-                            <label for="id_tecnico" class="form-label">{{ __('ID Técnico') }}</label>
-                            <input type="number" name="id_tecnico" class="form-control @error('id_tecnico') is-invalid @enderror"
-                                value="{{ old('id_tecnico', $gasto?->id_tecnico) }}" id="id_tecnico" placeholder="Ej: 123">
-                            {!! $errors->first('id_tecnico', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
+                            <label for="id_tecnico" class="form-label fw-bold">{{ __('Técnico') }}</label>
+                            <select name="id_tecnico" class="form-control select2" id="id_tecnico" required>
+                                <option value="" selected>{{ __('Seleccionar Técnico') }}</option>
+                                @foreach($empleado as $tecnico)
+                                    <option value="{{ $tecnico->id_empleado }}" {{ old('id_tecnico', $gasto?->id_tecnico) == $tecnico->id_empleado ? 'selected' : '' }}>
+                                        {{ $tecnico->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('id_tecnico')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
 
-                    <!-- Valor -->
                     <div class="col-md-4">
                         <div class="form-group mb-3">
                             <label for="valor" class="form-label">{{ __('Valor Total') }}</label>
@@ -38,7 +42,6 @@
                     </div>
                 </div>
 
-                <!-- Descripción -->
                 <div class="form-group mb-3">
                     <label for="descripcion" class="form-label">{{ __('Descripción') }}</label>
                     <textarea name="descripcion" class="form-control @error('descripcion') is-invalid @enderror" 
@@ -46,10 +49,8 @@
                     {!! $errors->first('descripcion', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
                 </div>
 
-                <!-- Subcategoría y Estatus -->
                 <div class="row">
                     <div class="col-md-6">
-                    <!-- Subcategoría (Select con opciones predeterminadas) -->
                         <div class="form-group mb-2 mb20">
                             <label for="subcategoria" class="form-label">{{ __('Subcategoría') }}</label>
                             <select name="subcategoria" id="subcategoria" class="form-control @error('subcategoria') is-invalid @enderror">
@@ -81,13 +82,11 @@
             </div>
         </div>
 
-        <!-- Sección de Pagos Parciales -->
         <div class="card mt-4">
             <div class="card-header bg-light">
                 <h5 class="mb-0">Registro de Pagos Parciales</h5>
             </div>
             <div class="card-body">
-                <!-- Resumen de Pagos -->
                 <div class="alert alert-info mb-4">
                     <div class="d-flex justify-content-between">
                         <div>
@@ -105,7 +104,6 @@
                     </div>
                 </div>
 
-                <!-- Formulario para agregar pagos -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-4">
                         <label class="form-label">Monto</label>
@@ -131,7 +129,6 @@
                     <i class="fas fa-plus-circle me-1"></i> Agregar Pago
                 </button>
 
-                <!-- Lista de pagos registrados -->
                 <div class="mt-4" id="lista-pagos">
                     @if(!empty($gasto->pagos) && is_array($gasto->pagos))
                         @foreach($gasto->pagos as $index => $pago)
@@ -259,8 +256,7 @@ $(document).ready(function() {
         actualizarMaximoPago();
         
         $('#pago_monto').val('').focus();
-        
-        alert('Pago de $' + monto.toFixed(2) + ' agregado correctamente');
+
     });
 
     function actualizarListaPagos() {

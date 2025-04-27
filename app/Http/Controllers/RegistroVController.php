@@ -53,7 +53,7 @@ class RegistroVController extends Controller
         $inventario = Inventario::with('producto')->get();
         $almacenes = Almacene::all();
         $registroV = new RegistroV();
-        $empleados = Empleado::all();
+        $empleados = Empleado::where('cargo', '1')->get();
 
         return view('registro-v.create', compact('registroV', 'clientes', 'inventario', 'almacenes', 'empleados'));
     }
@@ -171,7 +171,7 @@ class RegistroVController extends Controller
         ]);
     
         return Redirect::route('registro-vs.index')
-            ->with('success', 'RegistroV creado exitosamente.');
+            ->with('success', 'Registro creado satisfactoriamente.');
     }
     
     /**
@@ -220,6 +220,7 @@ class RegistroVController extends Controller
         $registroV = registroV::findOrFail($id);
         $almacenes = Almacene::all();
         $clientes = Cliente::all();
+        $empleados = Empleado::where('cargo', '1')->get();
 
         $items = json_decode($registroV->items, true) ?? [];
         
@@ -245,7 +246,7 @@ class RegistroVController extends Controller
         
         $registroV->items = $items;
         
-        return view('registro-v.edit', compact('registroV', 'almacenes', 'clientes','empleados'));
+        return view('registro-v.edit', compact('registroV', 'almacenes', 'clientes', 'empleados'));
     }
     
  // Método para ajustar el inventario
@@ -454,7 +455,7 @@ class RegistroVController extends Controller
         $registroV->update($validatedData);
     
         return Redirect::route('registro-vs.index')
-            ->with('success', 'RegistroV actualizado exitosamente');
+            ->with('success', 'Registro actualizado satisfactoriamente.');
     }
 
     /**
@@ -465,7 +466,7 @@ class RegistroVController extends Controller
         RegistroV::find($id)->delete();
 
         return Redirect::route('registro-vs.index')
-            ->with('success', 'RegistroV eliminado exitosamente');
+            ->with('success', 'Registro eliminado satisfactoriamente.');
     }
 
     /**
@@ -473,10 +474,13 @@ class RegistroVController extends Controller
      */
     public function generarPdf($id)
     {
-        $registroV = RegistroV::find($id);
+        $registroV = RegistroV::findOrFail($id);
 
-        $items = json_decode($registroV->items, true);
-
+        $items = $registroV->items;
+        if (is_string($items)) {
+            $items = json_decode($items, true);
+        }
+        
         if (is_array($items)) {
             foreach ($items as &$itemGroup) {
                 if (isset($itemGroup['productos']) && is_array($itemGroup['productos'])) {
@@ -486,23 +490,99 @@ class RegistroVController extends Controller
                             if ($productoDetalle) {
                                 $producto['nombre_producto'] = $productoDetalle->item;
                                 $producto['precio_producto'] = $productoDetalle->precio;
+                                $producto['id_producto'] = $productoDetalle->id_producto;
                             } else {
                                 $producto['nombre_producto'] = 'Producto no encontrado';
                                 $producto['precio_producto'] = 0;
+                                $producto['id_producto'] = 'N/A';
                             }
                         } else {
                             $producto['nombre_producto'] = 'Producto no especificado';
                             $producto['precio_producto'] = 0;
+                            $producto['id_producto'] = 'N/A';
                         }
                     }
                 }
             }
+        } else {
+            $items = [];
         }
 
+        $pagos = $registroV->pagos;
+        if (is_string($pagos)) {
+            $pagos = json_decode($pagos, true);
+        }
+        if (!is_array($pagos)) {
+            $pagos = [];
+        }
+
+        $totalPagado = collect($pagos)->sum('monto');
+        $saldoPendiente = max($registroV->valor_v - $totalPagado, 0);
+    
         $registroV->items = $items;
-
+        $registroV->pagos = $pagos;
+        $registroV->total_pagado = $totalPagado;
+        $registroV->saldo_pendiente = $saldoPendiente;
+    
         $pdf = Pdf::loadView('registro-v.pdf', compact('registroV'));
-
+    
         return $pdf->stream('registro_v_' . $registroV->id . '.pdf');
+    }
+
+    public function generatePdf($id)
+    {
+        $registroV = RegistroV::findOrFail($id);
+
+        $items = $registroV->items;
+        if (is_string($items)) {
+            $items = json_decode($items, true);
+        }
+        
+        if (is_array($items)) {
+            foreach ($items as &$itemGroup) {
+                if (isset($itemGroup['productos']) && is_array($itemGroup['productos'])) {
+                    foreach ($itemGroup['productos'] as &$producto) {
+                        if (isset($producto['producto'])) {
+                            $productoDetalle = Producto::find($producto['producto']);
+                            if ($productoDetalle) {
+                                $producto['nombre_producto'] = $productoDetalle->item;
+                                $producto['precio_producto'] = $productoDetalle->precio;
+                                $producto['id_producto'] = $productoDetalle->id_producto;
+                            } else {
+                                $producto['nombre_producto'] = 'Producto no encontrado';
+                                $producto['precio_producto'] = 0;
+                                $producto['id_producto'] = 'N/A';
+                            }
+                        } else {
+                            $producto['nombre_producto'] = 'Producto no especificado';
+                            $producto['precio_producto'] = 0;
+                            $producto['id_producto'] = 'N/A';
+                        }
+                    }
+                }
+            }
+        } else {
+            $items = [];
+        }
+
+        $pagos = $registroV->pagos;
+        if (is_string($pagos)) {
+            $pagos = json_decode($pagos, true);
+        }
+        if (!is_array($pagos)) {
+            $pagos = [];
+        }
+
+        $totalPagado = collect($pagos)->sum('monto');
+        $saldoPendiente = max($registroV->valor_v - $totalPagado, 0);
+    
+        $registroV->items = $items;
+        $registroV->pagos = $pagos;
+        $registroV->total_pagado = $totalPagado;
+        $registroV->saldo_pendiente = $saldoPendiente;
+    
+        $pdf = Pdf::loadView('registro-v.invoice', compact('registroV'));
+    
+        return $pdf->stream('invoice' . $registroV->id . '.pdf');
     }
 }

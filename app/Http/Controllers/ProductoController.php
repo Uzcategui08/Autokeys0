@@ -48,7 +48,7 @@ class ProductoController extends Controller implements HasMiddleware
         Producto::create($request->validated());
 
         return Redirect::route('productos.index')
-            ->with('success', 'Producto created successfully.');
+            ->with('success', 'Producto creado satisfactoriamente.');
     }
 
     /**
@@ -79,7 +79,7 @@ class ProductoController extends Controller implements HasMiddleware
         $producto->update($request->validated());
 
         return Redirect::route('productos.index')
-            ->with('success', 'Producto updated successfully');
+            ->with('success', 'Producto actualizado satisfactoriamente.');
     }
 
     public function destroy($id): RedirectResponse
@@ -87,6 +87,6 @@ class ProductoController extends Controller implements HasMiddleware
         Producto::find($id)->delete();
 
         return Redirect::route('productos.index')
-            ->with('success', 'Producto deleted successfully');
+            ->with('success', 'Producto eliminado satisfactoriamente.');
     }
 }

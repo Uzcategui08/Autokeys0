@@ -29,23 +29,58 @@ class PrestamoController extends Controller
     public function create(): View
     {
         $prestamo = new Prestamo();
+        $empleado = \App\Models\Empleado::all();
 
-        return view('prestamo.create', compact('prestamo'));
+        return view('prestamo.create', compact('prestamo', 'empleado'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(PrestamoRequest $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        $prestamo = Prestamo::create([
-            ...$request->validated(),
-            'activo' => true 
-        ]);
-        $prestamo->generarCuotas(); 
+        try {
+            $validated = $request->validate([
+                'f_prestamo' => 'required|date',
+                'id_empleado' => 'required|integer|min:1',
+                'descripcion' => 'required|string|max:500',
+                'subcategoria' => 'required|string|in:mantenimiento,repuestos,herramientas,software,consumibles,combustible,capacitacion,otros',
+                'valor' => 'required|numeric|min:0',
+                'estatus' => 'required|in:pendiente,parcialmente_pagado,pagado',
+            ]);
 
-        return Redirect::route('prestamos.index')
-            ->with('success', 'Prestamo created successfully.');
+            $pagosData = [];
+            if ($request->has('pagos')) {
+                $pagosInput = $request->input('pagos');
+                if (is_string($pagosInput)) {
+                    $pagosData = json_decode(trim($pagosInput, '"\' '), true) ?? [];
+                } elseif (is_array($pagosInput)) {
+                    $pagosData = $pagosInput;
+                }
+            }
+
+            $prestamo = new Prestamo([
+                'f_prestamo' => $validated['f_prestamo'],
+                'id_empleado' => $validated['id_empleado'],
+                'descripcion' => $validated['descripcion'],
+                'subcategoria' => $validated['subcategoria'],
+                'valor' => $validated['valor'],
+                'estatus' => $validated['estatus'],
+                'pagos' => $pagosData
+            ]);
+
+            if (!$prestamo->save()) {
+                throw new \Exception("No se pudo guardar el registro en la base de datos");
+            }
+
+            return Redirect::route('prestamos.index')
+                ->with('success', 'Prestamo creado satisfactoriamente.');
+
+        } catch (\Exception $e) {
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'Ocurrió un error al guardar el prestamo: ' . $e->getMessage()]);
+        }
     }
 
     /**
@@ -53,9 +88,15 @@ class PrestamoController extends Controller
      */
     public function show($id): View
     {
-        $prestamo = Prestamo::find($id);
-
-        return view('prestamo.show', compact('prestamo'));
+        $prestamo = Prestamo::with('empleado')->findOrFail($id);
+        
+        $pagos = is_string($prestamo->pagos) ? json_decode($prestamo->pagos, true) : ($prestamo->pagos ?? []);
+        
+        return view('prestamo.show', [
+            'prestamo' => $prestamo,
+            'total_pagado' => $this->calcularTotalPagado($pagos),
+            'saldo_pendiente' => $prestamo->valor - $this->calcularTotalPagado($pagos)
+        ]);
     }
 
     /**
@@ -64,19 +105,70 @@ class PrestamoController extends Controller
     public function edit($id): View
     {
         $prestamo = Prestamo::find($id);
-
-        return view('prestamo.edit', compact('prestamo'));
+        $empleado = \App\Models\Empleado::all();
+        return view('prestamo.edit', compact('prestamo', 'empleado'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(PrestamoRequest $request, Prestamo $prestamo): RedirectResponse
+    public function update(Request $request, $id): RedirectResponse
     {
-        $prestamo->update($request->validated());
+        try {
+            $validated = $request->validate([
+                'f_prestamo' => 'required|date',
+                'id_empleado' => 'required|integer|min:1',
+                'descripcion' => 'required|string|max:500',
+                'subcategoria' => 'required|string|in:mantenimiento,repuestos,herramientas,software,consumibles,combustible,capacitacion,otros',
+                'valor' => 'required|numeric|min:0',
+                'pagos' => 'required|json'
+            ]);
 
-        return Redirect::route('prestamos.index')
-            ->with('success', 'Prestamo updated successfully');
+            $pagosJson = trim($validated['pagos'], '"\'');
+            $pagos = json_decode($pagosJson, true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($pagos)) {
+                throw new \Exception("Formato de pagos inválido: " . json_last_error_msg());
+            }
+
+            $prestamo = Prestamo::findOrFail($id);
+            $totalPagado = $this->calcularTotalPagado($pagos);
+            $estatus = $this->determinarEstatus($validated['valor'], $pagos);
+
+            $prestamo->update([
+                'f_prestamo' => $validated['f_prestamo'],
+                'id_empleado' => $validated['id_empleado'],
+                'descripcion' => $validated['descripcion'],
+                'subcategoria' => $validated['subcategoria'],
+                'valor' => $validated['valor'],
+                'pagos' => $pagos,
+                'estatus' => $estatus
+            ]);
+
+            return Redirect::route('prestamos.index')
+                ->with('success', 'Prestamo actualizado satisfactoriamente.');
+
+        } catch (\Exception $e) {
+            return back()->withInput()->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    private function calcularTotalPagado(array $pagos): float
+    {
+        if (empty($pagos)) return 0;
+        return array_sum(array_column($pagos, 'monto'));
+    }
+
+    private function determinarEstatus(float $valor, array $pagos): string
+    {
+        $totalPagado = $this->calcularTotalPagado($pagos);
+        
+        if (abs($totalPagado - $valor) < 0.01) {
+            return 'pagado';
+        } elseif ($totalPagado > 0) {
+            return 'parcialmente_pagado';
+        }
+        return 'pendiente';
     }
 
     public function destroy($id): RedirectResponse
@@ -85,36 +177,5 @@ class PrestamoController extends Controller
 
         return Redirect::route('prestamos.index')
             ->with('success', 'Prestamo deleted successfully');
-    }
-
-    public function porEmpleado($idEmpleado): View
-    {
-        $empleado = \App\Models\Empleado::findOrFail($idEmpleado);
-        $prestamos = Prestamo::where('id_empleado', $idEmpleado)
-                            ->with('empleado')
-                            ->paginate(10);
-
-        return view('prestamo.empleado', compact('empleado', 'prestamos'));
-    }
-
-    public function showCuotas($id): View
-    {
-        try {
-            $prestamo = Prestamo::with(['cuotasPrestamo' => function($query) {
-                $query->orderBy('id_cuotas', 'asc');
-            }, 'empleado'])->findOrFail($id);
-
-            if (!$prestamo->cuotasPrestamo instanceof \Illuminate\Database\Eloquent\Collection) {
-                throw new \RuntimeException('Las cuotas no son una colección válida');
-            }
-    
-            return view('prestamo.cuotas', [
-                'prestamo' => $prestamo,
-                'lista_cuotas' => $prestamo->cuotasPrestamo
-            ]);
-    
-        } catch (\Exception $e) {
-            abort(500, "Error al cargar las cuotas del préstamo");
-        }
     }
 }

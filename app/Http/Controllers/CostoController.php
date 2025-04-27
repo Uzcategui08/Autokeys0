@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Costo;
+use App\Models\Empleado;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -20,9 +21,10 @@ class CostoController extends Controller
     public function create(): View
     {
         $costo = new Costo();
+        $empleado = Empleado::where('cargo', '1')->get();
         $costo->f_costos = now()->format('Y-m-d');
         $costo->estatus = 'pendiente';
-        return view('costo.create', compact('costo'));
+        return view('costo.create', compact('costo','empleado'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -32,7 +34,7 @@ class CostoController extends Controller
                 'f_costos' => 'required|date',
                 'id_tecnico' => 'required|integer|min:1',
                 'descripcion' => 'required|string|max:500',
-                'subcategoria' => 'required|string|in:mantenimiento,repuestos,herramientas,software,consumibles,combustible,capacitacion,otros',
+                'subcategoria' => 'required|string',
                 'valor' => 'required|numeric|min:0',
                 'estatus' => 'required|in:pendiente,parcialmente_pagado,pagado',
             ]);
@@ -62,7 +64,7 @@ class CostoController extends Controller
             }
 
             return Redirect::route('costos.index')
-                ->with('success', 'Costo creado exitosamente.');
+                ->with('success', 'Costo creado satisfactoriamente.');
 
         } catch (\Exception $e) {
             return back()
@@ -73,7 +75,7 @@ class CostoController extends Controller
 
     public function show($id): View
     {
-        $costo = Costo::findOrFail($id);
+        $costo = Costo::findOrFail($id)->with('empleado')->first();
         return view('costo.show', [
             'costo' => $costo,
             'total_pagado' => $this->calcularTotalPagado($costo->pagos),
@@ -84,7 +86,8 @@ class CostoController extends Controller
     public function edit($id): View
     {
         $costo = Costo::findOrFail($id);
-        return view('costo.edit', compact('costo'));
+        $empleado = Empleado::where('cargo', '1')->get();
+        return view('costo.edit', compact('costo', 'empleado'));
     }
 
     public function update(Request $request, $id): RedirectResponse
@@ -121,7 +124,7 @@ class CostoController extends Controller
             ]);
 
             return Redirect::route('costos.index')
-                ->with('success', 'Costo actualizado exitosamente');
+                ->with('success', 'Costo actualizado satisfactoriamente.');
 
         } catch (\Exception $e) {
             return back()->withInput()->withErrors(['error' => $e->getMessage()]);
@@ -152,7 +155,7 @@ class CostoController extends Controller
             $costo = Costo::findOrFail($id);
             $costo->delete();
             return Redirect::route('costos.index')
-                ->with('success', 'Costo eliminado exitosamente');
+                ->with('success', 'Costo eliminado satisfactoriamente.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Ocurrió un error al eliminar el costo']);
         }

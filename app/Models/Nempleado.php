@@ -33,8 +33,14 @@ class Nempleado extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['id_nempleado', 'id_pnomina', 'id_empleado', 'total_descuentos', 'total_abonos', 'total_prestamos', 'total_costos', 'total_pagado', 'metodo_pago'];
+    protected $fillable = ['id_nempleado', 'id_pnomina', 'id_empleado', 'total_descuentos', 'total_abonos', 'total_prestamos', 'total_costos', 'total_pagado', 'metodo_pago', 'id_abonos', 'id_descuentos', 'id_costos', 'fecha_desde', 'fecha_hasta', 'sueldo_base'];
 
+    protected $casts = [
+        'id_abonos' => 'array',
+        'id_descuentos' => 'array',
+        'id_costos' => 'array',
+        'metodo_pago' => 'array',
+    ];
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -44,23 +50,25 @@ class Nempleado extends Model
         return $this->belongsTo(\App\Models\Empleado::class, 'id_empleado', 'id_empleado');
     }
     
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function pnomina()
+    public function abonos()
     {
-        return $this->belongsTo(\App\Models\Pnomina::class, 'id_pnomina', 'id_pnomina');
+        // Obtener IDs de abonos desde el JSON
+        $abonosIds = $this->id_abonos ? json_decode($this->id_abonos, true) : [];
+        
+        // Retornar una relación HasMany "filtrada" (no es óptimo, pero funciona)
+        return $this->hasMany(Abono::class, 'id_empleado', 'id_empleado')
+                   ->whereIn('id_abonos', $abonosIds);
     }
     
-    public function periodo()
+    public function descuentos()
     {
-        return $this->belongsTo(Pnomina::class, 'id_pnomina');
+        $descuentosIds = $this->id_descuentos ? json_decode($this->id_descuentos, true) : [];
+        
+        return $this->hasMany(Descuento::class, 'id_empleado', 'id_empleado')
+                   ->whereIn('id_descuentos', $descuentosIds);
     }
 
-    public function tnomina()
-    {
-        return $this->belongsTo(\App\Models\Tnomina::class, 'id_tnomina', 'id_tnomina');
-    }
+
 
     
 }

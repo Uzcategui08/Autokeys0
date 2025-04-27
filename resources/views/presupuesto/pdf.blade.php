@@ -179,45 +179,39 @@
         </table>
     </div>
 
-    @if (is_array($presupuesto->items))
-        @foreach ($presupuesto->items as $itemGroup)
-            <h3>Trabajo: {{ $itemGroup['trabajo'] ?? 'N/A' }}</h3>
-            <table class="items-table">
-                <thead>
+    @if (is_array($presupuesto->items) && count($presupuesto->items) > 0)
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>DESCRIPCIÓN</th>
+                    <th>PRECIO UNITARIO</th>
+                    <th>SUBTOTAL</th>
+                </tr>
+            </thead>
+            <tbody>
+                @php
+                    $subtotal = 0;
+                @endphp
+                @foreach ($presupuesto->items as $index => $item)
+                    @php
+                        $subtotal += $item['precio'] ?? 0;
+                    @endphp
                     <tr>
-                        <th>DESCRIPCIÓN</th>
-                        <th>UNIDADES</th>
-                        <th>PRECIO</th>
-                        <th>TOTAL</th>
+                        <td>{{ $index + 1 }}</td>
+                        <td>{{ $item['descripcion'] ?? 'Descripción no disponible' }}</td>
+                        <td>${{ number_format($item['precio'] ?? 0, 2) }}</td>
+                        <td>${{ number_format($item['precio'] ?? 0, 2) }}</td>
                     </tr>
-                </thead>
-                <tbody>
-                    @if (isset($itemGroup['productos']) && is_array($itemGroup['productos']))
-                        @foreach ($itemGroup['productos'] as $item)
-                            <tr>
-                                <td>{{ $item['nombre_producto'] ?? 'N/A' }}</td>
-                                <td>{{ $item['cantidad'] ?? 'N/A' }}</td>
-                                <td>${{ number_format($item['precio_producto'], 2) }}</td>
-                                <td>${{ number_format($item['cantidad'] * $item['precio_producto'], 2) }}</td>
-                            </tr>
-                        @endforeach
-                    @endif
-                </tbody>
-            </table>
-        @endforeach
+                @endforeach
+            </tbody>
+        </table>
+    @else
+        <p>No hay items en este presupuesto</p>
     @endif
 
     <div class="totals">
         @php
-            $subtotal = 0;
-            foreach ($presupuesto->items as $itemGroup) {
-                if (isset($itemGroup['productos']) && is_array($itemGroup['productos'])) {
-                    foreach ($itemGroup['productos'] as $item) {
-                        $subtotal += $item['cantidad'] * $item['precio_producto'];
-                    }
-                }
-            }
-            
             $descuentoAmount = $subtotal * ($presupuesto->descuento / 100);
             $subtotalConDescuento = $subtotal - $descuentoAmount;
             $ivaAmount = $subtotalConDescuento * ($presupuesto->iva / 100);
@@ -229,14 +223,22 @@
                 <th>SUBTOTAL</th>
                 <td>${{ number_format($subtotal, 2) }}</td>
             </tr>
+            @if($presupuesto->descuento > 0)
             <tr>
                 <th>DESCUENTO ({{ $presupuesto->descuento }}%)</th>
-                <td>${{ number_format($descuentoAmount, 2) }}</td>
+                <td>-${{ number_format($descuentoAmount, 2) }}</td>
             </tr>
+            <tr>
+                <th>SUBTOTAL CON DESCUENTO</th>
+                <td>${{ number_format($subtotalConDescuento, 2) }}</td>
+            </tr>
+            @endif
+            @if($presupuesto->iva > 0)
             <tr>
                 <th>IVA ({{ $presupuesto->iva }}%)</th>
                 <td>${{ number_format($ivaAmount, 2) }}</td>
             </tr>
+            @endif
             <tr>
                 <th><strong>TOTAL PRESUPUESTADO</strong></th>
                 <td><strong>${{ number_format($total, 2) }}</strong></td>

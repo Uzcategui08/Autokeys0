@@ -3,7 +3,7 @@
 @section('title', 'Inventario')
 
 @section('content_header')
-<h1>Editar inventario</h1>
+<h1>Editar</h1>
 @stop
 
 @section('content')
@@ -13,7 +13,7 @@
 
             <div class="card card-default">
                 <div class="card-header">
-                    <span class="card-title">{{ __('Update') }} Inventario</span>
+                    <span class="card-title">Inventario</span>
                 </div>
                 <div class="card-body bg-white">
                     <form method="POST" action="{{ route('inventarios.update', $inventario->id_inventario) }}" role="form" enctype="multipart/form-data">
@@ -28,15 +28,4 @@
         </div>
     </div>
 </section>
-@stop
-
-@section('css')
-{{-- Add here extra stylesheets --}}
-{{-- <link rel="stylesheet" href="/css/admin_custom.css"> --}}
-@stop
-
-@section('js')
-<script>
-    console.log("Hi, I'm using the Laravel-AdminLTE package!");
-</script>
 @stop

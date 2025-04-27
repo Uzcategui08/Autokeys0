@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use App\Models\Nempleado;
 use App\Models\Pnomina;
 use App\Models\Empleado;
 use App\Models\Cuota;
+use App\Models\Abono;
+use App\Models\Descuento;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,14 +29,151 @@ class NempleadoController extends Controller
     public function create(): View
     {
         $nempleado = new Nempleado();
-        return view('nempleado.create', compact('nempleado'));
+        $empleados = Empleado::all();
+        return view('nempleado.create', compact('nempleado', 'empleados'));
     }
 
-    public function store(NempleadoRequest $request): RedirectResponse
+    public function store(Request $request)
     {
-        Nempleado::create($request->validated());
-        return Redirect::route('nempleados.index')
-            ->with('success', 'Nempleado created successfully.');
+        DB::beginTransaction();
+        try {
+            $validator = Validator::make($request->all(), [
+                'id_empleado' => 'required|exists:empleados,id_empleado',
+                'fecha_desde' => 'required|date',
+                'fecha_hasta' => 'required|date|after_or_equal:fecha_desde',
+                'sueldo_base' => 'required|numeric|min:0',
+                'total_pagado' => 'required|numeric|min:0',
+                'id_abonos_json' => 'required|json',
+                'id_descuentos_json' => 'required|json',
+                'metodo_pago_json' => 'required|json',
+            ], [
+                'id_abonos_json.required' => 'Debe seleccionar al menos un concepto',
+                'id_abonos_json.json' => 'Formato de datos inválido',
+            ]);
+    
+            if ($validator->fails()) {
+                return back()->withErrors($validator)->withInput();
+            }
+ 
+            $abonosIds = $this->procesarIds($request->id_abonos_json, 'abono');
+            $descuentosIds = $this->procesarIds($request->id_descuentos_json, 'descuento');
+            $metodosPago = $this->procesarMetodosPago($request->metodo_pago_json);
+
+            $this->validarPertenenciaEmpleado($request->id_empleado, $abonosIds, $descuentosIds);
+
+            $totalAbonos = $abonosIds ? Abono::whereIn('id_abonos', $abonosIds)->sum('valor') : 0;
+            $totalDescuentos = $descuentosIds ? Descuento::whereIn('id_descuentos', $descuentosIds)->sum('valor') : 0;
+
+            $nempleado = Nempleado::create([
+                'id_empleado' => $request->id_empleado,
+                'id_abonos' => $abonosIds,
+                'id_descuentos' => $descuentosIds,
+                'sueldo_base' => $request->sueldo_base,
+                'total_descuentos' => $totalDescuentos,
+                'total_abonos' => $totalAbonos,
+                'total_pagado' => $request->total_pagado,
+                'metodo_pago' => $metodosPago,
+                'fecha_desde' => $request->fecha_desde,
+                'fecha_hasta' => $request->fecha_hasta,
+            ]);
+
+            $this->marcarComoProcesados($abonosIds, $descuentosIds);
+    
+            DB::commit();
+    
+            return redirect()->route('nempleados.index')
+                ->with('success', 'Registro creado satisfactoriamente.');
+    
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()
+                ->with('error', 'Error al guardar: ' . $e->getMessage());
+        }
+    }
+
+    protected function procesarIds($jsonString, $tipo)
+    {
+        $ids = json_decode($jsonString, true);
+        
+        if (!is_array($ids)) {
+            throw new \Exception("Formato de $tipo inválido");
+        }
+    
+        return collect($ids)
+            ->filter(fn($id) => is_numeric($id) && $id > 0)
+            ->map(fn($id) => (int)$id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+    
+    protected function procesarMetodosPago($metodoPago)
+    {
+        if (empty($metodoPago)) {
+            return [];
+        }
+
+        if (is_array($metodoPago) && isset($metodoPago[0]['nombre'])) {
+            return $metodoPago;
+        }
+
+        if (is_array($metodoPago) && isset($metodoPago[0]['metodo_id'])) {
+            return array_map(function($metodo) {
+                return [
+                    'nombre' => $this->getNombreMetodoPago($metodo['metodo_id']),
+                    'monto' => $metodo['monto'] ?? 0
+                ];
+            }, $metodoPago);
+        }
+
+        if (is_string($metodoPago)) {
+            $metodos = json_decode($metodoPago, true);
+            return is_array($metodos) ? $this->procesarMetodosPago($metodos) : [];
+        }
+
+        return [];
+    }
+    
+    protected function validarPertenenciaEmpleado($empleadoId, $abonosIds, $descuentosIds)
+    {
+        if ($abonosIds) {
+            $abonosInvalidos = Abono::whereIn('id_abonos', $abonosIds)
+                ->where('id_empleado', '!=', $empleadoId)
+                ->count();
+                
+            if ($abonosInvalidos > 0) {
+                throw new \Exception("Algunos abonos no pertenecen al empleado");
+            }
+        }
+        
+        if ($descuentosIds) {
+            $descuentosInvalidos = Descuento::whereIn('id_descuentos', $descuentosIds)
+                ->where('id_empleado', '!=', $empleadoId)
+                ->count();
+                
+            if ($descuentosInvalidos > 0) {
+                throw new \Exception("Algunos descuentos no pertenecen al empleado");
+            }
+        }
+    }
+    
+    protected function marcarComoProcesados($abonosIds, $descuentosIds)
+    {
+        if ($abonosIds) {
+            Abono::whereIn('id_abonos', $abonosIds)
+                ->update([
+                    'status' => 1, 
+                    'fecha_pago' => now(),
+                ]);
+        }
+        
+        if ($descuentosIds) {
+            Descuento::whereIn('id_descuentos', $descuentosIds)
+                ->update([
+                    'status' => 1,
+                    'fecha_pago' => now(),
+                ]);
+        }
     }
 
     public function show($id): View
@@ -51,210 +192,359 @@ class NempleadoController extends Controller
     {
         $nempleado->update($request->validated());
         return Redirect::route('nempleados.index')
-            ->with('success', 'Nempleado updated successfully');
+            ->with('success', 'Registro actualizado satisfactoriamente.');
     }
 
     public function destroy($id): RedirectResponse
     {
-        Nempleado::find($id)->delete();
-        return Redirect::route('nempleados.index')
-            ->with('success', 'Nempleado deleted successfully');
-    }
-
-    protected function calcularFactor($frecuencia)
-    {
-        return match ($frecuencia) {
-            1 => 0.5,
-            2 => 1,
-            3 => 0.25,
-            default => 0
-        };
-    }
-
-    public function generarRecibo($periodoId, $empleadoId)
-    {
+        DB::beginTransaction();
         try {
-            $periodo = Pnomina::with('tipo')->findOrFail($periodoId);
-            $empleado = Empleado::with('tipoNomina')->findOrFail($empleadoId);
-            
-            $factor = $this->calcularFactor($periodo->tipo->frecuencia);
-            $totalPagado = $empleado->salario_base * $factor;
-        
-            $nominaEmpleado = Nempleado::where('id_pnomina', $periodoId)
-                ->where('id_empleado', $empleadoId)
-                ->firstOrFail();
-        
-            $descuentosCollection = $empleado->descuentos()
-                ->whereBetween('d_fecha', [$periodo->inicio, $periodo->fin])
-                ->get();
-                
-            $abonosCollection = $empleado->abonos()
-                ->whereBetween('a_fecha', [$periodo->inicio, $periodo->fin])
-                ->get();
+            $nempleado = Nempleado::findOrFail($id);
 
-            $costosCollection = $empleado->costos()
-                ->whereBetween('f_costos', [$periodo->inicio, $periodo->fin])
-                ->get();    
-        
-            $prestamosSimplificados = [];
-            
-            if ($nominaEmpleado->total_prestamos > 0) {
-                $prestamosActivos = $empleado->prestamos()
-                    ->where('activo', true)
-                    ->get();
+            if (!empty($nempleado->id_abonos)) {
+                $abonosIds = is_string($nempleado->id_abonos) 
+                    ? json_decode($nempleado->id_abonos, true) 
+                    : $nempleado->id_abonos;
                 
-                foreach ($prestamosActivos as $prestamo) {
-                    $prestamosSimplificados[] = [
-                        'numero_prestamo' => $prestamo->id_prestamos,
-                        'cuota_actual' => $prestamo->cuota_actual,
-                        'monto_prestamo' => $prestamo->valor/$prestamo->cuotas
-                    ];
+                if (is_array($abonosIds) && !empty($abonosIds)) {
+                    Abono::whereIn('id_abonos', $abonosIds)
+                        ->update([
+                            'status' => 0,
+                            'fecha_pago' => null
+                        ]);
                 }
             }
-        
-            $data = [
-                'periodo' => $periodo,
-                'empleado' => $empleado,
-                'factor' => $factor,
-                'totalPagado' => $totalPagado,
-                'totalDescuentos' => $nominaEmpleado->total_descuentos,
-                'totalAbonos' => $nominaEmpleado->total_abonos,
-                'totalCostos' => $nominaEmpleado->total_costos,
-                'totalPrestamos' => $nominaEmpleado->total_prestamos,
-                'netoPagado' => $nominaEmpleado->total_pagado,
-                'costos' => $costosCollection,
-                'descuentos' => $descuentosCollection,
-                'abonos' => $abonosCollection,
-                'prestamos' => $prestamosSimplificados
-            ];
-            
-            return PDF::loadView('nempleado.pdf', $data)->stream('recibo.pdf');
-            
+
+            if (!empty($nempleado->id_descuentos)) {
+                $descuentosIds = is_string($nempleado->id_descuentos) 
+                    ? json_decode($nempleado->id_descuentos, true) 
+                    : $nempleado->id_descuentos;
+                
+                if (is_array($descuentosIds) && !empty($descuentosIds)) {
+                    Descuento::whereIn('id_descuentos', $descuentosIds)
+                        ->update([
+                            'status' => 0,
+                            'fecha_pago' => null
+                        ]);
+                }
+            }
+
+            $nempleado->delete();
+    
+            DB::commit();
+    
+            return Redirect::route('nempleados.index')
+                ->with('success', 'Registro eliminado satisfactoriamente.');
+    
         } catch (\Exception $e) {
-            throw $e;
+            DB::rollBack();
+            return Redirect::route('nempleados.index')
+                ->with('error', 'Error al eliminar: ' . $e->getMessage());
         }
     }
 
-    public function generarReciboGeneral($periodoId)
+    public function generarReciboIndividual($idNempleado)
     {
         try {
-            $periodo = Pnomina::with('tipo')->findOrFail($periodoId);
+            $nominaEmpleado = Nempleado::with(['empleado'])
+                ->findOrFail($idNempleado);
+            
+            $abonos = [];
+            if (!empty($nominaEmpleado->id_abonos)) {
+                if (is_string($nominaEmpleado->id_abonos)) {
+                    $abonosIds = json_decode($nominaEmpleado->id_abonos, true);
+                } 
+                elseif (is_array($nominaEmpleado->id_abonos)) {
+                    $abonosIds = $nominaEmpleado->id_abonos;
+                } 
+                else {
+                    $abonosIds = [];
+                }
+                
+                if (!empty($abonosIds)) {
+                    $abonos = Abono::whereIn('id_abonos', $abonosIds)->get();
+                }
+            }
 
-            $nominasEmpleados = Nempleado::with(['empleado' => function($query) {
-                    $query->with('tipoNomina');
-                }])
-                ->where('id_pnomina', $periodoId)
+            $descuentos = [];
+            if (!empty($nominaEmpleado->id_descuentos)) {
+                if (is_string($nominaEmpleado->id_descuentos)) {
+                    $descuentosIds = json_decode($nominaEmpleado->id_descuentos, true);
+                } 
+                elseif (is_array($nominaEmpleado->id_descuentos)) {
+                    $descuentosIds = $nominaEmpleado->id_descuentos;
+                } 
+                else {
+                    $descuentosIds = [];
+                }
+                
+                if (!empty($descuentosIds)) {
+                    $descuentos = Descuento::whereIn('id_descuentos', $descuentosIds)->get();
+                }
+            }
+
+            $metodosPago = [];
+            if (!empty($nominaEmpleado->metodo_pago)) {
+                if (is_string($nominaEmpleado->metodo_pago)) {
+                    $metodosData = json_decode($nominaEmpleado->metodo_pago, true);
+                } 
+                elseif (is_array($nominaEmpleado->metodo_pago)) {
+                    $metodosData = $nominaEmpleado->metodo_pago;
+                } 
+                else {
+                    $metodosData = [];
+                }
+                
+                if (!empty($metodosData)) {
+                    foreach ($metodosData as $metodo) {
+                        if (!isset($metodo['metodo_id']) || !isset($metodo['monto'])) {
+                            continue;
+                        }
+                        
+                        $metodosPago[] = [
+                            'nombre' => $this->getNombreMetodoPago($metodo['metodo_id']),
+                            'monto' => $metodo['monto']
+                        ];
+                    }
+                }
+            }
+
+            $data = [
+                'nomina' => $nominaEmpleado,
+                'empleado' => $nominaEmpleado->empleado,
+                'fecha_desde' => $nominaEmpleado->fecha_desde,
+                'fecha_hasta' => $nominaEmpleado->fecha_hasta,
+                'fecha_pago' => $nominaEmpleado->created_at,
+                'sueldo_base' => $nominaEmpleado->sueldo_base,
+                'total_descuentos' => $nominaEmpleado->total_descuentos,
+                'total_abonos' => $nominaEmpleado->total_abonos,
+                'total_costos' => $nominaEmpleado->total_costos,
+                'total_prestamos' => $nominaEmpleado->total_prestamos,
+                'neto_pagado' => $nominaEmpleado->total_pagado,
+                'descuentos' => $descuentos,
+                'abonos' => $abonos,
+                'metodos_pago' => $metodosPago
+            ];
+            
+            return PDF::loadView('nempleado.pdf', $data)
+                ->stream('recibo-'.$nominaEmpleado->empleado->cedula.'-'.$nominaEmpleado->created_at->format('Ymd').'.pdf');
+                
+        } catch (\Exception $e) {
+            abort(500, "Error al generar el recibo de pago");
+        }
+    }
+
+    public function generarReciboGeneral($fechaDesde, $fechaHasta)
+    {
+        try {
+            $nominasEmpleados = Nempleado::with('empleado')
+                ->whereBetween('created_at', [
+                    \Carbon\Carbon::parse($fechaDesde)->startOfDay(), 
+                    \Carbon\Carbon::parse($fechaHasta)->endOfDay()  
+                ])
+                ->orderBy('created_at', 'desc')  
                 ->get();
-
+    
             $totales = [
                 'totalPagado' => 0,
                 'totalDescuentos' => 0,
                 'totalCostos' => 0,
                 'totalAbonos' => 0,
-                'totalPrestamos' => 0,
-                'netoPagado' => 0
+                'netoPagado' => 0,
+                'totalSalarioBase' => 0
             ];
-
-            $empleadosData = [];
-            foreach ($nominasEmpleados as $nominaEmpleado) {
+    
+            $empleadosData = $nominasEmpleados->map(function($nominaEmpleado) use (&$totales) {
                 $empleado = $nominaEmpleado->empleado;
                 
-                $factor = $this->calcularFactor($periodo->tipo->frecuencia);
-                $totalPagado = $empleado->salario_base * $factor;
-
-                $prestamos = [];
-                if ($nominaEmpleado->total_prestamos > 0) {
-                    $prestamosActivos = $empleado->prestamos()
-                        ->where('activo', true)
-                        ->get();
-
-                    foreach ($prestamosActivos as $prestamo) {
-                        $prestamos[] = [
-                            'numero' => $prestamo->id_prestamos,
-                            'cuota' => $prestamo->cuota_actual,
-                            'valor' => $prestamo->valor_cuota
-                        ];
-                    }
-                }
-
                 $empleadoData = [
                     'id' => $empleado->id_empleado,
                     'nombre' => $empleado->nombre,
                     'cedula' => $empleado->cedula,
                     'cargo' => $empleado->cargo,
-                    'salario_base' => $empleado->salario_base,
-                    'factor' => $factor,
-                    'totalPagado' => $totalPagado,
+                    'salario_base' => $nominaEmpleado->sueldo_base,
+                    'totalPagado' => $nominaEmpleado->sueldo_base + $nominaEmpleado->total_abonos,
                     'totalDescuentos' => $nominaEmpleado->total_descuentos,
                     'totalCostos' => $nominaEmpleado->total_costos,
                     'totalAbonos' => $nominaEmpleado->total_abonos,
-                    'totalPrestamos' => $nominaEmpleado->total_prestamos,
                     'netoPagado' => $nominaEmpleado->total_pagado,
-                    'prestamos' => $prestamos
+                    'metodos_pago' => $this->procesarMetodosPago($nominaEmpleado->metodo_pago)
                 ];
 
-                $totales['totalPagado'] += $totalPagado;
-                $totales['totalDescuentos'] += $nominaEmpleado->total_descuentos;
-                $totales['totalCostos'] += $nominaEmpleado->total_costos;
-                $totales['totalAbonos'] += $nominaEmpleado->total_abonos;
-                $totales['totalPrestamos'] += $nominaEmpleado->total_prestamos;
-                $totales['netoPagado'] += $nominaEmpleado->total_pagado;
+                $totales['totalPagado'] += $empleadoData['totalPagado'];
+                $totales['totalDescuentos'] += $empleadoData['totalDescuentos'];
+                $totales['totalCostos'] += $empleadoData['totalCostos'];
+                $totales['totalAbonos'] += $empleadoData['totalAbonos'];
+                $totales['netoPagado'] += $empleadoData['netoPagado'];
+                $totales['totalSalarioBase'] += $empleadoData['salario_base'];
+    
+                return $empleadoData;
+            });
 
-                $empleadosData[] = $empleadoData;
-            }
-
+            $metodosPagoGlobales = $this->consolidarMetodosPago($nominasEmpleados);
+    
             $data = [
-                'periodo' => $periodo,
+                'fechaDesde' => $fechaDesde,
+                'fechaHasta' => $fechaHasta,
                 'empleados' => $empleadosData,
                 'totales' => $totales,
+                'metodosPagoGlobales' => $metodosPagoGlobales,
                 'fechaGeneracion' => now()->format('d/m/Y H:i:s')
             ];
-
+    
             return PDF::loadView('nempleado.pdfgeneral', $data)
-                    ->stream('nomina_general_'.$periodoId.'.pdf');
-
+                    ->setPaper('a4', 'landscape')
+                    ->stream('nomina_general_'.$fechaDesde.'_'.$fechaHasta.'.pdf');
+    
         } catch (\Exception $e) {
             return back()->with('error', 'Error al generar el reporte general');
         }
     }
-
+    
+    private function consolidarMetodosPago($nominasEmpleados)
+    {
+        $metodosConsolidados = [];
+        
+        foreach ($nominasEmpleados as $nomina) {
+            $metodos = $this->procesarMetodosPago($nomina->metodo_pago);
+            
+            foreach ($metodos as $metodo) {
+                if (!isset($metodosConsolidados[$metodo['nombre']])) {
+                    $metodosConsolidados[$metodo['nombre']] = 0;
+                }
+                $metodosConsolidados[$metodo['nombre']] += $metodo['monto'];
+            }
+        }
+        
+        return $metodosConsolidados;
+    }
 
     public function reporte(Request $request)
     {
-        $periodos = Pnomina::with('tnomina')->orderBy('inicio', 'desc')->get();
-        $empleados = Empleado::orderBy('nombre')->get();
-        
-        $nominasIndividuales = collect();
-        $nominaGeneral = null;
-        
-        if ($request->filled('periodo_id')) {
-            $periodoId = $request->periodo_id;
-
-            if ($request->filled('tipo') && $request->tipo == 'individual') {
-                $query = Nempleado::with(['empleado', 'pnomina.tipo'])
-                    ->where('id_pnomina', $periodoId);
-                    
-                if ($request->filled('empleado_id')) {
-                    $query->where('id_empleado', $request->empleado_id);
+        try {
+            $empleados = Empleado::orderBy('nombre')->get();
+            
+            $pagosIndividuales = collect();
+            $resumenGeneral = null;
+            
+            if ($request->filled('fecha_desde') && $request->filled('fecha_hasta')) {
+                $fechaDesde = $request->fecha_desde;
+                $fechaHasta = $request->fecha_hasta;
+    
+                if ($fechaDesde > $fechaHasta) {
+                    throw new \Exception("La fecha desde no puede ser mayor que la fecha hasta");
                 }
-                
-                $nominasIndividuales = $query->get();
+    
+                if ($request->filled('tipo') && $request->tipo == 'individual') {
+                    $query = Nempleado::with(['empleado'])
+                        ->whereDate('created_at', '>=', $fechaDesde)
+                        ->whereDate('created_at', '<=', $fechaHasta);
+                        
+                    if ($request->filled('empleado_id')) {
+                        $query->where('id_empleado', $request->empleado_id);
+                    }
+                    
+                    $pagosIndividuales = $query->orderBy('created_at', 'desc')->get();
+                }
+                elseif ($request->filled('tipo') && $request->tipo == 'general') {
+                    $pagos = Nempleado::with(['empleado'])
+                        ->whereDate('created_at', '>=', $fechaDesde)
+                        ->whereDate('created_at', '<=', $fechaHasta)
+                        ->get();
+
+                    $metodosPago = [];
+                    foreach ($pagos as $pago) {
+                        $metodos = $pago->metodo_pago;
+
+                        if (is_string($metodos)) {
+                            $metodos = json_decode($metodos, true);
+                        }
+
+                        if (is_array($metodos)) {
+                            foreach ($metodos as $metodo) {
+                                if (isset($metodo['metodo_id'])) {
+                                    $nombreMetodo = $this->getNombreMetodoPago($metodo['metodo_id']);
+                                    $monto = $metodo['monto'] ?? 0;
+                                } elseif (isset($metodo['nombre'])) {
+                                    $nombreMetodo = strtolower($metodo['nombre']);
+                                    $monto = $metodo['monto'] ?? 0;
+                                } else {
+                                    continue;
+                                }
+                                
+                                if (!isset($metodosPago[$nombreMetodo])) {
+                                    $metodosPago[$nombreMetodo] = 0;
+                                }
+                                $metodosPago[$nombreMetodo] += $monto;
+                            }
+                        }
+                    }
+    
+                    $resumenGeneral = [
+                        'total_empleados' => $pagos->unique('id_empleado')->count(),
+                        'total_pagos' => $pagos->count(),
+                        'total_pagado' => $pagos->sum('total_pagado'),
+                        'total_sueldo_base' => $pagos->sum('sueldo_base'),
+                        'total_abonos' => $pagos->sum('total_abonos'),
+                        'total_descuentos' => $pagos->sum('total_descuentos'),
+                        'total_costos' => $pagos->sum('total_costos'),
+                        'metodos_pago' => $metodosPago,
+                        'fecha_desde' => $fechaDesde,
+                        'fecha_hasta' => $fechaHasta
+                    ];
+                }
             }
-            elseif ($request->filled('tipo') && $request->tipo == 'general') {
-                $periodo = Pnomina::find($periodoId);
-                
-                $nominaGeneral = [
-                    'periodo' => $periodo,
-                    'total_empleados' => Nempleado::where('id_pnomina', $periodoId)->count(),
-                    'total_nomina' => Nempleado::where('id_pnomina', $periodoId)->sum('total_pagado')
-                ];
+            
+            if ($request->ajax()) {
+                return view('nempleado.reporte', compact('empleados', 'pagosIndividuales', 'resumenGeneral'));
             }
+            
+            return view('nempleado.reporte', compact('empleados', 'pagosIndividuales', 'resumenGeneral'));
+            
+        } catch (\Exception $e) {
+            if ($request->ajax()) {
+                return response()->json(['error' => $e->getMessage()], 500);
+            }
+            return back()->withError($e->getMessage());
         }
-        
-        if ($request->ajax()) {
-            return view('nempleado.reporte', compact('periodos', 'empleados', 'nominasIndividuales', 'nominaGeneral'));
+    }
+    
+    private function getNombreMetodoPago($id)
+    {
+        if (!is_numeric($id)) {
+            return strtolower($id);
         }
+    
+        $metodos = [
+            1 => 'transferencia',
+            2 => 'cheque', 
+            3 => 'efectivo',
+            4 => 'otro'
+        ];
         
-        return view('nempleado.reporte', compact('periodos', 'empleados', 'nominasIndividuales', 'nominaGeneral'));
+        return $metodos[$id] ?? 'otro';
+    }
+
+    public function getRegistros(Request $request) {
+        $request->validate([
+            'id_empleado' => 'required|exists:empleados,id_empleado',
+            'fecha_desde' => 'required|date',
+            'fecha_hasta' => 'required|date|after_or_equal:fecha_desde'
+        ]);
+    
+        $abonos = Abono::where('id_empleado', $request->id_empleado)
+            ->where('status', 0) 
+            ->whereBetween('a_fecha', [$request->fecha_desde, $request->fecha_hasta])
+            ->get();
+    
+        $descuentos = Descuento::where('id_empleado', $request->id_empleado)
+            ->where('status', 0)
+            ->whereBetween('d_fecha', [$request->fecha_desde, $request->fecha_hasta])
+            ->get();
+    
+        return response()->json([
+            'abonos' => $abonos,
+            'descuentos' => $descuentos
+        ]);
     }
 }

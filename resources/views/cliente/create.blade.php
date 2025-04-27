@@ -1,9 +1,9 @@
 @extends('adminlte::page')
 
-@section('title', 'Dashboard')
+@section('title', 'Clientes')
 
 @section('content_header')
-<h1>Dashboard</h1>
+<h1>Crear</h1>
 @stop
 
 @section('content')
@@ -14,7 +14,7 @@
 
                 <div class="card card-default">
                     <div class="card-header">
-                        <span class="card-title">{{ __('Create') }} Cliente</span>
+                        <span class="card-title">Cliente</span>
                     </div>
                     <div class="card-body bg-white">
                         <form method="POST" action="{{ route('clientes.store') }}"  role="form" enctype="multipart/form-data">
@@ -28,19 +28,4 @@
             </div>
         </div>
     </section>
-    @stop
-@section('css')
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-@stop
-
-@section('js')
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script>
-    $(document).ready(function() {
-        if (typeof $().select2 === 'function') {
-            $('.select2').select2();
-        }
-    });
-</script>
 @stop

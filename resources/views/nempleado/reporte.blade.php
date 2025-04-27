@@ -1,9 +1,9 @@
 @extends('adminlte::page')
 
-@section('title', 'Reporte de Nóminas')
+@section('title', 'Reporte de Pagos de Nómina')
 
 @section('content_header')
-    <h1>Reporte de Nóminas</h1>
+    <h1>Reporte de Pagos de Nómina</h1>
 @stop
 
 @section('content')
@@ -11,21 +11,21 @@
     <div class="card-body">
         <form id="filtroForm">
             <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="form-group">
-                        <label for="periodo_id">Período de Nómina</label>
-                        <select name="periodo_id" id="periodo_id" class="form-control select2" required>
-                            <option value="">Seleccione un período</option>
-                            @foreach($periodos as $periodo)
-                                <option value="{{ $periodo->id_pnomina }}" 
-                                    {{ request('periodo_id') == $periodo->id_pnomina ? 'selected' : '' }}>
-                                    {{ $periodo->tnomina->nombre }} ({{ \Carbon\Carbon::parse($periodo->inicio)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($periodo->fin)->format('d/m/Y') }})
-                                </option>
-                            @endforeach
-                        </select>
+                        <label for="fecha_desde">Fecha Desde</label>
+                        <input type="date" name="fecha_desde" id="fecha_desde" class="form-control" 
+                               value="{{ request('fecha_desde') }}" required>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="fecha_hasta">Fecha Hasta</label>
+                        <input type="date" name="fecha_hasta" id="fecha_hasta" class="form-control" 
+                               value="{{ request('fecha_hasta') }}" required>
+                    </div>
+                </div>
+                <div class="col-md-3">
                     <div class="form-group">
                         <label for="empleado_id">Empleado</label>
                         <select name="empleado_id" id="empleado_id" class="form-control">
@@ -39,16 +39,13 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary btn-block">
-                        <i class="fas fa-search mr-1"></i> Buscar
-                    </button>
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="button" id="limpiarFiltros" class="btn btn-outline-secondary btn-block">
-                        <i class="fas fa-broom mr-1"></i> Limpiar
-                    </button>
-                </div>                               
+                <div class="col-md-3 d-flex align-items-end">
+                    <div class="form-group w-100">
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-search mr-1"></i> Buscar
+                        </button>
+                    </div>
+                </div>                              
             </div>
         </form>
 
@@ -56,12 +53,12 @@
             <ul class="nav nav-tabs" id="myTab" role="tablist">
                 <li class="nav-item">
                     <a class="nav-link active" id="individual-tab" data-toggle="tab" href="#individual" role="tab">
-                        <i class="fas fa-user mr-1"></i> Individuales
+                        Pagos Individuales
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" id="general-tab" data-toggle="tab" href="#general" role="tab">
-                        <i class="fas fa-users mr-1"></i> General
+                        Resumen General
                     </a>
                 </li>
             </ul>
@@ -72,47 +69,39 @@
                         <div class="spinner-grow text-primary" style="width: 3rem; height: 3rem;" role="status">
                             <span class="sr-only">Cargando...</span>
                         </div>
-                        <p class="mt-3 text-muted">Cargando nóminas individuales...</p>
+                        <p class="mt-3 text-muted">Cargando pagos individuales...</p>
                     </div>
                     <div id="contenido-individual">
-                        @if(isset($nominasIndividuales))
-                            @if($nominasIndividuales->isNotEmpty())
+                        @if(isset($pagosIndividuales))
+                            @if($pagosIndividuales->isNotEmpty())
                                 <div class="table-responsive">
                                     <table class="table table-hover">
                                         <thead class="thead-light">
                                             <tr>
                                                 <th>Empleado</th>
                                                 <th>Cédula</th>
-                                                <th class="text-right">Total Bruto</th>
+                                                <th class="text-right">Sueldo Base</th>
+                                                <th class="text-right">Total Abonos</th>
+                                                <th class="text-right">Total Descuentos</th>
                                                 <th class="text-right">Neto Pagado</th>
+                                                <th class="text-center">Fecha Pago</th>
                                                 <th class="text-center">Acciones</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach($nominasIndividuales as $nomina)
+                                            @foreach($pagosIndividuales as $pago)
                                                 <tr>
-                                                    <td>{{ $nomina->empleado->nombre }}</td>
-                                                    <td>{{ $nomina->empleado->cedula }}</td>
-                                                    <td class="text-right">
-                                                        @php
-                                                            $factores = [
-                                                                1 => 0.5,
-                                                                2 => 1,
-                                                                3 => 0.25,
-                                                            ];
-                                                            
-                                                            $frecuencia = $nomina->pnomina->tnomina->frecuencia ?? 1;
-                                                            $factor = $factores[$frecuencia] ?? 1;
-                                                            $totalBruto = $nomina->empleado->salario_base * $factor;
-                                                        @endphp
-                                                        ${{ number_format($totalBruto, 2) }}
-                                                    </td>
-                                                    <td class="text-right">${{ number_format($nomina->total_pagado, 2) }}</td>
+                                                    <td>{{ $pago->empleado->nombre }}</td>
+                                                    <td>{{ $pago->empleado->cedula }}</td>
+                                                    <td class="text-right">${{ number_format($pago->sueldo_base, 2) }}</td>
+                                                    <td class="text-right">${{ number_format($pago->total_abonos, 2) }}</td>
+                                                    <td class="text-right">${{ number_format($pago->total_descuentos, 2) }}</td>
+                                                    <td class="text-right">${{ number_format($pago->total_pagado, 2) }}</td>
+                                                    <td class="text-center">{{ $pago->created_at->format('d/m/Y') }}</td>
                                                     <td class="text-center">
                                                         <button class="btn btn-sm btn-outline-primary generar-pdf" 
                                                                 data-tipo="individual"
-                                                                data-periodo="{{ $nomina->id_pnomina }}"
-                                                                data-empleado="{{ $nomina->id_empleado }}">
+                                                                data-id="{{ $pago->id_nempleado }}">
                                                             <i class="fas fa-file-pdf"></i>
                                                         </button>
                                                     </td>
@@ -124,15 +113,15 @@
                             @else
                                 <div class="alert alert-light text-center mt-3">
                                     @if(request('empleado_id'))
-                                        No se encontraron resultados
+                                        No se encontraron pagos para este empleado en el rango de fechas
                                     @else
-                                        No hay nóminas para este período
+                                        No hay pagos registrados en el rango de fechas seleccionado
                                     @endif
                                 </div>
                             @endif
                         @else
                             <div class="alert alert-light text-center mt-3">
-                                Seleccione un período para comenzar
+                                Seleccione un rango de fechas para comenzar
                             </div>
                         @endif
                     </div>
@@ -146,80 +135,156 @@
                         <p class="mt-3 text-muted">Cargando resumen general...</p>
                     </div>
                     <div id="contenido-general">
-                        @if(isset($nominaGeneral))
-                            @if($nominaGeneral)
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <h5 class="mb-0"><i class="fas fa-file-alt mr-2"></i>Resumen General</h5>
-                                    <button class="btn btn-success generar-pdf" 
-                                            data-tipo="general"
-                                            data-periodo="{{ $nominaGeneral['periodo']->id_pnomina }}">
-                                        <i class="fas fa-file-pdf mr-1"></i> Exportar PDF
-                                    </button>
-                                </div>
+                        @if(isset($resumenGeneral))
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="mb-0">Resumen General de Pagos</h5>
+                                <button class="btn btn-success generar-pdf" 
+                                        data-tipo="general"
+                                        data-fecha-desde="{{ request('fecha_desde') }}"
+                                        data-fecha-hasta="{{ request('fecha_hasta') }}">
+                                    <i class="fas fa-file-pdf mr-1"></i> Exportar PDF
+                                </button>
+                            </div>
 
-                                <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <div class="card h-100 border-0 shadow-sm">
-                                            <div class="card-body">
-                                                <div class="d-flex align-items-center">
-                                                    <div class="bg-primary rounded-circle p-2 mr-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                                        <i class="fas fa-calendar-alt text-white"></i>
-                                                    </div>
-                                                    <div>
-                                                        <h6 class="mb-0 text-muted small">PERÍODO</h6>
-                                                        <h5 class="mb-0">
-                                                            {{ $nominaGeneral['periodo']->tnomina->nombre }}
-                                                            <small class="text-muted">
-                                                                ({{ \Carbon\Carbon::parse($nominaGeneral['periodo']->inicio)->format('d/m/Y') }} - 
-                                                                 {{ \Carbon\Carbon::parse($nominaGeneral['periodo']->fin)->format('d/m/Y') }})
-                                                            </small>
-                                                        </h5>
-                                                    </div>
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-primary rounded-circle p-2 mr-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                    <i class="fas fa-calendar-alt text-white"></i>
                                                 </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-4 mb-3">
-                                        <div class="card h-100 border-0 shadow-sm">
-                                            <div class="card-body">
-                                                <div class="d-flex align-items-center">
-                                                    <div class="bg-success rounded-circle p-2 mr-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                                        <i class="fas fa-users text-white"></i>
-                                                    </div>
-                                                    <div>
-                                                        <h6 class="mb-0 text-muted small">EMPLEADOS</h6>
-                                                        <h5 class="mb-0">{{ $nominaGeneral['total_empleados'] }}</h5>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-4 mb-3">
-                                        <div class="card h-100 border-0 shadow-sm">
-                                            <div class="card-body">
-                                                <div class="d-flex align-items-center">
-                                                    <div class="bg-warning rounded-circle p-2 mr-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                                        <i class="fas fa-dollar-sign text-white"></i>
-                                                    </div>
-                                                    <div>
-                                                        <h6 class="mb-0 text-muted small">TOTAL NÓMINA</h6>
-                                                        <h5 class="mb-0">${{ number_format($nominaGeneral['total_nomina'], 2) }}</h5>
-                                                    </div>
+                                                <div>
+                                                    <h6 class="mb-0 text-muted small">PERÍODO</h6>
+                                                    <h5 class="mb-0">
+                                                        {{ \Carbon\Carbon::parse(request('fecha_desde'))->format('d/m/Y') }} - 
+                                                        {{ \Carbon\Carbon::parse(request('fecha_hasta'))->format('d/m/Y') }}
+                                                    </h5>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            @else
-                                <div class="alert alert-light text-center">
-                                    Seleccione un período para ver el resumen
+
+                                <div class="col-md-3 mb-3">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-success rounded-circle p-2 mr-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                    <i class="fas fa-users text-white"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0 text-muted small">EMPLEADOS</h6>
+                                                    <h5 class="mb-0">{{ $resumenGeneral['total_empleados'] }}</h5>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            @endif
+
+                                <div class="col-md-3 mb-3">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-info rounded-circle p-2 mr-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                    <i class="fas fa-money-bill-wave text-white"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0 text-muted small">TOTAL PAGADO</h6>
+                                                    <h5 class="mb-0">${{ number_format($resumenGeneral['total_pagado'], 2) }}</h5>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-3 mb-3">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-warning rounded-circle p-2 mr-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                    <i class="fas fa-hand-holding-usd text-white"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0 text-muted small">PAGOS</h6>
+                                                    <h5 class="mb-0">{{ $resumenGeneral['total_pagos'] }}</h5>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0">Distribución por Conceptos</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Concepto</th>
+                                                            <th class="text-right">Total</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td>Sueldo Base</td>
+                                                            <td class="text-right">${{ number_format($resumenGeneral['total_sueldo_base'], 2) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Abonos</td>
+                                                            <td class="text-right">${{ number_format($resumenGeneral['total_abonos'], 2) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Descuentos</td>
+                                                            <td class="text-right">${{ number_format($resumenGeneral['total_descuentos'], 2) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Costos</td>
+                                                            <td class="text-right">${{ number_format($resumenGeneral['total_costos'], 2) }}</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0">Métodos de Pago</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Método</th>
+                                                            <th class="text-right">Total</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($resumenGeneral['metodos_pago'] as $metodo => $total)
+                                                        <tr>
+                                                            <td>{{ ucfirst($metodo) }}</td>
+                                                            <td class="text-right">${{ number_format($total, 2) }}</td>
+                                                        </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         @else
                             <div class="alert alert-light text-center">
-                                Seleccione un período para ver el resumen
+                                Seleccione un rango de fechas para ver el resumen
                             </div>
                         @endif
                     </div>
@@ -234,14 +299,6 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-theme/0.1.0-beta.10/select2-bootstrap.min.css"/>
 <style>
-    /*
-    .card {
-        transition: transform 0.2s;
-    }
-    .card:hover {
-        transform: translateY(-3px);
-    }
-    */
     .nav-tabs .nav-link {
         font-weight: 500;
         padding: 12px 20px;
@@ -265,8 +322,8 @@
         color: #6c757d!important;
     }
     #filtroForm .row {
-    display: flex;
-    align-items: flex-end;
+        display: flex;
+        align-items: flex-end;
     }
     #filtroForm select {
         height: 38px
@@ -286,34 +343,35 @@
         height: 38px;
     }
     #filtroForm .btn {
-    height: 38px;
-    margin-bottom: 16px;
+        height: 38px;
+        margin-bottom: 16px;
     }
-
+    .card-header {
+        background-color: #f8f9fa;
+    }
 </style>
 @stop
 
 @section('js')
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/i18n/es.js"></script>
 <script>
 $(document).ready(function() {
-    $('#periodo_id, #empleado_id').select2({
+    $('#empleado_id').select2({
         theme: 'bootstrap',
         language: 'es',
-        placeholder: function() {
-            $(this).data('placeholder');
-        },
+        placeholder: 'Seleccione un empleado',
         width: '100%'
     });
+
     $('#filtroForm').on('submit', function(e) {
         e.preventDefault();
-        const periodoId = $('#periodo_id').val();
-        if(!periodoId) {
-            Swal.fire('Error', 'Seleccione un período', 'error');
+        const fechaDesde = $('#fecha_desde').val();
+        const fechaHasta = $('#fecha_hasta').val();
+        
+        if(!fechaDesde || !fechaHasta) {
+            Swal.fire('Error', 'Seleccione ambas fechas', 'error');
             return;
         }
 
@@ -322,80 +380,101 @@ $(document).ready(function() {
         $(`#contenido-${tabActiva}`).hide();
 
         if(tabActiva === 'individual') {
-            cargarNominasIndividuales(periodoId, $('#empleado_id').val());
+            cargarPagosIndividuales(fechaDesde, fechaHasta, $('#empleado_id').val());
         } else {
-            cargarNominaGeneral(periodoId);
+            cargarResumenGeneral(fechaDesde, fechaHasta);
         }
     });
 
     $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
-        const periodoId = $('#periodo_id').val();
-        if(!periodoId) return;
+        const fechaDesde = $('#fecha_desde').val();
+        const fechaHasta = $('#fecha_hasta').val();
+        if(!fechaDesde || !fechaHasta) return;
 
         const target = $(e.target).attr("href").replace('#', '');
         $(`#loading-${target}`).show();
         $(`#contenido-${target}`).hide();
 
         if(target === 'individual') {
-            cargarNominasIndividuales(periodoId, $('#empleado_id').val());
+            cargarPagosIndividuales(fechaDesde, fechaHasta, $('#empleado_id').val());
         } else {
-            cargarNominaGeneral(periodoId);
+            cargarResumenGeneral(fechaDesde, fechaHasta);
         }
     });
 
-    $('#limpiarFiltros').on('click', function() {
-        $('#periodo_id, #empleado_id').val('');
-        $('#contenido-individual').html('<div class="alert alert-light text-center mt-3">Seleccione un período para comenzar</div>');
-        $('#contenido-general').html('<div class="alert alert-light text-center">Seleccione un período para ver el resumen</div>');
-    });
-
-    function cargarNominasIndividuales(periodoId, empleadoId = '') {
+    function cargarPagosIndividuales(fechaDesde, fechaHasta, empleadoId = '') {
         $.ajax({
             url: "{{ route('nempleados.reporte') }}",
             type: 'GET',
-            data: { periodo_id: periodoId, empleado_id: empleadoId, tipo: 'individual' },
+            data: { 
+                fecha_desde: fechaDesde, 
+                fecha_hasta: fechaHasta, 
+                empleado_id: empleadoId,
+                tipo: 'individual' 
+            },
             success: function(response) {
                 $('#contenido-individual').html($(response).find('#contenido-individual').html());
                 $('#loading-individual').hide();
                 $('#contenido-individual').show();
             },
             error: function() {
-                Swal.fire('Error', 'Error al cargar nóminas individuales', 'error');
+                Swal.fire('Error', 'Error al cargar pagos individuales', 'error');
                 $('#loading-individual').hide();
                 $('#contenido-individual').show();
             }
         });
     }
 
-    function cargarNominaGeneral(periodoId) {
-        $.ajax({
-            url: "{{ route('nempleados.reporte') }}",
-            type: 'GET',
-            data: { periodo_id: periodoId, tipo: 'general' },
-            success: function(response) {
-                $('#contenido-general').html($(response).find('#contenido-general').html());
-                $('#loading-general').hide();
-                $('#contenido-general').show();
-            },
-            error: function() {
-                Swal.fire('Error', 'Error al cargar nómina general', 'error');
-                $('#loading-general').hide();
-                $('#contenido-general').show();
-            }
-        });
-    }
+    function cargarResumenGeneral(fechaDesde, fechaHasta) {
+    $.ajax({
+        url: "{{ route('nempleados.reporte') }}",
+        type: 'GET',
+        data: { 
+            fecha_desde: fechaDesde, 
+            fecha_hasta: fechaHasta,
+            tipo: 'general' 
+        },
+        success: function(response) {
+            $('#contenido-general').html($(response).find('#contenido-general').html());
+            $('#loading-general').hide();
+            $('#contenido-general').show();
+        },
+        error: function(xhr) {
+            console.error('Error detallado:', xhr.responseText); // Ver el error real
+            Swal.fire({
+                title: 'Error',
+                text: 'Ocurrió un error al cargar el resumen general. Por favor verifica los logs.',
+                icon: 'error'
+            });
+            $('#loading-general').hide();
+            $('#contenido-general').show();
+        }
+    });
+}
+
 
     $(document).on('click', '.generar-pdf', function(e) {
         e.preventDefault();
         const tipo = $(this).data('tipo');
-        const periodoId = $(this).data('periodo');
-        const url = tipo === 'individual' 
-            ? "{{ route('nempleados.pdf', ['periodoId' => ':periodoId', 'empleadoId' => ':empleadoId']) }}"
-                .replace(':periodoId', periodoId)
-                .replace(':empleadoId', $(this).data('empleado'))
-            : "{{ route('nempleados.general', ['periodoId' => ':periodoId']) }}"
-                .replace(':periodoId', periodoId);
-        window.open(url, '_blank');
+        
+        if(tipo === 'individual') {
+            const url = "{{ route('nempleados.pdf', ['id' => ':id']) }}"
+                .replace(':id', $(this).data('id'));
+            window.open(url, '_blank');
+        } else {
+            // Para el reporte general
+            const fechaDesde = $('#fecha_desde').val();
+            const fechaHasta = $('#fecha_hasta').val();
+            
+            if(!fechaDesde || !fechaHasta) {
+                Swal.fire('Error', 'Seleccione ambas fechas', 'error');
+                return;
+            }
+            
+            // Construye la URL correctamente
+            const url = "{{ url('nomina/generar-recibo-general') }}/" + fechaDesde + "/" + fechaHasta;
+            window.open(url, '_blank');
+        }
     });
 });
 </script>

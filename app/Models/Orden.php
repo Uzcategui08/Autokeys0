@@ -38,4 +38,11 @@ class Orden extends Model
         return $this->belongsTo(\App\Models\Cliente::class, 'id_cliente', 'id_cliente');
     }
 
+    public function empleado()
+    {
+        return $this->belongsTo(\App\Models\Empleado::class, 'id_tecnico', 'id_empleado');
+    }
+
+
+
 }

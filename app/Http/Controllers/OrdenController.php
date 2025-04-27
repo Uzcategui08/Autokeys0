@@ -6,6 +6,7 @@ use App\Models\Orden;
 use App\Models\Inventario;
 use App\Models\Almacene;
 use App\Models\Cliente;
+use App\Models\Empleado;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use App\Http\Requests\OrdenRequest;
@@ -23,7 +24,7 @@ class OrdenController extends Controller
     public function index(Request $request): View
     {
 
-        $ordens = Orden::with('cliente')->paginate();
+        $ordens = Orden::with('cliente', 'empleado')->paginate();
 
         return view('orden.index', compact('ordens'))
             ->with('i', ($request->input('page', 1) - 1) * $ordens->perPage());
@@ -42,7 +43,9 @@ class OrdenController extends Controller
 
         $orden = new Orden();
 
-        return view('orden.create', compact('orden', 'inventario', 'almacenes', 'clientes'));
+        $empleado = Empleado::where('cargo', '1')->get();
+
+        return view('orden.create', compact('orden', 'inventario', 'almacenes', 'clientes', 'empleado'));
     }
 
     /**
@@ -50,39 +53,26 @@ class OrdenController extends Controller
      */
     public function store(OrdenRequest $request): RedirectResponse
     {
-
         $validatedData = $request->validated();
-
-        $trabajos = [];
+    
+        $items = [];
         if ($request->has('items')) {
             foreach ($request->input('items') as $item) {
-                if (!empty($item['trabajo'])) {
-                    $productos = [];
-                    if (isset($item['productos'])) {
-                        foreach ($item['productos'] as $producto) {
-                            if (!empty($producto['producto'])) {
-                                $productos[] = [
-                                    'producto' => $producto['producto'],
-                                    'cantidad' => $producto['cantidad'],
-                                    'almacen' => $producto['almacen'],
-                                ];
-                            }
-                        }
-                    }
-                    $trabajos[] = [
-                        'trabajo' => $item['trabajo'],
-                        'productos' => $productos,
+                if (!empty($item['descripcion']) && !empty($item['cantidad'])) {
+                    $items[] = [
+                        'descripcion' => $item['descripcion'],
+                        'cantidad' => $item['cantidad'],
                     ];
                 }
             }
         }
-   
-        $validatedData['items'] = json_encode($trabajos);
+    
+        $validatedData['items'] = !empty($items) ? json_encode($items) : null;
     
         Orden::create($validatedData);
     
         return Redirect::route('ordens.index')
-            ->with('success', 'Orden creada exitosamente.');
+            ->with('success', 'Órden creada satisfactoriamente.');
     }
     
     
@@ -92,40 +82,19 @@ class OrdenController extends Controller
      */
     public function show($id): View
     {
-        $orden = Orden::find($id);
+        $orden = Orden::findOrFail($id);
+
+        $items = is_string($orden->items) ? json_decode($orden->items, true) : ($orden->items ?? []);
+
+        $orden->items = array_map(function($item) {
+            return [
+                'descripcion' => $item['descripcion'] ?? 'Descripción no disponible',
+                'cantidad' => $item['cantidad'] ?? 1
+            ];
+        }, $items);
     
-        $items = json_decode($orden->items, true);
-    
-        if (is_array($items)) {
-
-            foreach ($items as &$itemGroup) {
-
-                if (isset($itemGroup['productos']) && is_array($itemGroup['productos'])) {
-
-                    foreach ($itemGroup['productos'] as &$producto) {
-                        if (isset($producto['producto'])) {
-                            $productoDetalle = Producto::find($producto['producto']);
-                            if ($productoDetalle) {
-                                $producto['nombre_producto'] = $productoDetalle->item;
-                                $producto['precio_producto'] = $productoDetalle->precio;
-                            } else {
-                                $producto['nombre_producto'] = 'Producto no encontrado';
-                                $producto['precio_producto'] = 0;
-                            }
-                        } else {
-                            $producto['nombre_producto'] = 'Producto no especificado';
-                            $producto['precio_producto'] = 0;
-                        }
-                    }
-                }
-            }
-        }
-
-        $orden->items = $items;
-
         return view('orden.show', compact('orden'));
     }
-    
     
 
     /**
@@ -134,74 +103,40 @@ class OrdenController extends Controller
     public function edit($id): View
     {
         $orden = Orden::findOrFail($id);
-        $almacenes = Almacene::all();
         $clientes = Cliente::all();
+        $empleado = Empleado::where('cargo', '1')->get();
 
-        $items = json_decode($orden->items, true) ?? [];
-        
-        foreach ($items as &$trabajo) {
-            if (isset($trabajo['productos'])) {
-                foreach ($trabajo['productos'] as &$producto) {
-                    $producto['producto'] = $producto['producto'] ?? null;
-                    $producto['cantidad'] = $producto['cantidad'] ?? 1;
-                    $producto['almacen'] = $producto['almacen'] ?? null;
-                    
-                    if ($producto['producto']) {
-                        $productoModel = Producto::find($producto['producto']);
-                        $producto['nombre_producto'] = $productoModel ? $productoModel->item : 'Producto no encontrado';
-                    } else {
-                        $producto['nombre_producto'] = 'Producto no especificado';
-                    }
-                }
-            } else {
-                $trabajo['productos'] = [];
-            }
-        }
-        
-        $orden->items = $items;
-        
-        return view('orden.edit', compact('orden', 'almacenes', 'clientes'));
+        $items = is_string($orden->items) ? json_decode($orden->items, true) : ($orden->items ?? []);
+
+        $orden->items = array_map(function($item) {
+            return [
+                'descripcion' => $item['descripcion'] ?? '',
+                'cantidad' => $item['cantidad'] ?? 1
+            ];
+        }, $items);
+    
+        return view('orden.edit', [
+            'orden' => $orden,
+            'clientes' => $clientes,
+            'empleado' => $empleado,
+        ]);
     }
     
-    
-
-    /**
-     * Update the specified resource in storage.
-
-    public function update(OrdenRequest $request, Orden $orden): RedirectResponse
-    {
-
-        $orden->update($request->validated());
-    
-        if ($request->has('items')) {
-            foreach ($request->input('items') as $index => $itemData) {
-                $productoId = $itemData['producto'] ?? $orden->items[$index]['producto'] ?? null;
-                $almacenId = $itemData['almacen'] ?? $orden->items[$index]['almacen'] ?? null;
-                $cantidad = $itemData['cantidad'] ?? $orden->items[$index]['cantidad'] ?? null;
-    
-            }
-        }
-
-        return Redirect::route('ordens.index')
-            ->with('success', 'Orden updated successfully');
-    }
-    */
 
     public function update(OrdenRequest $request, Orden $orden): RedirectResponse
     {
         $validatedData = $request->validated();
 
-        $items = $request->input('items');
+        $items = array_filter($request->input('items', []), function($item) {
+            return !empty($item['descripcion']) && !empty($item['cantidad']);
+        });
+    
+        $validatedData['items'] = !empty($items) ? json_encode(array_values($items)) : null;
 
-        $orden->update(Arr::except($validatedData, ['items']));
-
-        if ($request->has('items')) {
-            $orden->items = json_encode($items);
-            $orden->save();
-        }
-
-        return Redirect::route('ordens.index')
-            ->with('success', 'Orden updated successfully');
+        $orden->update($validatedData);
+    
+        return redirect()->route('ordens.index')
+               ->with('success', __('Órden actualizada satisfactoriamente.'));
     }
 
     public function destroy($id): RedirectResponse
@@ -209,7 +144,7 @@ class OrdenController extends Controller
         Orden::find($id)->delete();
 
         return Redirect::route('ordens.index')
-            ->with('success', 'Orden deleted successfully');
+            ->with('success', 'Órden eliminada satisfactoriamente.');
     }
 
     public function obtenerProductos(Request $request)
@@ -232,36 +167,27 @@ class OrdenController extends Controller
 
     public function generarPdf($id)
     {
-        $orden = Orden::find($id);
+        $orden = Orden::with(['cliente', 'empleado'])->findOrFail($id);
 
-        $items = json_decode($orden->items, true);
+        $items = is_string($orden->items) ? json_decode($orden->items, true) : ($orden->items ?? []);
 
-        if (is_array($items)) {
-            foreach ($items as &$itemGroup) {
-                if (isset($itemGroup['productos']) && is_array($itemGroup['productos'])) {
-                    foreach ($itemGroup['productos'] as &$producto) {
-                        if (isset($producto['producto'])) {
-                            $productoDetalle = Producto::find($producto['producto']);
-                            if ($productoDetalle) {
-                                $producto['nombre_producto'] = $productoDetalle->item;
-                                $producto['precio_producto'] = $productoDetalle->precio;
-                            } else {
-                                $producto['nombre_producto'] = 'Producto no encontrado';
-                                $producto['precio_producto'] = 0;
-                            }
-                        } else {
-                            $producto['nombre_producto'] = 'Producto no especificado';
-                            $producto['precio_producto'] = 0;
-                        }
-                    }
-                }
-            }
-        }
+        $orden->items = is_array($items) ? array_map(function($item) {
+            return [
+                'descripcion' => $item['descripcion'] ?? 'Descripción no disponible',
+                'cantidad' => (int)($item['cantidad'] ?? 1)
+            ];
+        }, $items) : [];
 
-        $orden->items = $items;
-    
-        $pdf = Pdf::loadView('orden.pdf', compact('orden'));
-    
+        $empresa = [
+            'nombre' => config('app.name', 'Mi Empresa'),
+            'direccion' => 'Dirección de la empresa',
+            'telefono' => '123-456-7890',
+            'email' => 'contacto@empresa.com',
+            'cuit' => 'XX-XXXXXXXX-X'
+        ];
+        
+        $pdf = Pdf::loadView('orden.pdf', compact('orden', 'empresa'));
+        
         return $pdf->stream('orden_' . $orden->id_orden . '.pdf');
     }
 }

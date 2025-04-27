@@ -29,9 +29,8 @@ class EmpleadoController extends Controller
     public function create(): View
     {
         $empleado = new Empleado();
-        $tnominas = Tnomina::all();
 
-        return view('empleado.create', compact('empleado', 'tnominas'));
+        return view('empleado.create', compact('empleado'));
     }
 
     /**
@@ -42,7 +41,7 @@ class EmpleadoController extends Controller
         Empleado::create($request->validated());
 
         return Redirect::route('empleados.index')
-            ->with('success', 'Empleado created successfully.');
+            ->with('success', 'Empleado creado satisfactoriamente.');
     }
 
     /**
@@ -73,7 +72,7 @@ class EmpleadoController extends Controller
         $empleado->update($request->validated());
 
         return Redirect::route('empleados.index')
-            ->with('success', 'Empleado updated successfully');
+            ->with('success', 'Empleado actualizado sasatisfactoriamente.');
     }
 
     public function destroy($id): RedirectResponse
@@ -81,6 +80,6 @@ class EmpleadoController extends Controller
         Empleado::find($id)->delete();
 
         return Redirect::route('empleados.index')
-            ->with('success', 'Empleado deleted successfully');
+            ->with('success', 'Empleado eliminado satisfactoriamente.');
     }
 }

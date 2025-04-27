@@ -33,7 +33,6 @@ class Gasto extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'id_gastos',
         'f_gastos',
         'id_tecnico',
         'descripcion',
@@ -88,6 +87,10 @@ class Gasto extends Model
     public function saldoPendiente()
     {
         return $this->valor - $this->totalPagado();
+    }
+
+    public function empleado() {
+        return $this->belongsTo(Empleado::class, 'id_tecnico', 'id_empleado');
     }
 
 }
