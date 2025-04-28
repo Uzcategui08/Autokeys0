@@ -232,13 +232,21 @@
                             </div>
                             
                             <div class="col-md-2">
-                                <div class="form-group mb-3">
-                                    <label for="cobro" class="form-label">{{ __('Cobro') }}</label>
-                                    <input type="text" name="cobro" class="form-control @error('cobro') is-invalid @enderror" 
-                                        value="{{ old('cobro', $registroV?->cobro) }}" id="cobro" placeholder="Cobro">
-                                    {!! $errors->first('cobro', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
-                                </div>
-                            </div>
+    <div class="form-group mb-3">
+        <label for="cobro" class="form-label">{{ __('Empleado') }}</label>
+        <select name="cobro" id="cobro" class="form-control @error('cobro') is-invalid @enderror">
+            <option value="">Seleccione empleado</option>
+            @foreach($empleados as $empleado)
+                <option value="{{ $empleado->id_empleado }}" {{ old('cobro', $registroV->cobro ?? '') == $empleado->id_empleado ? 'selected' : '' }}>
+                    {{ $empleado->nombre }}
+                </option>
+            @endforeach
+        </select>
+        @error('empleado_id')
+            <div class="invalid-feedback"><strong>{{ $message }}</strong></div>
+        @enderror
+    </div>
+</div>
                             
                             <div class="col-md-3">
                                 <div class="form-group mb-3">
