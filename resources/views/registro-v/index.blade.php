@@ -39,7 +39,7 @@
                                         <th>Valor de Venta</th>
                                         <th>% Técnico</th>
                                         <th>Estatus</th>
-                                        <th>Descripción</th>
+                                        <th>Lugar de Venta</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -55,7 +55,7 @@
                                             <td>{{ $registroV->valor_v }}</td>
                                             <td>{{ $registroV->porcentaje_c }}</td>
                                             <td>{{ $registroV->estatus }}</td>
-                                            <td>{{ $registroV->descripcion_ce }}</td>
+                                            <td>{{ $registroV->lugarventa }}</td>
                                             <td>
                                                 <form onsubmit="return confirmDelete(this)"  action="{{ route('registro-vs.destroy', $registroV->id) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
                                                     <a class="btn btn-sm btn-primary" href="{{ route('registro-vs.show', $registroV->id) }}">

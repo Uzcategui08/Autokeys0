@@ -72,7 +72,7 @@
                             <label for="estatus" class="form-label">{{ __('Estatus') }}</label>
                             <select name="estatus" id="estatus" class="form-control @error('estatus') is-invalid @enderror">
                                 <option value="pendiente" {{ old('estatus', $prestamo?->estatus) == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
-                                <option value="parcialmente_pagado" {{ old('estatus', $prestamo?->estatus) == 'parcialmente_pagado' ? 'selected' : '' }}>Parcialmente Pagado</option>
+                                <option value="parcialmente pagado" {{ old('estatus', $prestamo?->estatus) == 'parcialmente pagado' ? 'selected' : '' }}>Parcialmente Pagado</option>
                                 <option value="pagado" {{ old('estatus', $prestamo?->estatus) == 'pagado' ? 'selected' : '' }}>Pagado</option>
                             </select>
                             {!! $errors->first('estatus', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
@@ -212,7 +212,7 @@ $(document).ready(function() {
         if (saldoPendiente <= 0.01) { 
             $('#estatus').val('pagado');
         } else if (totalPagado > 0) {
-            $('#estatus').val('parcialmente_pagado');
+            $('#estatus').val('parcialmente pagado');
         } else {
             $('#estatus').val('pendiente');
         }

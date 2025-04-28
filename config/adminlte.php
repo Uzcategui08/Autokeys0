@@ -334,6 +334,11 @@ return [
             'url' => 'inventarios',
             'icon' => 'fas fa-fw fa-clipboard-check',
         ],
+        [
+            'text' => 'Cargas/Descargas',
+            'url' => 'cargas',
+            'icon' => 'fas fa-exchange-alt',
+        ],
 
         // VENTAS Y CLIENTES
         ['header' => 'VENTAS'],
@@ -417,7 +422,7 @@ return [
         ],
         [
             'text' => 'Tipos de Pago',
-            'url' => '#',
+            'url' => 'tipos-de-pagos',
         ],
 
         // ADMINISTRACIÓN

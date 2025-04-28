@@ -46,7 +46,7 @@ class PrestamoController extends Controller
                 'descripcion' => 'required|string|max:500',
                 'subcategoria' => 'required|string|in:mantenimiento,repuestos,herramientas,software,consumibles,combustible,capacitacion,otros',
                 'valor' => 'required|numeric|min:0',
-                'estatus' => 'required|in:pendiente,parcialmente_pagado,pagado',
+                'estatus' => 'required|in:pendiente,parcialmente pagado,pagado',
             ]);
 
             $pagosData = [];
@@ -166,7 +166,7 @@ class PrestamoController extends Controller
         if (abs($totalPagado - $valor) < 0.01) {
             return 'pagado';
         } elseif ($totalPagado > 0) {
-            return 'parcialmente_pagado';
+            return 'parcialmente pagado';
         }
         return 'pendiente';
     }

@@ -30,15 +30,16 @@ class RegistroVRequest extends FormRequest
 			'valor_v' => 'required',
 			'estatus' => 'required|string',
 			'titular_c' => 'required|string',
-			'cobro' => 'required|string',
-			'descripcion_ce' => 'required|string',
-			'monto_ce' => 'required',
+			'cobro' => 'nullable|string',
+			'descripcion_ce' => 'nullable|string',
+			'monto_ce' => 'nullable',
 			'porcentaje_c' => 'required|string',
+            'lugarventa' => 'required|string',
 			'marca' => 'required|string',
 			'modelo' => 'required|string',
 			'año' => 'required',
 			'items' => 'required',
-            'metodo_pce' => 'required|string',
+            'metodo_pce' => 'nullable|string',
         ];
     }
 }

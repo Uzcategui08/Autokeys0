@@ -29,7 +29,7 @@
                     <div class="icon">
                         <i class="ion ion-bag"></i>
                     </div>
-                    <a href="#" class="small-box-footer">Mas información <i class="fas fa-arrow-circle-right"></i></a>
+
                 </div>
             </div>
 
@@ -43,7 +43,7 @@
                     <div class="icon">
                         <i class="ion ion-stats-bars"></i>
                     </div>
-                    <a href="#" class="small-box-footer">Mas información <i class="fas fa-arrow-circle-right"></i></a>
+
                 </div>
             </div>
 
@@ -57,7 +57,7 @@
                     <div class="icon">
                         <i class="ion ion-person-add"></i>
                     </div>
-                    <a href="#" class="small-box-footer">Mas información <i class="fas fa-arrow-circle-right"></i></a>
+
                 </div>
             </div>
 
@@ -71,7 +71,7 @@
                     <div class="icon">
                         <i class="ion ion-pie-graph"></i>
                     </div>
-                    <a href="#" class="small-box-footer">Mas información <i class="fas fa-arrow-circle-right"></i></a>
+
                 </div>
             </div>
 
@@ -80,30 +80,27 @@
 
         <div class="row">
 
-            <section class="col-lg-7 connectedSortable">
-
-
-                <x-adminlte-card title="Grafico de ventas diarias" icon="fas fa-lg fa-fan" removable collapsible>
-                    <canvas id="ventas"></canvas>
-                </x-adminlte-card>
-
-
-            </section>
-            <section class="col-lg-5 connectedSortable">
-                <div class="card bg-gradient">
-                    <div class="card-header border-0">
-                        <h3 class="card-title">
-                            <i class="fas fa-th mr-1"></i>
-                            Gráfico de ventas totales
-                        </h3>
-                    </div>
-                    <div class="card-footer bg-transparent">
-                        <div class="d-flex justify-content-center align-items-center" style="height: 450px;"> <!-- Ajusta la altura según sea necesario -->
-                            <canvas id="Donut" width="485" height="485"></canvas>
-                        </div>
-                    </div>
+        <section class="col-lg-7 connectedSortable">
+        <x-adminlte-card title="Ventas por Lugar" icon="fas fa-lg fa-chart-line" removable collapsible>
+            <canvas id="ventasPorLugar"></canvas>
+        </x-adminlte-card>
+    </section>
+    
+    <section class="col-lg-5 connectedSortable">
+        <div class="card bg-gradient">
+            <div class="card-header border-0">
+                <h3 class="card-title">
+                    <i class="fas fa-th mr-1"></i>
+                    Ventas por Técnico
+                </h3>
+            </div>
+            <div class="card-footer bg-transparent">
+                <div class="d-flex justify-content-center align-items-center" style="height: 450px;">
+                    <canvas id="ventasPorTecnico"></canvas>
                 </div>
-            </section>
+            </div>
+        </div>
+    </section>
 
         </div>
 
@@ -139,3 +136,138 @@
 
 @stop
 
+@section('js')
+<canvas id="ventasPorLugar"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+ const datosLugar = <?php echo json_encode($ventasPorLugar); ?>;
+
+// Mapear número de mes a nombre
+const nombresMeses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+// Extraer meses únicos ordenados
+const meses = [...new Set(datosLugar.map(item => item.mes))].sort((a,b) => a - b);
+
+// Extraer lugares únicos
+const lugares = [...new Set(datosLugar.map(item => item.lugarventa))];
+
+// Preparar datasets
+const datasetsLugar = lugares.map(lugar => {
+    const datos = meses.map(mes => {
+        const registro = datosLugar.find(item => item.mes === mes && item.lugarventa === lugar);
+        return registro ? registro.total : 0;
+    });
+
+    // Color aleatorio para cada línea
+    const color = `rgb(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)})`;
+
+    return {
+        label: lugar,
+        data: datos,
+        borderColor: color,
+        backgroundColor: color.replace(')', ', 0.2)').replace('rgb', 'rgba'),
+        tension: 0.1,
+        fill: true
+    };
+});
+
+    
+    // Crear el gráfico de líneas
+    const ctxLugar = document.getElementById('ventasPorLugar').getContext('2d');
+
+const lineChart = new Chart(ctxLugar, {
+    type: 'line',
+    data: {
+        labels: meses.map(m => nombresMeses[m - 1]), // Convertir números a nombres
+        datasets: datasetsLugar  
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Ventas por Lugar de Venta por Mes'
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return `${context.dataset.label}: ${context.raw.toLocaleString()}`;
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value.toLocaleString();
+                    }
+                }
+            }
+        }
+    }
+});
+
+
+    // Gráfico de dona para ventas por técnico
+    const ctxTecnico = document.querySelector('#ventasPorTecnico');
+    const datosTecnico = <?php echo json_encode($ventasPorTecnico); ?>;
+    
+    const donutChart = new Chart(ctxTecnico, {
+        type: 'doughnut',
+        data: {
+            labels: datosTecnico.map(item => item.tecnico),
+            datasets: [{
+                label: 'Monto Total',
+                data: datosTecnico.map(item => item.monto_total),
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(153, 102, 255, 0.7)',
+                    'rgba(255, 159, 64, 0.7)',
+                    'rgba(199, 199, 199, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)',
+                    'rgba(199, 199, 199, 1)'
+                ],
+                borderWidth: 1,
+                hoverOffset: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                },
+                title: {
+                    display: true,
+                    text: 'Ventas por Técnico'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return `${label}: $${value.toLocaleString()} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+@stop

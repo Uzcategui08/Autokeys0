@@ -25,7 +25,7 @@ class EmpleadoRequest extends FormRequest
 			'nombre' => 'required|string',
 			'cedula' => 'required',
 			'cargo' => 'required|string',
-			'salario_base' => 'required',
+			'salario_base' => 'nullable',
             'tipo' => 'required',
         ];
     }

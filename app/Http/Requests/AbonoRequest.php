@@ -23,7 +23,7 @@ class AbonoRequest extends FormRequest
     {
         return [
 			'id_empleado' => 'required',
-			'concepto' => 'required|string',
+			'concepto' => 'nullable|string',
 			'valor' => 'required',
 			'a_fecha' => 'required',
             'fecha_pago' => 'nullable|date',
