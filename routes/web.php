@@ -18,6 +18,7 @@ use App\Http\Controllers\CostoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TiposDePagoController;
+use App\Http\Controllers\EstadisticasVentasController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -45,6 +46,8 @@ Route::resource('productos', ProductoController::class);
 
 route::get('admin/dashboard', [DashboardController::class, "index"])->name('admin.dashboard');
 
+
+Route::get('/inventarios/export', [InventarioController::class, 'export'])->name('inventarios.export');
 Route::resource('inventarios', InventarioController::class);
 Route::get('/cargas', [InventarioController::class, 'cargas'])->name('inventario.cargas');
 
@@ -53,6 +56,9 @@ Route::resource('almacenes', AlmaceneController::class);
 Route::resource('presupuestos', PresupuestoController::class);
 
 Route::resource('registro-vs', RegistroVController::class);
+
+Route::get('/estadisticas-ventas/{month?}/{year?}', [EstadisticasVentasController::class, 'index'])
+    ->name('estadisticas.ventas');
 
 Route::resource('tipos-de-pagos', TiposDePagoController::class);
 

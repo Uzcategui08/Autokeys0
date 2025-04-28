@@ -59,7 +59,7 @@
                     <div class="col-sm-4 invoice-col">
                         <b>Registro V #{{ $registroV->id }}</b><br>
                         <b>Valor Total:</b> ${{ number_format($registroV->valor_v, 2) }}<br>
-                        <b>Cobro:</b> ${{ number_format($registroV->cobro, 2) }}<br>
+                        <b>Cobro:</b> ${{ ($registroV->cobro) }}<br>
                         <b>Titular:</b> {{ $registroV->titular_c }}
                     </div>
                 </div>
@@ -257,7 +257,6 @@
                 <!-- Botones de acción -->
                 <div class="row no-print">
                     <div class="col-12">
-                        <a href="javascript:window.print()" class="btn btn-default"><i class="fas fa-print"></i> Imprimir</a>
                         <a href="{{ route('registro-vs.edit', $registroV->id) }}" class="btn btn-primary">
                             <i class="fas fa-edit me-1"></i> Editar
                         </a>

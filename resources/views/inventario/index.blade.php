@@ -19,7 +19,10 @@
                         </span>
 
                         <div class="float-right">
-                            <a href="{{ route('inventarios.create') }}" class="btn btn-secondary btn-m float-right" data-placement="left">
+                            <a href="{{ route('inventarios.export') }}" class="btn btn-success btn-sm mr-2">
+                                <i class="fas fa-file-excel"></i> Exportar Excel
+                            </a>
+                            <a href="{{ route('inventarios.create') }}" class="btn btn-secondary btn-sm float-right" data-placement="left">
                                 {{ __('Crear Nuevo') }}
                             </a>
                         </div>
@@ -57,9 +60,8 @@
                                             </a>
                                             <a class="btn btn-sm btn-success" href="{{ route('inventarios.edit', $inventario->id_inventario) }}">
                                             <i class="fas fa-exchange-alt"></i>
-    
                                             </a>
-                                 @csrf
+                                            @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-danger btn-sm">
                                                 <i class="fa fa-fw fa-trash"></i> 
@@ -76,4 +78,17 @@
         </div>
     </div>
 </div>
+<style>
+    .btn-export-excel {
+    background-color: #1d6f42;
+    color: white;
+    border-color: #1a633b;
+}
+
+.btn-export-excel:hover {
+    background-color: #1a633b;
+    color: white;
+}
+</style>
+
 @stop

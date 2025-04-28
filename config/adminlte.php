@@ -428,6 +428,11 @@ return [
         // ADMINISTRACIÓN
         ['header' => 'ADMINISTRACIÓN'],
         [
+            'text' => 'Estado de Resultados',
+            'url' => 'estadisticas-ventas',
+            'icon' => 'fas fa-fw fa-receipt',
+        ],
+        [
             'text' => 'Usuarios',
             'url' => 'profile',
             'icon' => 'fas fa-fw fa-user-cog',

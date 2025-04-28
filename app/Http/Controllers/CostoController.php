@@ -97,7 +97,7 @@ class CostoController extends Controller
                 'f_costos' => 'required|date',
                 'id_tecnico' => 'required|integer|min:1',
                 'descripcion' => 'required|string|max:500',
-                'subcategoria' => 'required|string|in:mantenimiento,repuestos,herramientas,software,consumibles,combustible,capacitacion,otros',
+                'subcategoria' => 'required|string',
                 'valor' => 'required|numeric|min:0',
                 'pagos' => 'required|json'
             ]);

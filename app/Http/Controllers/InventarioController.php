@@ -11,6 +11,8 @@ use App\Models\Producto;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use App\Exports\InventariosExport;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Models\AjusteInventario;
 
 
@@ -137,7 +139,11 @@ class InventarioController extends Controller
         return Redirect::route('inventarios.index')
             ->with('success', 'Inventario eliminado satifactoriamente.');
     }
-
+    
+    public function export() 
+    {
+        return Excel::download(new InventariosExport, 'inventario.xlsx');
+    }
 
   }
 
