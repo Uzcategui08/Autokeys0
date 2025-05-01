@@ -117,13 +117,10 @@
                             <td><hr style="border: 1px solid #000;"></td>
                         </tr>
                         <tr>
-                            <td><strong>Name:</strong> Company Name</td>
+                            <td><strong>Name:</strong> Autokeys USA</td>
                         </tr>
                         <tr>
                             <td><strong>Address:</strong> Company Address</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Tax ID:</strong> Company Tax ID</td>
                         </tr>
                         <tr>
                             <td><strong>Phone:</strong> Company Phone</td>
@@ -148,13 +145,7 @@
                             <td><strong>Address:</strong> {{ $presupuesto->cliente->direccion ?? 'N/A' }}</td>
                         </tr>
                         <tr>
-                            <td><strong>Tax ID:</strong> {{ $presupuesto->cliente->cuit ?? 'N/A' }}</td>
-                        </tr>
-                        <tr>
                             <td><strong>Phone:</strong> {{ $presupuesto->cliente->telefono ?? 'N/A' }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Email:</strong> {{ $presupuesto->cliente->email ?? 'N/A' }}</td>
                         </tr>
                     </table>
                 </td>
@@ -185,7 +176,6 @@
                 <tr>
                     <th>#</th>
                     <th>DESCRIPTION</th>
-                    <th>UNIT PRICE</th>
                     <th>SUBTOTAL</th>
                 </tr>
             </thead>
@@ -200,7 +190,6 @@
                     <tr>
                         <td>{{ $index + 1 }}</td>
                         <td>{{ $item['descripcion'] ?? 'No description available' }}</td>
-                        <td>${{ number_format($item['precio'] ?? 0, 2) }}</td>
                         <td>${{ number_format($item['precio'] ?? 0, 2) }}</td>
                     </tr>
                 @endforeach

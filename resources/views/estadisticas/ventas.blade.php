@@ -5,6 +5,9 @@
 @section('content_header')
 <div class="d-flex justify-content-between align-items-center">
         <h1>Reporte Financiero - {{ \Carbon\Carbon::create($yearSelected, $monthSelected, 1)->format('F Y') }}</h1>
+        <button onclick="window.print()" class="btn btn-success mr-2">
+            <i class="fas fa-print"></i> Imprimir Reporte
+        </button>
         
         <form method="GET" action="{{ route('estadisticas.ventas') }}" class="form-inline">
             <div class="form-group mr-2">
@@ -214,6 +217,32 @@
     }
     .table tbody tr:hover {
         background-color: rgba(0,0,0,.05);
+    }
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        .container-fluid, .container-fluid * {
+            visibility: visible;
+        }
+        .container-fluid {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        .card-header, .table th {
+            background-color: #343a40 !important;
+            color: white !important;
+            -webkit-print-color-adjust: exact;
+        }
+        .btn {
+            display: none !important;
+        }
+        .card {
+            border: 1px solid #ddd !important;
+            page-break-inside: avoid;
+        }
     }
 </style>
 @stop

@@ -33,8 +33,6 @@
                                         <th>Cliente</th>
                                         <th>Fecha</th>
                                         <th>Validez</th>
-                                        <th>Descuento</th>
-                                        <th>IVA</th>
                                         <th>Estado</th>
                                         <th>Acciones</th>
                                     </tr>
@@ -46,8 +44,7 @@
                                             <td>{{ $presupuesto->cliente->nombre }}</td>
                                             <td>{{ $presupuesto->f_presupuesto }}</td>
                                             <td>{{ $presupuesto->validez }}</td>
-                                            <td>{{ $presupuesto->descuento }}%</td>
-                                            <td>{{ $presupuesto->iva }}%</td>
+
                                             <td>
                                                 <span class="badge badge-lg fs-6 p-2
                                                             @if($presupuesto->estado == 'aprobado') badge-success 

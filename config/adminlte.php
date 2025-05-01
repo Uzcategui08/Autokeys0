@@ -298,151 +298,219 @@ return [
     |
     */
 
-    'menu' => [
-        // Navbar items (top right)
-        [
-            'type' => 'navbar-search',
-            'text' => 'search',
-            'topnav_right' => false,
-        ],
-        [
-            'type' => 'fullscreen-widget',
-            'topnav_right' => false,
-        ],
+   'menu' => [
+    // ========================================
+    // ITEMS DE NAVBAR (PARTE SUPERIOR DERECHA)
+    // ========================================
+    [
+        'type' => 'navbar-search',
+        'text' => 'Buscar',
+        'topnav_right' => true,
+    ],
+    [
+        'type' => 'fullscreen-widget',
+        'topnav_right' => true,
+    ],
 
-        // Sidebar items
-        [
-            'text' => 'Dashboard',
-            'url' => 'dashboard',
-            'icon' => 'fas fa-fw fa-tachometer-alt',
-        ],
+    // ========================================
+    // ITEMS DE SIDEBAR
+    // ========================================
+    [
+        'text' => 'Dashboard',
+        'url' => 'dashboard',
+        'icon' => 'fas fa-fw fa-tachometer-alt',
+        'can' => ['admin', 'limited_user'], // Accesible para ambos roles
+    ],
 
-        // INVENTARIO Y PRODUCTOS
-        ['header' => 'INVENTARIO'],
-        [
-            'text' => 'Almacenes',
-            'url' => 'almacenes',
-            'icon' => 'fas fa-fw fa-warehouse',
-        ],
-        [
-            'text' => 'Productos',
-            'url' => 'productos',
-            'icon' => 'fas fa-fw fa-box-open',
-        ],
-        [
-            'text' => 'Inventario',
-            'url' => 'inventarios',
-            'icon' => 'fas fa-fw fa-clipboard-check',
-        ],
-        [
-            'text' => 'Cargas/Descargas',
-            'url' => 'cargas',
-            'icon' => 'fas fa-exchange-alt',
-        ],
+    // ========================================
+    // SECCIÓN INVENTARIO
+    // ========================================
+    [
+        'header' => 'INVENTARIO',
+        'can' => ['admin', 'inventario_limited'],
+    ],
+    [
+        'text' => 'Almacenes',
+        'url' => 'almacenes',
+        'icon' => 'fas fa-fw fa-warehouse',
+        'can' => 'admin', // Solo admin
+    ],
+    [
+        'text' => 'Productos',
+        'url' => 'productos',
+        'icon' => 'fas fa-fw fa-box-open',
+        'can' => 'admin', // Solo admin
+    ],
+    [
+        'text' => 'Inventario',
+        'url' => 'inventarios',
+        'icon' => 'fas fa-fw fa-clipboard-check',
+        'can' => ['admin', 'inventario_limited'],
+    ],
+    [
+        'text' => 'Carga/Descarga',
+        'url' => 'cargas',
+        'icon' => 'fas fa-fw fa-exchange-alt',
+        'can' => ['admin', 'inventario_limited'],
+    ],
 
-        // VENTAS Y CLIENTES
-        ['header' => 'VENTAS'],
-        [
-            'text' => 'Clientes',
-            'url' => 'clientes',
-            'icon' => 'fas fa-fw fa-user-friends',
-        ],
-        [
-            'text' => 'Presupuestos',
-            'url' => 'presupuestos',
-            'icon' => 'fas fa-fw fa-file-invoice',
-        ],
-        [
-            'text' => 'Órdenes',
-            'url' => 'ordens',
-            'icon' => 'fas fa-fw fa-tasks',
-        ],
-        [
-            'text' => 'Registro de Ventas',
-            'url' => 'registro-vs',
-            'icon' => 'fas fa-fw fa-shopping-cart',
-        ],
-        [
-            'text' => 'Cuentas por Cobrar',
-            'url' => 'cxc',
-            'icon' => 'fas fa-fw fa-file-invoice-dollar',
-        ],
+    // ========================================
+    // SECCIÓN VENTAS (para usuarios limitados)
+    // ========================================
+    [
+        'header' => 'VENTAS',
+        'can' => ['admin', 'presupuestos_limited', 'ordenes_limited', 'ventas_limited'],
+    ],
+    [
+        'text' => 'Clientes',
+        'url' => 'clientes',
+        'icon' => 'fas fa-fw fa-user-friends',
+        'can' => ['admin', 'ventas_limited'],
+    ],
+    [
+        'text' => 'Presupuestos',
+        'url' => 'presupuestos',
+        'icon' => 'fas fa-fw fa-file-invoice',
+        'can' => ['admin', 'presupuestos_limited'],
+    ],
+    [
+        'text' => 'Órdenes de Trabajo',
+        'url' => 'ordens',
+        'icon' => 'fas fa-fw fa-tasks',
+        'can' => ['admin', 'ordenes_limited'],
+    ],
+    [
+        'text' => 'Registro de Ventas',
+        'url' => 'registro-vs',
+        'icon' => 'fas fa-fw fa-shopping-cart',
+        'can' => ['admin', 'ventas_limited'],
+    ],
+    [
+        'text' => 'Cuentas por Cobrar',
+        'url' => 'cxc',
+        'icon' => 'fas fa-fw fa-file-invoice-dollar',
+        'can' => [  'admin','ventas_limited' ]
+    ],
 
-        // NÓMINA
-        ['header' => 'NÓMINA'],
-        [
-            'text' => 'Empleados',
-            'url' => 'empleados',
-            'icon' => 'fas fa-fw fa-id-badge',
-        ],
-        [
-            'text' => 'Movimientos',
-            'icon' => 'fas fa-fw fa-random',
-            'submenu' => [
-                [
-                    'text' => 'Préstamos',
-                    'url' => 'prestamos',
-                ],
-                [
-                    'text' => 'Descuentos',
-                    'url' => 'descuentos',
-                ],
-                [
-                    'text' => 'Abonos',
-                    'url' => 'abonos',
-                ],
+    // ========================================
+    // SECCIÓN NÓMINA (solo admin)
+    // ========================================
+    [
+        'header' => 'NÓMINA',
+        'can' => 'admin',
+    ],
+    [
+        'text' => 'Empleados',
+        'url' => 'empleados',
+        'icon' => 'fas fa-fw fa-id-badge',
+        'can' => 'admin',
+    ],
+    [
+        'text' => 'Movimientos',
+        'icon' => 'fas fa-fw fa-random',
+        'can' => 'admin',
+        'submenu' => [
+            [
+                'text' => 'Préstamos',
+                'url' => 'prestamos',
+                'can' => 'admin',
             ],
-        ],
-        [
-            'text' => 'Procesos de Nómina',
-            'icon' => 'fas fa-fw fa-calculator',
-            'submenu' => [
-                [
-                    'text' => 'Generar Pagos',
-                    'url' => 'nempleados',
-                ],
-                [
-                    'text' => 'Reportes',
-                    'url' => 'nempleados/generar-reporte',
-                ],
+            [
+                'text' => 'Descuentos',
+                'url' => 'descuentos',
+                'can' => 'admin',
             ],
-        ],
-
-        // CONTABILIDAD
-        ['header' => 'CONTABILIDAD'],
-        [
-            'text' => 'Registro de Costos',
-            'url' => 'costos',
-            'icon' => 'fas fa-fw fa-money-bill-wave',
-        ],
-        [
-            'text' => 'Registro de Gastos',
-            'url' => 'gastos',
-            'icon' => 'fas fa-fw fa-receipt',
-        ],
-        [
-            'text' => 'Tipos de Pago',
-            'url' => 'tipos-de-pagos',
-        ],
-
-        // ADMINISTRACIÓN
-        ['header' => 'ADMINISTRACIÓN'],
-        [
-            'text' => 'Estado de Resultados',
-            'url' => 'estadisticas-ventas',
-            'icon' => 'fas fa-fw fa-receipt',
-        ],
-        [
-            'text' => 'Usuarios',
-            'url' => 'profile',
-            'icon' => 'fas fa-fw fa-user-cog',
-        ],
-        [
-            'text' => 'Permisos',
-            'url' => '#',
-            'icon' => 'fas fa-fw fa-key',
+            [
+                'text' => 'Abonos',
+                'url' => 'abonos',
+                'can' => 'admin',
+            ],
         ],
     ],
+    [
+        'text' => 'Procesos de Nómina',
+        'icon' => 'fas fa-fw fa-calculator',
+        'can' => 'admin',
+        'submenu' => [
+            [
+                'text' => 'Generar Pagos',
+                'url' => 'nempleados',
+                'can' => 'admin',
+            ],
+            [
+                'text' => 'Reportes',
+                'url' => 'nempleados/generar-reporte',
+                'can' => 'admin',
+            ],
+        ],
+    ],
+
+    // ========================================
+    // SECCIÓN CONTABILIDAD
+    // ========================================
+    [
+        'header' => 'CONTABILIDAD',
+        'can' => ['admin'],
+    ],
+    [
+        'text' => 'Registro de Costos',
+        'url' => 'costos',
+        'icon' => 'fas fa-fw fa-money-bill-wave',
+        'can' => ['admin'],
+    ],
+    [
+        'text' => 'Registro de Gastos',
+        'url' => 'gastos',
+        'icon' => 'fas fa-fw fa-receipt',
+        'can' => ['admin'],
+    ],
+    [
+        'text' => 'Tipos de Pago',
+        'url' => 'tipos-de-pagos',
+        'icon' => 'fas fa-fw fa-credit-card',
+        'can' => 'admin',
+    ],
+    [
+        'text' => 'Estado de Resultados',
+        'url' => 'estadisticas-ventas',
+        'icon' => 'fas fa-fw fa-chart-line',
+        'can' => 'admin',
+    ],
+
+    // ========================================
+    // SECCIÓN ADMINISTRACIÓN (solo admin)
+    // ========================================
+    [
+        'header' => 'ADMINISTRACIÓN',
+        'can' => 'admin',
+    ],
+    [
+        'text' => 'Usuarios',
+        'url' => 'profile',
+        'icon' => 'fas fa-fw fa-users-cog',
+        'can' => 'admin',
+    ],
+
+    // ========================================
+    // SECCIÓN REPORTES
+    // ========================================
+    [
+        'header' => 'REPORTES',
+        'can' => 'admin',
+    ],
+    [
+        'text' => 'Reporte de Ventas',
+        'url' => 'reportes/ventas',
+        'icon' => 'fas fa-fw fa-chart-bar',
+        'can' => 'admin',
+    ],
+    [
+        'text' => 'Reporte de Inventario',
+        'url' => 'reportes/inventario',
+        'icon' => 'fas fa-fw fa-boxes',
+        'can' => 'admin',
+    ],
+],
 
     /*
     |--------------------------------------------------------------------------

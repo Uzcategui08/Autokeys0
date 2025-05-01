@@ -176,10 +176,6 @@
                             <td class="info-value">{{ $registroV->tecnico }}</td>
                         </tr>
                         <tr>
-                            <td class="info-label">Trabajo:</td>
-                            <td class="info-value">{{ $registroV->trabajo }}</td>
-                        </tr>
-                        <tr>
                             <td class="info-label">Estatus:</td>
                             <td class="info-value">
                                 <span class="estatus 

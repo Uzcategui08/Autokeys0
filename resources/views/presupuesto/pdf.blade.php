@@ -185,7 +185,6 @@
                 <tr>
                     <th>#</th>
                     <th>DESCRIPCIÓN</th>
-                    <th>PRECIO UNITARIO</th>
                     <th>SUBTOTAL</th>
                 </tr>
             </thead>
@@ -200,7 +199,6 @@
                     <tr>
                         <td>{{ $index + 1 }}</td>
                         <td>{{ $item['descripcion'] ?? 'Descripción no disponible' }}</td>
-                        <td>${{ number_format($item['precio'] ?? 0, 2) }}</td>
                         <td>${{ number_format($item['precio'] ?? 0, 2) }}</td>
                     </tr>
                 @endforeach

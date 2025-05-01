@@ -4,6 +4,7 @@
 
 @section('content_header')
 <h1>Registro</h1>
+
 @stop
 
 @section('content')
@@ -12,6 +13,7 @@
         <div class="col-sm-12">
             <div class="card">
                 <div class="card-header">
+                    
                     <div style="display: flex; justify-content: space-between; align-items: center;">
 
                         <span id="card_title">
@@ -25,6 +27,7 @@
                             <a href="{{ route('inventarios.create') }}" class="btn btn-secondary btn-sm float-right" data-placement="left">
                                 {{ __('Crear Nuevo') }}
                             </a>
+                            
                         </div>
                     </div>
                 </div>
@@ -37,8 +40,8 @@
                                     <th class="text-center align-middle">ID Inventario</th>
                                     <th class="text-center align-middle">ID Producto</th>
                                     <th class="text-center align-middle">Producto</th>
-                                    <th class="text-center align-middle">Almacén</th>
                                     <th class="text-center align-middle">Cantidad</th>
+                                    <th class="text-center align-middle">Almacén</th>
                                     <th class="text-center align-middle">Total $</th>
                                     <th class="text-center align-middle">Acciones</th>
                                 </tr>
@@ -49,8 +52,16 @@
                                     <td class="text-center align-middle">{{ $inventario->id_inventario}}</td>
                                     <td class="text-center align-middle">{{ $inventario->producto->id_producto}}</td>
                                     <td class="text-center align-middle">{{ $inventario->producto->item }}</td>
+                                    <td class="text-center align-middle">
+                                        <span class="
+                                            @if($inventario->cantidad <= 5) bg-danger text-white p-1 rounded
+                                            @elseif($inventario->cantidad <= 10) bg-warning text-dark p-1 rounded
+                                            @else bg-success text-white p-1 rounded
+                                            @endif">
+                                            {{ $inventario->cantidad }}
+                                        </span>
+                                    </td>
                                     <td class="text-center align-middle">{{ $inventario->almacene->nombre }}</td>
-                                    <td class="text-center align-middle">{{ $inventario->cantidad }}</td>
                                     <td class="text-center align-middle">$ {{ number_format($inventario->cantidad * $inventario->producto->precio, 2) }}</td>
 
                                     <td class="text-center align-middle">

@@ -47,15 +47,13 @@
                                             <td >{{ $orden->direccion }}</td>
                                             <td >{{ $orden->empleado->nombre }}</td>
                                             <td>
-                                                <span class="badge badge-lg fs-6 p-2
-                                                            @if($orden->estado == 'aprobado') badge-success 
-                                                            @elseif($orden->estado == 'pendiente') badge-warning 
-                                                            @elseif($orden->estado == 'rechazado') badge-danger 
-                                                            @else badge-secondary 
-                                                            @endif">
-                                                    {{ $orden->estado }}
-                                                </span>
-                                            </td>
+    <span class="badge badge-lg fs-6 p-2
+              {{ $orden->estado == 'aprobado' ? 'bg-success' : 
+                 ($orden->estado == 'pendiente' ? 'bg-warning' :
+                 ($orden->estado == 'rechazado' ? 'bg-danger' : 'bg-secondary')) }}">
+        {{ ucfirst($orden->estado) }}
+    </span>
+</td>
 
                                             <td>
                                                 <form onsubmit="return confirmDelete(this)" action="{{ route('ordens.destroy', $orden->id_orden) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">

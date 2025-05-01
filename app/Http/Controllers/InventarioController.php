@@ -23,11 +23,14 @@ class InventarioController extends Controller
      */
     public function index(Request $request): View
     {
-        $inventarios = Inventario::paginate();
-        $inventarios1 = Inventario::with(['producto', 'almacene'])->get();
+// En el controlador
+$inventarios1 = Inventario::with(['producto', 'almacene'])
+    ->orderByRaw('CAST(cantidad AS SIGNED) ASC') // Orden numérico explícito
+    ->get();
 
-        return view('inventario.index', compact('inventarios', 'inventarios1'))
-            ->with('i', ($request->input('page', 1) - 1) * $inventarios->perPage());
+
+        return view('inventario.index', compact( 'inventarios1'))
+           ;
     }
 
     /**
@@ -128,7 +131,7 @@ class InventarioController extends Controller
             'user_id' => Auth::id(),
         ]);
 
-        return redirect()->route('inventarios.edit', $inventario->id_inventario)
+        return redirect()->route('inventarios.index', $inventario->id_inventario)
                          ->with('success', 'Inventario actualizado y ajuste registrado correctamente.');
     }
 
