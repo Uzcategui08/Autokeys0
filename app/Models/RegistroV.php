@@ -43,11 +43,13 @@ class RegistroV extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['fecha_h', 'tecnico', 'trabajo', 'cliente', 'telefono', 'valor_v', 'estatus', 'metodo_p', 'titular_c', 'pagos', 'descripcion_ce', 'monto_ce', 'cobro', 'porcentaje_c', 'marca', 'modelo', 'año', 'items','lugarventa', 'id_cliente', 'metodo_pce'];
+    protected $fillable = ['fecha_h', 'tecnico', 'trabajo', 'cliente', 'telefono', 'valor_v', 'estatus', 'metodo_p', 'titular_c', 'pagos', 'descripcion_ce', 'monto_ce', 'cobro', 'porcentaje_c', 'marca', 'modelo', 'año', 'items','lugarventa', 'id_cliente', 'metodo_pce', 'costos', 'gastos', 'id_abono'];
 
     protected $casts = [
         'pagos' => 'array',
-        'fecha_h' => 'datetime'
+        'fecha_h' => 'datetime',
+        'costos' => 'array',
+        'gastos' => 'array'
     ];
 
     public function setPagosAttribute($value)
@@ -79,8 +81,9 @@ class RegistroV extends Model
     {
         return $this->hasMany(Abono::class);
     }
-    public function empleado()
+
+    public function costosRelacionados()
     {
-        return $this->belongsTo(Empleado::class);
+        return $this->hasMany(Costo::class, 'id_costos');
     }
 }

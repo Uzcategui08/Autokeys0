@@ -208,7 +208,7 @@
                     <tbody>
                         @foreach($metodosPagoGlobales as $nombre => $monto)
                         <tr>
-                            <td>{{ $nombre }}</td>
+                            <td>{{ ucfirst($nombre) }}</td>
                             <td class="text-right">${{ number_format($monto, 2) }}</td>
                             <td class="text-right">{{ number_format(($monto / $totales['netoPagado']) * 100, 1) }}%</td>
                         </tr>

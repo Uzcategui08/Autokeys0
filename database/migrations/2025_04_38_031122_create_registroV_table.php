@@ -32,6 +32,9 @@ return new class extends Migration
             $table->string('modelo');
             $table->integer('año');
             $table->json('items');
+            $table->json('costos')->nullable();
+            $table->json('gastos')->nullable();
+            $table->integer('id_abono')->nullable();
         });
     }
 

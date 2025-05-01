@@ -3,7 +3,7 @@
 @section('title', 'Tipos de Pago')
 
 @section('content_header')
-<h1>Tipos de Pago</h1>
+<h1>Registro</h1>
 @stop
 
 @section('content')
@@ -19,8 +19,8 @@
                             </span>
 
                              <div class="float-right">
-                                <a href="{{ route('tipos-de-pagos.create') }}" class="btn btn-primary btn-sm float-right"  data-placement="left">
-                                  {{ __('Create New') }}
+                                <a href="{{ route('tipos-de-pagos.create') }}" class="btn btn-secondary btn-m float-right"  data-placement="left">
+                                  {{ __('Crear Nuevo') }}
                                 </a>
                               </div>
                         </div>
@@ -31,27 +31,26 @@
                             <table class="table table-striped table-hover dataTable">
                                 <thead class="thead">
                                     <tr>
-                                        <th>No</th>
-                                        
-									<th >Name</th>
-
-                                        <th></th>
+                                    <th>ID</th>
+									<th >Nombre</th>
+                                    <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($tiposDePagos as $tiposDePago)
                                         <tr>
-                                            <td>{{ ++$i }}</td>
-                                            
+                                        <td>{{ $tiposDePago->id }}</td>    
 										<td >{{ $tiposDePago->name }}</td>
 
                                             <td>
-                                                <form action="{{ route('tipos-de-pagos.destroy', $tiposDePago->id) }}" method="POST">
-                                                    <a class="btn btn-sm btn-primary " href="{{ route('tipos-de-pagos.show', $tiposDePago->id) }}"><i class="fa fa-fw fa-eye"></i> {{ __('Show') }}</a>
-                                                    <a class="btn btn-sm btn-success" href="{{ route('tipos-de-pagos.edit', $tiposDePago->id) }}"><i class="fa fa-fw fa-edit"></i> {{ __('Edit') }}</a>
+                                                <form onsubmit="return confirmDelete(this)"  action="{{ route('tipos-de-pagos.destroy', $tiposDePago->id) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
+                                                    <a class="btn btn-sm btn-primary " href="{{ route('tipos-de-pagos.show', $tiposDePago->id) }}"><i class="fa fa-fw fa-eye"></i></a>
+                                                    <a class="btn btn-sm btn-success" href="{{ route('tipos-de-pagos.edit', $tiposDePago->id) }}"><i class="fa fa-fw fa-edit"></i></a>
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger btn-sm" onclick="event.preventDefault(); confirm('Are you sure to delete?') ? this.closest('form').submit() : false;"><i class="fa fa-fw fa-trash"></i> {{ __('Delete') }}</button>
+                                                    <button type="submit" class="btn btn-danger btn-sm"> 
+                                                        <i class="fa fa-fw fa-trash"></i>
+                                                    </button>
                                                 </form>
                                             </td>
                                         </tr>
@@ -61,7 +60,6 @@
                         </div>
                     </div>
                 </div>
-                {!! $tiposDePagos->withQueryString()->links() !!}
             </div>
         </div>
     </div>

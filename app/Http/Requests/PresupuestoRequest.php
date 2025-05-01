@@ -24,8 +24,10 @@ class PresupuestoRequest extends FormRequest
         return [
 			'id_cliente' => 'required',
             'f_presupuesto' => 'required|date',
-			'validez' => 'required|date',
-			'estado' => 'required',
+            'validez' => 'required|date',
+            'estado' => 'required',
+            'iva' => 'nullable|numeric',
+            'descuento' => 'nullable|numeric',
             'items' => 'required|array',
         ];
     }

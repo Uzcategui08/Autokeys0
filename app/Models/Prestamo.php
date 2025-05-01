@@ -54,16 +54,6 @@ class Prestamo extends Model
         return $this->belongsTo(\App\Models\Empleado::class, 'id_empleado', 'id_empleado');
     }
 
-    public function cuotas()
-    {
-        return $this->hasMany(Cuota::class, 'id_prestamos');
-    }
-
-    public function cuotasPrestamo()
-    {
-        return $this->hasMany(Cuota::class, 'id_prestamos');
-    }
-
     public function generarCuotas()
     {
         $valorPorCuota = $this->valor / $this->cuotas;

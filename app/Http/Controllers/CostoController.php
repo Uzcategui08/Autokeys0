@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Costo;
 use App\Models\Empleado;
+use App\Models\TiposDePago;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+
 
 class CostoController extends Controller
 {
@@ -24,7 +26,8 @@ class CostoController extends Controller
         $empleado = Empleado::where('cargo', '1')->get();
         $costo->f_costos = now()->format('Y-m-d');
         $costo->estatus = 'pendiente';
-        return view('costo.create', compact('costo','empleado'));
+        $metodos = TiposDePago::all();
+        return view('costo.create', compact('costo','empleado', 'metodos'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -75,9 +78,12 @@ class CostoController extends Controller
 
     public function show($id): View
     {
-        $costo = Costo::findOrFail($id)->with('empleado')->first();
+        $costo = Costo::with('empleado')->findOrFail($id);
+        $metodos = TiposDePago::all()->pluck('name', 'id');
+        
         return view('costo.show', [
             'costo' => $costo,
+            'metodos' => $metodos,
             'total_pagado' => $this->calcularTotalPagado($costo->pagos),
             'saldo_pendiente' => $costo->valor - $this->calcularTotalPagado($costo->pagos)
         ]);
@@ -87,7 +93,8 @@ class CostoController extends Controller
     {
         $costo = Costo::findOrFail($id);
         $empleado = Empleado::where('cargo', '1')->get();
-        return view('costo.edit', compact('costo', 'empleado'));
+        $metodos = TiposDePago::all();
+        return view('costo.edit', compact('costo', 'empleado', 'metodos'));
     }
 
     public function update(Request $request, $id): RedirectResponse

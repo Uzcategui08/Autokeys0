@@ -112,13 +112,21 @@
                         <small class="text-muted">Monto máximo: <span id="maximo-pago">${{ number_format($costo->valor ?? 0, 2) }}</span></small>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Método de Pago</label>
-                        <select id="pago_metodo" class="form-control">
-                            <option value="efectivo">Efectivo</option>
-                            <option value="transferencia">Transferencia</option>
-                            <option value="tarjeta">Tarjeta</option>
-                            <option value="cheque">Cheque</option>
-                        </select>
+                        <div class="form-group mb-3">
+                            <label for="pago_metodo" class="form-label fw-bold">{{ __('Método de Pago') }}</label>
+                            <select name="pago_metodo" class="form-control select2 @error('pago_metodo') is-invalid @enderror" id="pago_metodo">
+                                <option value="" selected>{{ __('Seleccionar Método de Pago') }}</option>
+                                @foreach($metodos as $metodo)
+                                    <option value="{{ $metodo->id }}" 
+                                        {{ old('pago_metodo', isset($costo) ? $costo->pago_metodo : '') == $metodo->id ? 'selected' : '' }}>
+                                        {{ $metodo->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('pago_metodo')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Fecha</label>
@@ -170,6 +178,8 @@
 
 <script>
 $(document).ready(function() {
+    const metodosPago = @json($metodos ?? []);
+
     let valorTotal = parseFloat($('#valor').val()) || 0;
     let totalPagado = 0;
     let saldoPendiente = valorTotal;
@@ -219,11 +229,21 @@ $(document).ready(function() {
         }
     }
 
+    const $pagoMetodo = $('#pago_metodo');
+    $pagoMetodo.empty();
+    $pagoMetodo.append('<option value="">Seleccionar método</option>');
+    metodosPago.forEach(metodo => {
+        $pagoMetodo.append($('<option>', {
+            value: metodo.id, 
+            text: metodo.name  
+        }));
+    });
+
     $('#btn-agregar-pago').click(function() {
         const monto = parseFloat($('#pago_monto').val());
-        const metodo = $('#pago_metodo').val();
+        const metodoId = $('#pago_metodo').val();
         const fecha = $('#pago_fecha').val();
-
+        
         if (!monto || monto <= 0) {
             alert('Error: Ingrese un monto válido mayor a cero');
             return;
@@ -233,7 +253,12 @@ $(document).ready(function() {
             alert('Error: El monto excede el saldo pendiente de $' + saldoPendiente.toFixed(2));
             return;
         }
-
+        
+        if (!metodoId) {
+            alert('Error: Seleccione un método de pago');
+            return;
+        }
+        
         const pagosJson = $('#pagos_json').val() || '[]';
         let pagos = [];
         
@@ -243,22 +268,20 @@ $(document).ready(function() {
         } catch (e) {
             console.error('Error parseando pagos:', e);
         }
-
+        
         pagos.push({
             monto: monto,
-            metodo_pago: metodo,
+            metodo_pago: metodoId,
             fecha: fecha
         });
-
+        
         $('#pagos_json').val(JSON.stringify(pagos));
-
+        
         actualizarListaPagos();
         actualizarResumen();
         actualizarMaximoPago();
-
+        
         $('#pago_monto').val('').focus();
-
-
     });
 
     function actualizarListaPagos() {
@@ -274,13 +297,16 @@ $(document).ready(function() {
             }
             
             pagos.forEach((pago, index) => {
+                const metodoPago = metodosPago.find(m => m.id == pago.metodo_pago);
+                const metodoNombre = metodoPago ? metodoPago.name : 'Método desconocido';
+                
                 $('#lista-pagos').append(`
                     <div class="pago-item card mb-2">
                         <div class="card-body py-2">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <span class="fw-bold">$${parseFloat(pago.monto).toFixed(2)}</span>
-                                    <span class="text-muted ms-2">(${pago.metodo_pago})</span>
+                                    <span class="text-muted ms-2">(${metodoNombre})</span>
                                     <small class="text-muted ms-2">${pago.fecha}</small>
                                 </div>
                                 <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-pago" data-index="${index}">
@@ -305,14 +331,12 @@ $(document).ready(function() {
             let pagos = JSON.parse(pagosJson);
             
             if (index >= 0 && index < pagos.length) {
-                const pagoEliminado = pagos.splice(index, 1);
+                pagos.splice(index, 1);
                 
                 $('#pagos_json').val(JSON.stringify(pagos));
                 actualizarListaPagos();
                 actualizarResumen();
                 actualizarMaximoPago();
-                
-                alert('Pago eliminado correctamente');
             }
         } catch (e) {
             console.error('Error eliminando pago:', e);
