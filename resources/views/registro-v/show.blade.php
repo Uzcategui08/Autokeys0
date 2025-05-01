@@ -6,7 +6,7 @@
 <div class="container-fluid">
     <div class="row mb-2">
         <div class="col-sm-6">
-            <h1>Registro de Ventas V #{{ $registroV->id }}</h1>
+            <h1>Venta #{{ $registroV->id }}</h1>
         </div>
     </div>
 </div>
@@ -20,21 +20,20 @@
                 <div class="row">
                     <div class="col-12">
                         <h4>
-                            Venta: <i class="fas "> {{ $registroV->lugarventa }}</i>
-                            <small class="float-right">Fecha: {{ \Carbon\Carbon::parse($registroV->fecha_h)->format('m/d/Y') }}</small>
+                            <i class="fas fa-store"></i> {{ $registroV->lugarventa }}
+                            <small class="float-right">Fecha: {{ \Carbon\Carbon::parse($registroV->fecha_h)->format('d/m/Y') }}</small>
                         </h4>
                     </div>
                 </div>
 
-                <!-- Sección de Información del Trabajo y Vehículo -->
                 <div class="row invoice-info">
-                    <!-- Información del Trabajo -->
                     <div class="col-sm-4 invoice-col">
                         <strong>Técnico</strong>
                         <address>
-                            {{ $registroV->tecnico }}<br>
-                            Trabajo: {{ $registroV->trabajo }}<br>
-                            Estatus: <span class="badge 
+                            <i class="fas fa-user mr-1"></i> {{ $registroV->tecnico }}<br>
+                            <i class="fas fa-tools mr-1"></i> {{ ucfirst($registroV->trabajo) }}<br>
+                            <i class="fas fa-info-circle mr-1"></i> Estado: 
+                            <span class="badge 
                                 @if($registroV->estatus == 'pagado') badge-success 
                                 @elseif($registroV->estatus == 'parcialemente pagado') badge-warning 
                                 @elseif($registroV->estatus == 'pendiente') badge-danger 
@@ -45,9 +44,8 @@
                         </address>
                     </div>
 
-                    <!-- Información del Vehículo -->
                     <div class="col-sm-4 invoice-col">
-                        <strong>Vehículo</strong>
+                        <strong><i class="fas fa-car mr-1"></i> Vehículo</strong>
                         <address>
                             Marca: {{ $registroV->marca }}<br>
                             Modelo: {{ $registroV->modelo }}<br>
@@ -55,34 +53,32 @@
                         </address>
                     </div>
 
-                    <!-- Información de Pago -->
                     <div class="col-sm-4 invoice-col">
-                        <b>Registro V #{{ $registroV->id }}</b><br>
+                        <strong><i class="fas fa-file-invoice-dollar mr-1"></i> Factura #{{ $registroV->id }}</strong><br>
                         <b>Valor Total:</b> ${{ number_format($registroV->valor_v, 2) }}<br>
-                        <b>Cobro:</b> ${{ number_format($registroV->cobro, 2) }}<br>
-                        <b>Titular:</b> {{ $registroV->titular_c }}
+                        <b>Total Pagado:</b> ${{ number_format($totalPagado = array_reduce($registroV->pagos ?? [], function($carry, $pago) { return $carry + $pago['monto']; }, 0), 2) }}<br>
+                        <b>Saldo Pendiente:</b> ${{ number_format($registroV->valor_v - $totalPagado, 2) }}
                     </div>
                 </div>
 
-                <!-- Sección de Cliente -->
-                <div class="row">
+                <div class="row mt-3">
                     <div class="col-md-12">
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">
-                                <h5 class="mb-0">Información del Cliente</h5>
+                        <div class="card card-outline card-primary">
+                            <div class="card-header">
+                                <h3 class="card-title"><i class="fas fa-user-tie mr-2"></i>Información del Cliente</h3>
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-8">
-                                        <div class="form-group mb-3">
-                                            <label class="form-label">Cliente</label>
-                                            <p class="form-control-static">{{ $registroV->cliente }}</p>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Cliente</label>
+                                            <p class="form-control bg-light">{{ $registroV->cliente }}</p>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group mb-3">
-                                            <label class="form-label">Teléfono</label>
-                                            <p class="form-control-static">{{ $registroV->telefono }}</p>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Teléfono</label>
+                                            <p class="form-control bg-light">{{ $registroV->telefono }}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -91,49 +87,70 @@
                     </div>
                 </div>
 
-                <!-- Sección de Items de Trabajo -->
-                <div class="row">
+                <div class="row mt-3">
                     <div class="col-md-12">
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">
-                                <h5 class="mb-0">Items de Trabajo</h5>
+                        <div class="card card-outline card-info">
+                            <div class="card-header">
+                                <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Items de Trabajo</h3>
+                                <div class="card-tools">
+                                    <span class="badge badge-info p-2">
+                                        Total: ${{ number_format(array_reduce($items, function($carry, $itemGroup) {
+                                            return $carry + array_reduce($itemGroup['productos'] ?? [], function($total, $producto) {
+                                                return $total + (($producto['precio'] ?? 0) * ($producto['cantidad'] ?? 1));
+                                            }, 0);
+                                        }, 0), 2) }}
+                                    </span>
+                                </div>
                             </div>
                             <div class="card-body">
-                                @if(!empty($registroV->items) && count($registroV->items) > 0)
-                                    @foreach($registroV->items as $itemGroup)
-                                        <div class="item-group mb-3 p-3 border rounded">
+                                @if(!empty($items) && count($items) > 0)
+                                    @foreach($items as $itemIndex => $itemGroup)
+                                        <div class="mb-4 p-3 border rounded bg-light">
+                                            <h5 class="mb-3"><i class="fas fa-wrench mr-2"></i>Trabajo #{{ $itemIndex + 1 }}</h5>
                                             <div class="form-group mb-3">
-                                                <label class="form-label">Descripción del Trabajo</label>
-                                                <p class="form-control-static">{{ $itemGroup['trabajo'] ?? 'N/A' }}</p>
+                                                <label class="font-weight-bold">Descripción:</label>
+                                                <p class="form-control bg-white">{{ $itemGroup['trabajo'] ?? 'N/A' }}</p>
                                             </div>
                                             
                                             @if(!empty($itemGroup['productos']))
                                                 <div class="table-responsive">
-                                                    <table class="table table-striped">
-                                                        <thead>
+                                                    <table class="table table-bordered table-hover">
+                                                        <thead class="thead-dark">
                                                             <tr>
+                                                                <th>Código</th>
                                                                 <th>Producto</th>
-                                                                <th>Cantidad</th>
-                                                                <th>Precio</th>
+                                                                <th class="text-center">Cantidad</th>
                                                                 <th>Almacén</th>
+                                                                <th class="text-center">P. Unitario</th>
+                                                                <th class="text-right">Subtotal</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
                                                             @foreach($itemGroup['productos'] as $producto)
+                                                                @php
+                                                                    $almacenNombre = $almacenes->firstWhere('id_almacen', $producto['almacen'])->nombre ?? 'N/A';
+                                                                    $subtotal = ($producto['precio'] ?? 0) * ($producto['cantidad'] ?? 1);
+                                                                @endphp
                                                                 <tr>
-                                                                    <td>{{ $producto['producto'] ?? 'N/A' }}</td>
-                                                                    <td>{{ $producto['cantidad'] ?? '0' }}</td>
-                                                                    <td>${{ number_format($producto['precio'] ?? 0, 2) }}</td>
-                                                                    <td>
-                                                                        @foreach($almacenes as $almacen)
-                                                                            @if($almacen->id_almacen == $producto['almacen'])
-                                                                                {{ $almacen->nombre }}
-                                                                            @endif
-                                                                        @endforeach
-                                                                    </td>
+                                                                    <td>{{ $producto['codigo_producto'] ?? $producto['producto'] ?? 'N/A' }}</td>
+                                                                    <td>{{ $producto['nombre_producto'] ?? 'N/A' }}</td>
+                                                                    <td class="text-center">{{ $producto['cantidad'] ?? 1 }}</td>
+                                                                    <td>{{ $almacenNombre }}</td>
+                                                                    <td class="text-right">${{ number_format($producto['precio'] ?? 0, 2) }}</td>
+                                                                    <td class="text-right">${{ number_format($subtotal, 2) }}</td>
                                                                 </tr>
                                                             @endforeach
                                                         </tbody>
+                                                        <tfoot class="bg-gray">
+                                                            <tr>
+                                                                <td colspan="5" class="text-right"><strong>Total:</strong></td>
+                                                                <td class="text-right">
+                                                                    ${{ number_format(array_reduce($itemGroup['productos'], function($carry, $producto) {
+                                                                        return $carry + (($producto['precio'] ?? 0) * ($producto['cantidad'] ?? 1));
+                                                                    }, 0), 2) }}
+                                                                </td>
+                                                            </tr>
+                                                        </tfoot>
                                                     </table>
                                                 </div>
                                             @else
@@ -149,98 +166,171 @@
                     </div>
                 </div>
 
-                <!-- Sección de Costos Extras -->
-                <div class="row">
+                <div class="row mt-3">
                     <div class="col-md-12">
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">
-                                <h5 class="mb-0">Costos Extras</h5>
+                        <div class="card card-outline card-warning">
+                            <div class="card-header">
+                                <h3 class="card-title"><i class="fas fa-money-bill-wave mr-2"></i>Costos Extras</h3>
+                                <div class="card-tools">
+                                    <span class="badge badge-warning p-2">
+                                        Total: ${{ number_format(array_sum(array_column($costosExtras, 'monto')), 2) }}
+                                    </span>
+                                </div>
                             </div>
                             <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <div class="form-group mb-3">
-                                            <label class="form-label">Descripción</label>
-                                            <p class="form-control-static">{{ $registroV->descripcion_ce ?? 'N/A' }}</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group mb-3">
-                                            <label class="form-label">Monto</label>
-                                            <p class="form-control-static">${{ number_format($registroV->monto_ce, 2) }}</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group mb-3">
-                                            <label class="form-label">Método de Pago</label>
-                                            <p class="form-control-static">
-                                                @foreach($tiposDePago as $tipo)
-                                                    @if($tipo->id == $registroV->metodo_pce)
-                                                        {{ $tipo->name }}
-                                                    @endif
+                                @if(!empty($costosExtras) && count($costosExtras) > 0)
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover">
+                                            <thead class="thead-dark">
+                                                <tr>
+                                                    <th>Descripción</th>
+                                                    <th class="text-right">Monto</th>
+                                                    <th>Método de Pago</th>
+                                                    <th>Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($costosExtras as $costo)
+                                                <tr>
+                                                    <td>{{ $costo['descripcion'] ?? 'N/A' }}</td>
+                                                    <td class="text-right">${{ number_format($costo['monto'] ?? 0, 2) }}</td>
+                                                    <td>
+                                                        @foreach($tiposDePago as $tipo)
+                                                            @if($tipo->id == ($costo['metodo_pago'] ?? null))
+                                                                {{ $tipo->name }}
+                                                            @endif
+                                                        @endforeach
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge 
+                                                            @if(($costo['cobro'] ?? '') == 'pagado') badge-success 
+                                                            @else badge-warning 
+                                                            @endif">
+                                                            {{ ucfirst($costo['cobro'] ?? 'pendiente') }}
+                                                        </span>
+                                                    </td>
+                                                </tr>
                                                 @endforeach
-                                            </p>
-                                        </div>
+                                            </tbody>
+                                            <tfoot class="bg-gray">
+                                                <tr>
+                                                    <th colspan="3" class="text-right">% Cerrajero (36%):</th>
+                                                    <th class="text-right">${{ number_format($registroV->porcentaje_c, 2) }}</th>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
                                     </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group mb-3">
-                                            <label class="form-label">% Cerrajero</label>
-                                            <p class="form-control-static">{{ $registroV->porcentaje_c }}%</p>
-                                        </div>
-                                    </div>
-                                </div>
+                                @else
+                                    <div class="alert alert-warning">No hay costos extras registrados</div>
+                                @endif
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Sección de Pagos -->
-                <div class="row">
+                <div class="row mt-3">
                     <div class="col-md-12">
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">
-                                <h5 class="mb-0">Registro de Pagos</h5>
+                        <div class="card card-outline card-danger">
+                            <div class="card-header">
+                                <h3 class="card-title"><i class="fas fa-receipt mr-2"></i>Gastos</h3>
+                                <div class="card-tools">
+                                    <span class="badge badge-danger p-2">
+                                        Total: ${{ number_format(array_sum(array_column($gastos, 'monto')), 2) }}
+                                    </span>
+                                </div>
                             </div>
                             <div class="card-body">
-                                <div class="alert alert-info mb-4">
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <strong>Valor Total:</strong> 
-                                            <span>${{ number_format($registroV->valor_v, 2) }}</span>
+                                @if(!empty($gastos) && count($gastos) > 0)
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover">
+                                            <thead class="thead-dark">
+                                                <tr>
+                                                    <th>Descripción</th>
+                                                    <th class="text-right">Monto</th>
+                                                    <th>Método de Pago</th>
+                                                    <th>Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($gastos as $gasto)
+                                                <tr>
+                                                    <td>{{ $gasto['descripcion'] ?? 'N/A' }}</td>
+                                                    <td class="text-right">${{ number_format($gasto['monto'] ?? 0, 2) }}</td>
+                                                    <td>
+                                                        @foreach($tiposDePago as $tipo)
+                                                            @if($tipo->id == ($gasto['metodo_pago'] ?? null))
+                                                                {{ $tipo->name }}
+                                                            @endif
+                                                        @endforeach
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge 
+                                                            @if(($gasto['estatus'] ?? '') == 'pagado') badge-success 
+                                                            @else badge-warning 
+                                                            @endif">
+                                                            {{ ucfirst($gasto['estatus'] ?? 'pendiente') }}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @else
+                                    <div class="alert alert-warning">No hay gastos registrados</div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <div class="card card-outline card-success">
+                            <div class="card-header">
+                                <h3 class="card-title"><i class="fas fa-credit-card mr-2"></i>Registro de Pagos</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info">
+                                    <div class="row">
+                                        <div class="col-md-4 text-center">
+                                            <strong>Valor Total:</strong><br>
+                                            <span class="h4">${{ number_format($registroV->valor_v, 2) }}</span>
                                         </div>
-                                        <div>
-                                            <strong>Total Pagado:</strong> 
-                                            <span>${{ number_format($totalPagado = array_reduce($registroV->pagos ?? [], function($carry, $pago) { return $carry + $pago['monto']; }, 0), 2) }}</span>
+                                        <div class="col-md-4 text-center">
+                                            <strong>Total Pagado:</strong><br>
+                                            <span class="h4">${{ number_format($totalPagado, 2) }}</span>
                                         </div>
-                                        <div>
-                                            <strong>Saldo Pendiente:</strong> 
-                                            <span>${{ number_format($registroV->valor_v - $totalPagado, 2) }}</span>
+                                        <div class="col-md-4 text-center">
+                                            <strong>Saldo Pendiente:</strong><br>
+                                            <span class="h4">${{ number_format($registroV->valor_v - $totalPagado, 2) }}</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 @if(!empty($registroV->pagos) && count($registroV->pagos) > 0)
                                     <div class="table-responsive">
-                                        <table class="table table-striped">
-                                            <thead>
+                                        <table class="table table-bordered table-hover">
+                                            <thead class="thead-dark">
                                                 <tr>
-                                                    <th>Monto</th>
-                                                    <th>Método de Pago</th>
+                                                    <th>#</th>
                                                     <th>Fecha</th>
+                                                    <th>Método</th>
+                                                    <th class="text-right">Monto</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                @foreach($registroV->pagos as $pago)
+                                                @foreach($registroV->pagos as $index => $pago)
                                                     <tr>
-                                                        <td>${{ number_format($pago['monto'], 2) }}</td>
+                                                        <td>{{ $index + 1 }}</td>
+                                                        <td>{{ $pago['fecha'] ?? 'N/A' }}</td>
                                                         <td>
-                                                            @foreach($tiposDePago as $tipo)
-                                                                @if($tipo->name == $pago['metodo_pago'])
-                                                                    {{ $tipo->name }}
-                                                                @endif
-                                                            @endforeach
+                                                            @php
+                                                                $metodoPago = collect($tiposDePago)->firstWhere('id', $pago['metodo_pago'] ?? null);
+                                                            @endphp
+                                                            {{ $metodoPago->name ?? ($pago['metodo_pago'] ?? 'N/A') }}
                                                         </td>
-                                                        <td>{{ $pago['fecha'] }}</td>
+                                                        <td class="text-right">${{ number_format($pago['monto'] ?? 0, 2) }}</td>
                                                     </tr>
                                                 @endforeach
                                             </tbody>
@@ -254,23 +344,15 @@
                     </div>
                 </div>
 
-                <!-- Botones de acción -->
-                <div class="row no-print">
+                <div class="row no-print mt-3">
                     <div class="col-12">
-                        <a href="javascript:window.print()" class="btn btn-default"><i class="fas fa-print"></i> Imprimir</a>
-                        <a href="{{ route('registro-vs.edit', $registroV->id) }}" class="btn btn-primary">
-                            <i class="fas fa-edit me-1"></i> Editar
+                        <button onclick="window.print()" class="btn btn-default">
+                            <i class="fas fa-print"></i> Imprimir
+                        </button>
+                        <a href="{{ route('registro-vs.edit', $registroV->id) }}" class="btn btn-primary float-right mr-2">
+                            <i class="fas fa-edit"></i> Editar
                         </a>
-                        
-                        <form action="{{ route('registro-vs.destroy', $registroV->id) }}" method="POST" style="display: inline-block;">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro de eliminar este registro?')">
-                                <i class="fas fa-trash-alt me-1"></i> Eliminar
-                            </button>
-                        </form>
-                        
-                        <a href="{{ route('registro-vs.index') }}" class="btn btn-secondary float-right">
+                        <a href="{{ route('registro-vs.index') }}" class="btn btn-secondary float-right mr-2">
                             <i class="fas fa-arrow-left"></i> Volver
                         </a>
                     </div>
@@ -283,55 +365,41 @@
 
 @section('css')
 <style>
-    .form-control-static {
-        padding: 0.375rem 0.75rem;
-        border: 1px solid #dee2e6;
-        border-radius: 0.25rem;
-        background-color: #f8f9fa;
-        min-height: 38px;
-        display: flex;
-        align-items: center;
-    }
-    
-    .item-group {
-        background-color: #f8f9fa;
-    }
-    
-    .badge {
-        font-size: 0.9em;
-        padding: 0.5em 0.75em;
-    }
-    
     .invoice {
         position: relative;
         background: #fff;
         border: 1px solid #f4f4f4;
+        padding: 20px;
     }
     
     .invoice-title {
         margin-top: 0;
     }
     
+    .table thead th {
+        vertical-align: middle;
+    }
+    
     @media print {
+        body {
+            font-size: 11pt;
+        }
+        
         .no-print {
             display: none;
         }
         
-        body {
-            font-size: 11pt;
-            margin: 0;
-            padding: 0;
-            background: none;
+        .card-header, .card-body {
+            padding: 0.5rem;
         }
         
-        .container-fluid {
-            width: 100%;
-            padding: 0;
-        }
-        
-        .card, .card-header, .card-body {
+        .card {
             border: none;
             box-shadow: none;
+        }
+        
+        .table td, .table th {
+            padding: 0.3rem;
         }
     }
 </style>
@@ -339,11 +407,12 @@
 
 @section('js')
 <script>
-    $(document).ready(function() {
-        // Botón para imprimir
-        $('.btn-print').click(function() {
-            window.print();
-        });
+$(document).ready(function() {
+    $('[data-toggle="tooltip"]').tooltip();
+    
+    $('.btn-print').click(function() {
+        window.print();
     });
+});
 </script>
-@stop
+@endsection

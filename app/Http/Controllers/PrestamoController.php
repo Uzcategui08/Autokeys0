@@ -30,8 +30,9 @@ class PrestamoController extends Controller
     {
         $prestamo = new Prestamo();
         $empleado = \App\Models\Empleado::all();
+        $metodos = \App\Models\TiposDePago::all();
 
-        return view('prestamo.create', compact('prestamo', 'empleado'));
+        return view('prestamo.create', compact('prestamo', 'empleado', 'metodos'));
     }
 
     /**
@@ -44,7 +45,7 @@ class PrestamoController extends Controller
                 'f_prestamo' => 'required|date',
                 'id_empleado' => 'required|integer|min:1',
                 'descripcion' => 'required|string|max:500',
-                'subcategoria' => 'required|string|in:mantenimiento,repuestos,herramientas,software,consumibles,combustible,capacitacion,otros',
+                'subcategoria' => 'required|string',
                 'valor' => 'required|numeric|min:0',
                 'estatus' => 'required|in:pendiente,parcialmente pagado,pagado',
             ]);
@@ -91,9 +92,12 @@ class PrestamoController extends Controller
         $prestamo = Prestamo::with('empleado')->findOrFail($id);
         
         $pagos = is_string($prestamo->pagos) ? json_decode($prestamo->pagos, true) : ($prestamo->pagos ?? []);
+
+        $metodos = \App\Models\TiposDePago::all()->pluck('name', 'id');
         
         return view('prestamo.show', [
             'prestamo' => $prestamo,
+            'metodos' => $metodos,
             'total_pagado' => $this->calcularTotalPagado($pagos),
             'saldo_pendiente' => $prestamo->valor - $this->calcularTotalPagado($pagos)
         ]);
@@ -106,7 +110,8 @@ class PrestamoController extends Controller
     {
         $prestamo = Prestamo::find($id);
         $empleado = \App\Models\Empleado::all();
-        return view('prestamo.edit', compact('prestamo', 'empleado'));
+        $metodos = \App\Models\TiposDePago::all();
+        return view('prestamo.edit', compact('prestamo', 'empleado', 'metodos'));
     }
 
     /**
@@ -119,7 +124,7 @@ class PrestamoController extends Controller
                 'f_prestamo' => 'required|date',
                 'id_empleado' => 'required|integer|min:1',
                 'descripcion' => 'required|string|max:500',
-                'subcategoria' => 'required|string|in:mantenimiento,repuestos,herramientas,software,consumibles,combustible,capacitacion,otros',
+                'subcategoria' => 'required|string',
                 'valor' => 'required|numeric|min:0',
                 'pagos' => 'required|json'
             ]);

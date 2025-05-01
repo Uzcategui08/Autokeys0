@@ -19,36 +19,34 @@
                         </div>
                         <div class="form-group mb-3">
                             <label for="select_empleado" class="form-label">{{ __('Técnico') }}</label>
+                            
+                            <!-- Campo oculto para el ID del empleado -->
                             <input 
                                 type="hidden" 
                                 name="id_empleado" 
                                 id="id_empleado"
+                                value="{{ old('id_empleado', $empleadoId ?? '') }}"
                             >
+                            
+                            <!-- Campo oculto para el nombre del técnico -->
                             <input 
                                 type="hidden" 
                                 name="tecnico" 
                                 id="tecnico" 
-                                value="{{ old('tecnico', $registroV?->tecnico ?? '') }}"
+                                value="{{ old('tecnico', $registroV->tecnico ?? '') }}"
                             >
+                            
+                            <!-- Select visible -->
                             <select 
                                 id="select_empleado"
                                 class="form-control @error('tecnico') is-invalid @enderror"
-                                onchange="
-                                    const empleadoId = this.value;
-                                    const empleadoNombre = this.options[this.selectedIndex].text;
-                                    
-                                    document.getElementById('id_empleado').value = empleadoId;
-                                    document.getElementById('tecnico').value = empleadoNombre;
-                                "
+                                onchange="updateEmpleadoFields(this)"
                             >
                                 <option value="">Seleccionar...</option>
                                 @foreach($empleados as $empleado)
                                     <option 
                                         value="{{ $empleado->id_empleado }}"
-                                        @selected(
-                                            old('tecnico', $registroV?->tecnico) == $empleado->nombre ||
-                                            old('id_empleado') == $empleado->id_empleado
-                                        )
+                                        @selected(old('id_empleado', $empleadoId ?? null) == $empleado->id_empleado)
                                     >
                                         {{ $empleado->nombre }}
                                     </option>
@@ -59,6 +57,28 @@
                                 <div class="invalid-feedback d-block"><strong>{{ $message }}</strong></div>
                             @enderror
                         </div>
+                        <script>
+                            function updateEmpleadoFields(select) {
+                                const empleadoId = select.value;
+                                const empleadoNombre = select.options[select.selectedIndex].text;
+                                
+                                document.getElementById('id_empleado').value = empleadoId;
+                                document.getElementById('tecnico').value = empleadoNombre;
+                            }
+                            
+                            // Inicialización cuando el DOM está listo
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const select = document.getElementById('select_empleado');
+                                const idEmpleado = "{{ old('id_empleado', $empleadoId ?? '') }}";
+                                
+                                if (idEmpleado) {
+                                    select.value = idEmpleado;
+                                    // Disparar el evento change para actualizar los campos ocultos
+                                    const event = new Event('change');
+                                    select.dispatchEvent(event);
+                                }
+                            });
+                            </script>
                         <div class="form-group mb-3">
                             <label for="lugarventa" class="form-label">{{ __('Lugar de Venta') }}</label>
                             <select name="lugarventa" class="form-control select2 @error('lugarventa') is-invalid @enderror" id="lugarventa">
@@ -68,7 +88,6 @@
                                 <option value="Van Grande-Pulga" {{ old('lugarventa', $registroV?->lugarventa) == 'Van Grande-Pulga' ? 'selected' : '' }}>Van Grande-Pulga</option>
                                 <option value="Van Pequeña" {{ old('lugarventa', $registroV?->lugarventa) == 'Van Pequeña' ? 'selected' : '' }}>Van Pequeña</option>
                                 <option value="Van Pequeña-Pulga" {{ old('lugarventa', $registroV?->lugarventa) == 'Van Pequeña-Pulga' ? 'selected' : '' }}>Van Pequeña-Pulga</option>
-
                             </select>
                             {!! $errors->first('trabajo', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                         </div>
@@ -139,12 +158,16 @@
         <div class="row mb-4">
             <div class="col-md-12">
                 <div class="card">
-                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Items de Trabajo</h5>
-                        <button type="button" class="btn btn-success btn-sm btn-add-work">
-                            <i class="fas fa-plus-circle me-1"></i> Agregar Trabajo
-                        </button>
+                    <div class="card-header bg-light">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Items de Trabajo</h5>
+                            <button type="button" class="btn btn-success btn-sm btn-add-work">
+                                <i class="fas fa-plus-circle me-1"></i> Agregar Trabajo
+                            </button>
+                        </div>
                     </div>
+                    
+                                                       
                     <div class="card-body">
                         <div class="form-group" id="items-container">
                             <!-- Los items dinámicos se insertarán aquí -->
@@ -197,57 +220,51 @@
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-header bg-light">
-                        <h5 class="mb-0">Costos Extras</h5>
+                        <div class="d-flex justify-content-between align-items-center w-100">
+                            <h5 class="mb-0">Costos Extras</h5>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bg-success-subtle rounded p-1 m-2 border d-flex align-items-center me-2"> 
+                                    <span class="mx-2 fw-medium text-bold" style="font-size: 1rem">% Cerrajero:</span>
+                                    <div class="input-group input-group-sm" style="width: 90px;">
+                                        <span class="input-group-text bg-light border-0 py-1 px-2 text-bold">$</span>
+                                        <input type="text" name="porcentaje_c" 
+                                               class="form-control form-control-sm text-end border-0 py-1"
+                                               value="{{ old('porcentaje_c', $registroV?->porcentaje_c ?? 0) }}" 
+                                               id="porcentaje_c"
+                                               readonly
+                                               style="background-color: #f8f9fa; font-size: 1.1rem"> 
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-success btn-sm btn-add-costo">
+                                    <i class="fas fa-plus-circle me-1"></i> Agregar Costo
+                                </button>
+                            </div>                            
+                        </div>
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group mb-3">
-                                    <label for="descripcion_ce" class="form-label">{{ __('Descripción') }}</label>
-                                    <input type="text" name="descripcion_ce" class="form-control @error('descripcion_ce') is-invalid @enderror" 
-                                        value="{{ old('descripcion_ce', $registroV?->descripcion_ce) }}" id="descripcion_ce" placeholder="Descripción">
-                                    {!! $errors->first('descripcion_ce', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
-                                </div>
-                            </div>
+                        <div id="costos-container">
                             
-                            <div class="col-md-1">
-                                <div class="form-group mb-3">
-                                    <label for="monto_ce" class="form-label">{{ __('Monto') }}</label>
-                                    <input type="text" name="monto_ce" class="form-control @error('monto_ce') is-invalid @enderror" 
-                                        value="{{ old('monto_ce', $registroV?->monto_ce) }}" id="monto_ce" placeholder="Monto">
-                                    {!! $errors->first('monto_ce', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
-                                </div>
-                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                            <div class="col-md-3">
-                                <div class="form-group mb-3">
-                                    <label for="metodo_pce" class="form-label">{{ __('Método de Pago') }}</label>
-                                    <select id="metodo_pce" name="metodo_pce" class="form-control">
-                                        <option value="">Seleccione método de pago</option>
-                                            @foreach($tiposDePago as $tipo)
-                                        <option value="{{ $tipo->id }}">{{ $tipo->name }}</option>
-                                            @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-2">
-                                <div class="form-group mb-3">
-                                    <label for="cobro" class="form-label">{{ __('Cobro') }}</label>
-                                    <input type="text" name="cobro" class="form-control @error('cobro') is-invalid @enderror" 
-                                        value="{{ old('cobro', $registroV?->cobro) }}" id="cobro" placeholder="Cobro">
-                                    {!! $errors->first('cobro', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-3">
-                                <div class="form-group mb-3">
-                                    <label for="porcentaje_c" class="form-label">{{ __('% Cerrajero') }}</label>
-                                    <input type="text" name="porcentaje_c" class="form-control @error('porcentaje_c') is-invalid @enderror" 
-                                        value="{{ old('porcentaje_c', $registroV?->porcentaje_c) }}" id="porcentaje_c" placeholder="Porcentaje" readonly>
-                                    {!! $errors->first('porcentaje_c', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
-                                </div>
-                            </div>
+        <!-- Sección 6: Gastos -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Gastos</h5>
+                            <button type="button" class="btn btn-success btn-sm btn-add-gasto">
+                                <i class="fas fa-plus-circle me-1"></i> Agregar Gasto
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="gastos-container">
+                            <!-- Los gastos dinámicos se insertarán aquí -->
                         </div>
                     </div>
                 </div>
@@ -330,15 +347,14 @@
                                 <small class="text-muted">Monto máximo: <span id="maximo-pago">${{ number_format($registroV->valor_v ?? 0, 2) }}</span></small>
                             </div>
                             <div class="col-md-4">
-    <label class="form-label">Método de Pago</label>
-    <select id="pago_metodo" name="pago_metodo" class="form-control">
-        <option value="">Seleccione método de pago</option>
-        @foreach($tiposDePago as $tipo)
-            <option value="{{ $tipo->id }}">{{ $tipo->name }}</option>
-        @endforeach
-    </select>
-</div>
-
+                                <label class="form-label">Método de Pago</label>
+                                <select id="pago_metodo" name="pago_metodo" class="form-control">
+                                    <option value="">Seleccione método de pago</option>
+                                    @foreach($tiposDePago as $tipo)
+                                        <option value="{{ $tipo->id }}">{{ $tipo->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                             <div class="col-md-4">
                                 <label class="form-label">Fecha</label>
                                 <input type="date" id="pago_fecha" class="form-control" value="{{ date('Y-m-d') }}">
@@ -388,15 +404,7 @@
         </div>
     </div>
 </div>
-<script>
-$(document).ready(function() {
-    $('.select2').select2({
-        width: '100%',
-        dropdownAutoWidth: true,
-    });
-    
-});
-</script>
+
 <style>
 .select2-container .select2-selection--single {
     height: 38px !important;
@@ -405,29 +413,64 @@ $(document).ready(function() {
 .select2-container--default .select2-selection--single .select2-selection__arrow {
     height: 38px !important;
 }
+
 .pago-item {
-transition: all 0.3s ease;
+    transition: all 0.3s ease;
 }
+
 .pago-item:hover {
     background-color: #f8f9fa;
 }
+
 .btn-eliminar-pago {
     transition: all 0.2s ease;
 }
+
 .btn-eliminar-pago:hover {
     transform: scale(1.1);
 }
+
 #valor-total, #total-pagado, #saldo-pendiente {
     font-weight: bold;
+}
+
+.costo-group {
+    background-color: #f8f9fa;
+    margin-bottom: 15px;
+    border-radius: 5px;
+}
+
+.costo-group:hover {
+    background-color: #e9ecef;
+}
+
+.btn-remove-costo {
+    transition: all 0.2s ease;
+}
+
+.btn-remove-costo:hover {
+    transform: scale(1.1);
 }
 </style>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
 $(document).ready(function() {
+    $('.select2').select2({
+        width: '100%',
+        dropdownAutoWidth: true,
+    });
+
+    /**************************************
+     * SECCIÓN DE PAGOS PARCIALES
+     **************************************/
     let valorTotal = parseFloat($('#valor_v').val()) || 0;
     let totalPagado = 0;
     let saldoPendiente = valorTotal;
+
+    const metodosPago = @json($tiposDePago ?? []);
 
     actualizarResumen();
 
@@ -435,13 +478,12 @@ $(document).ready(function() {
         valorTotal = parseFloat($(this).val()) || 0;
         actualizarResumen();
         actualizarMaximoPago();
+        calcularPorcentajesCostos();
     });
 
     $('#estatus').on('change', function() {
-
         if(totalPagado === 0) {
             if($(this).val() === 'pagado') {
-
                 agregarPagoCompleto();
             }
         }
@@ -479,8 +521,7 @@ $(document).ready(function() {
     function calcularTotalPagado() {
         const pagosJson = $('#pagos_json').val() || '[]';
         try {
-            const jsonStr = pagosJson.replace(/^"|"$/g, '');
-            const pagos = JSON.parse(jsonStr);
+            const pagos = JSON.parse(pagosJson);
             return pagos.reduce((total, pago) => total + parseFloat(pago.monto), 0);
         } catch (e) {
             return 0;
@@ -550,13 +591,16 @@ $(document).ready(function() {
             }
             
             pagos.forEach((pago, index) => {
+                const metodo = metodosPago.find(m => m.id == pago.metodo_pago);
+                const nombreMetodo = metodo ? metodo.name : pago.metodo_pago;
+                
                 $('#lista-pagos').append(`
                     <div class="pago-item card mb-2">
                         <div class="card-body py-2">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <span class="fw-bold">$${parseFloat(pago.monto).toFixed(2)}</span>
-                                    <span class="text-muted ms-2">(${pago.metodo_pago})</span>
+                                    <span class="text-muted ms-2">(${nombreMetodo})</span>
                                     <small class="text-muted ms-2">${pago.fecha}</small>
                                 </div>
                                 <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-pago" data-index="${index}">
@@ -595,12 +639,10 @@ $(document).ready(function() {
 
     actualizarListaPagos();
     actualizarMaximoPago();
-});
-</script>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar Select2
+    /**************************************
+     * SECCIÓN DE CLIENTES (SELECT2)
+     **************************************/
     $('#id_cliente').select2({
         theme: 'bootstrap-5',
         placeholder: 'Seleccione un cliente',
@@ -609,108 +651,319 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const telefonoInput = document.getElementById('telefono');
 
-    // Escuchar cambios usando jQuery (compatible con Select2)
     $('#id_cliente').on('change', function() {
         const selectedOption = $(this).find(':selected');
         telefonoInput.value = selectedOption.data('telefono') || '';
     });
 
-    // Actualizar al cargar si hay valor inicial
     if ($('#id_cliente').val()) {
         const initialOption = $('#id_cliente').find(':selected');
         telefonoInput.value = initialOption.data('telefono') || '';
     }
-});
-</script>
-<script>document.addEventListener('DOMContentLoaded', function() {
-    const valorVentaInput = document.getElementById('valor_v');
-    const montoCEInput = document.getElementById('monto_ce');
-    const porcentajeCInput = document.getElementById('porcentaje_c');
 
-    function calcularPorcentaje() {
-        const valorVenta = parseFloat(valorVentaInput.value) || 0;
-        const montoCE = parseFloat(montoCEInput.value) || 0;
+
+    /**************************************
+     * SECCIÓN DE COSTOS EXTRAS 
+     **************************************/
+    let costoIndex = {{ count($costosExtras ?? []) }};
+    const costosExistentes = @json($costosExtras ?? []);
+
+    function addNewCostoGroup(costoData = null) {
+        const currentIndex = costoIndex;
+        const isExisting = costoData !== null;
+
+        let metodoPagoOptions = '<option value="">Seleccione método</option>';
+        @foreach($tiposDePago as $tipo)
+            metodoPagoOptions += `<option value="{{ $tipo->id }}" ${isExisting && costoData.metodo_pago == '{{ $tipo->id }}' ? 'selected' : ''}>{{ $tipo->name }}</option>`;
+        @endforeach
+
+        const newCostoGroup = $(`
+            <div class="costo-group mb-4 p-3 border rounded" data-index="${currentIndex}">
+                <input type="hidden" name="costos_extras[${currentIndex}][id_costos]" value="${isExisting ? (costoData.id_costos || '') : ''}">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Descripción</label>
+                            <input type="text" name="costos_extras[${currentIndex}][descripcion]" 
+                                class="form-control descripcion-ce" 
+                                value="${isExisting ? (costoData.descripcion || '') : ''}" 
+                                required>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Monto</label>
+                            <input type="number" step="0.01" name="costos_extras[${currentIndex}][monto]" 
+                                class="form-control monto-ce" 
+                                value="${isExisting ? (costoData.monto || '0.00') : '0.00'}" 
+                                required>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Método de Pago</label>
+                            <select name="costos_extras[${currentIndex}][metodo_pago]" 
+                                    class="form-control metodo-pago select2" required>
+                                ${metodoPagoOptions}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Estado</label>
+                            <select name="costos_extras[${currentIndex}][cobro]" class="form-control">
+                                <option value="pendiente" ${isExisting && costoData.cobro == 'pendiente' ? 'selected' : ''}>Pendiente</option>
+                                <option value="pagado" ${isExisting && costoData.cobro == 'pagado' ? 'selected' : ''}>Pagado</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-danger btn-remove-costo mt-4">
+                            <i class="fa fa-times-circle"></i>
+                        </button>
+                    </div>
+                </div>
+                ${isExisting && costoData.fecha ? `<input type="hidden" name="costos_extras[${currentIndex}][fecha]" value="${costoData.fecha}">` : ''}
+            </div>
+        `);
+
+        $('#costos-container').append(newCostoGroup);
+
+        newCostoGroup.find('.metodo-pago').select2({
+            width: '100%',
+            dropdownAutoWidth: true
+        });
         
-        // Aplicar la fórmula: (Valor venta - Monto costo extra) * 0.36
-        const porcentaje = (valorVenta - montoCE) * 0.36;
-        
-        // Actualizar el campo solo si el cálculo es válido
-        if (!isNaN(porcentaje)) {
-            porcentajeCInput.value = porcentaje.toFixed(2); // 2 decimales
-        } else {
-            porcentajeCInput.value = '';
-        }
+        costoIndex++;
     }
 
-    // Escuchar cambios en ambos campos
-    valorVentaInput.addEventListener('input', calcularPorcentaje);
-    montoCEInput.addEventListener('input', calcularPorcentaje);
-});</script>
-<script>
-$(document).ready(function() {
+    function calcularTotalCostos() {
+        let total = 0;
+        $('.monto-ce').each(function() {
+            total += parseFloat($(this).val()) || 0;
+        });
+        return total;
+    }
+
+    function calcularPorcentajeCerrajero() {
+        const totalCostos = calcularTotalCostos();
+        const valorVenta = parseFloat($('#valor_v').val()) || 0;
+        const porcentaje = (valorVenta - totalCostos) * 0.36;
+        $('#porcentaje_c').val(porcentaje.toFixed(2));
+    }
+
+    $(document).on('click', '.btn-add-costo', function() {
+        addNewCostoGroup();
+    });
+
+    $(document).on('click', '.btn-remove-costo', function() {
+        $(this).closest('.costo-group').remove();
+        calcularPorcentajeCerrajero();
+    });
+
+    $(document).on('input', '.monto-ce, #valor_v', function() {
+        calcularPorcentajeCerrajero();
+    });
+
+    $(document).ready(function() {
+        if (costosExistentes && costosExistentes.length > 0) {
+            costosExistentes.forEach(costo => {
+                addNewCostoGroup(costo);
+            });
+        } else {
+            addNewCostoGroup(); 
+        }
+
+        calcularPorcentajeCerrajero();
+    });
+
+    /**************************************
+     * SECCIÓN DE GASTOS 
+     **************************************/
+    let gastoIndex = {{ count($gastosData ?? []) }};
+    const gastosExistentes = @json($gastosData ?? []);
+
+    function addNewGastoGroup(gastoData = null) {
+        const currentIndex = gastoIndex;
+        const isExisting = gastoData !== null;
+
+        let metodoPagoOptions = '<option value="">Seleccione método</option>';
+        @foreach($tiposDePago as $tipo)
+            metodoPagoOptions += `<option value="{{ $tipo->id }}" ${isExisting && gastoData.metodo_pago == '{{ $tipo->id }}' ? 'selected' : ''}>{{ $tipo->name }}</option>`;
+        @endforeach
+
+        const newGastoGroup = $(`
+            <div class="gasto-group mb-4 p-3 border rounded" data-index="${currentIndex}">
+                <input type="hidden" name="gastos[${currentIndex}][id_gastos]" value="${isExisting ? (gastoData.id_gastos || '') : ''}">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Descripción</label>
+                            <input type="text" name="gastos[${currentIndex}][descripcion]" 
+                                class="form-control descripcion-gasto" 
+                                value="${isExisting ? (gastoData.descripcion || '') : ''}" 
+                                required>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Monto</label>
+                            <input type="number" step="0.01" name="gastos[${currentIndex}][monto]" 
+                                class="form-control monto-gasto" 
+                                value="${isExisting ? (gastoData.valor || '0.00') : '0.00'}" 
+                                required>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Método de Pago</label>
+                            <select name="gastos[${currentIndex}][metodo_pago]" 
+                                    class="form-control metodo-pago-gasto select2" required>
+                                ${metodoPagoOptions}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Estado</label>
+                            <select name="gastos[${currentIndex}][estatus]" class="form-control">
+                                <option value="pendiente" ${isExisting && gastoData.estatus == 'pendiente' ? 'selected' : ''}>Pendiente</option>
+                                <option value="pagado" ${isExisting && gastoData.estatus == 'pagado' ? 'selected' : ''}>Pagado</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-danger btn-remove-gasto mt-4">
+                            <i class="fa fa-times-circle"></i>
+                        </button>
+                    </div>
+                </div>
+                ${isExisting && gastoData.fecha ? `<input type="hidden" name="gastos[${currentIndex}][fecha]" value="${gastoData.fecha}">` : ''}
+            </div>
+        `);
+
+        $('#gastos-container').append(newGastoGroup);
+
+        newGastoGroup.find('.metodo-pago-gasto').select2({
+            width: '100%',
+            dropdownAutoWidth: true
+        });
+        
+        gastoIndex++;
+    }
+
+    $(document).on('click', '.btn-add-gasto', function() {
+        addNewGastoGroup();
+    });
+
+    $(document).on('click', '.btn-remove-gasto', function() {
+        $(this).closest('.gasto-group').remove();
+    });
+
+    $(document).ready(function() {
+        if (gastosExistentes && gastosExistentes.length > 0) {
+            gastosExistentes.forEach(gasto => {
+                const formattedGasto = {
+                    id_gastos: gasto.id_gastos,
+                    descripcion: gasto.descripcion,
+                    valor: gasto.monto || gasto.valor,
+                    metodo_pago: gasto.metodo_pago,
+                    estatus: gasto.estatus,
+                    fecha: gasto.fecha
+                };
+                addNewGastoGroup(formattedGasto);
+            });
+        } else {
+            addNewGastoGroup();
+        }
+    });
+
+    /**************************************
+     * SECCIÓN DE ITEMS DE TRABAJO
+     **************************************/
     let itemGroupIndex = 0;
     const itemsExistentes = @json($registroV->items ?? []);
 
-    function cargarProductosEnSelect($select, idAlmacen, productoSeleccionado = null, nombreProducto = null) {
-        if (idAlmacen) {
-            $.ajax({
-                url: '/obtener-productos-orden',
-                type: 'GET',
-                data: { id_almacen: idAlmacen },
-                success: function(response) {
-
-                    let options = '<option value="">{{ __('Select Producto') }}</option>';
+    function cargarProductosEnSelect($select, idAlmacen, productoSeleccionado = null, nombreProducto = null, precio = null) {
+    if (idAlmacen) {
+        $.ajax({
+            url: '/obtener-productos-orden',
+            type: 'GET',
+            data: { id_almacen: idAlmacen },
+            success: function(response) {
+                let options = '<option value="">{{ __('Select Producto') }}</option>';
+                
+                if (productoSeleccionado) {
+                    const productoEncontrado = response.find(p => p.id_producto == productoSeleccionado);
                     
-                    if (productoSeleccionado) {
-                        const productoEncontrado = response.find(p => p.id_producto == productoSeleccionado);
-                        
-                        if (productoEncontrado) {
-                            options += `
-                                <option value="${productoEncontrado.id_producto}" selected>
-                                    ${productoEncontrado.id_producto} - ${productoEncontrado.item}
-                                </option>`;
-                        } else if (nombreProducto) {
-                            options += `
-                                <option value="${productoSeleccionado}" selected>
-                                    ${productoSeleccionado} - ${nombreProducto}
-                                </option>`;
-                        }
-                    }
-                    
-                    response.forEach(function(producto) {
-                        if (producto.id_producto != productoSeleccionado) {
-                            options += `
-                                <option value="${producto.id_producto}">
-                                    ${producto.id_producto} - ${producto.item}
-                                </option>`;
-                        }
-                    });
-                    
-                    $select.html(options).prop('disabled', false);
-
-                    $select.select2();
-                    if (productoSeleccionado) {
-                        $select.val(productoSeleccionado).trigger('change');
-                    }
-
-                },
-                error: function(xhr) {
-                    console.error('Error al cargar los productos');
-                    if (productoSeleccionado && nombreProducto) {
-                        $select.html(`
-                            <option value="${productoSeleccionado}" selected>
+                    if (productoEncontrado) {
+                        options += `
+                            <option 
+                                value="${productoEncontrado.id_producto}" 
+                                data-precio="${productoEncontrado.precio_venta || productoEncontrado.precio || '0'}"
+                                selected>
+                                ${productoEncontrado.id_producto} - ${productoEncontrado.item}
+                            </option>`;
+                    } else if (nombreProducto) {
+                        options += `
+                            <option 
+                                value="${productoSeleccionado}" 
+                                data-precio="${precio || '0'}"
+                                selected>
                                 ${productoSeleccionado} - ${nombreProducto}
-                            </option>
-                            <option value="">{{ __('Select Producto') }}</option>
-                        `).prop('disabled', false);
-                        $select.select2();
+                            </option>`;
                     }
                 }
-            });
-        } else {
-            if (productoSeleccionado && nombreProducto) {
-                $select.html(`
-                    <option value="${productoSeleccionado}" selected>
+                
+                response.forEach(function(producto) {
+                    if (producto.id_producto != productoSeleccionado) {
+                        options += `
+                            <option 
+                                value="${producto.id_producto}" 
+                                data-precio="${producto.precio_venta || producto.precio || '0'}">
+                                ${producto.id_producto} - ${producto.item}
+                            </option>`;
+                    }
+                });
+                
+                $select.html(options).prop('disabled', false);
+                $select.select2();
+                
+                if (productoSeleccionado) {
+                    $select.val(productoSeleccionado).trigger('change');
+                }
+            },
+            error: function(xhr) {
+                console.error('Error al cargar los productos');
+                if (productoSeleccionado && nombreProducto) {
+                    $select.html(`
+                        <option 
+                            value="${productoSeleccionado}" 
+                            data-precio="${precio || '0'}"
+                            selected>
+                            ${productoSeleccionado} - ${nombreProducto}
+                        </option>
+                        <option value="">{{ __('Select Producto') }}</option>
+                    `).prop('disabled', false);
+                    $select.select2();
+                }
+            }
+        });
+    } else {
+        if (productoSeleccionado && nombreProducto) {
+            $select.html(`
+                <option 
+                    value="${productoSeleccionado}" 
+                    data-precio="${precio || '0'}"
+                        selected>
                         ${productoSeleccionado} - ${nombreProducto}
                     </option>
                     <option value="">{{ __('Select Producto') }}</option>
@@ -722,7 +975,18 @@ $(document).ready(function() {
         }
     };
 
-   function addNewProductRow(itemGroup, productoData = null) {
+    $(document).on('change', 'select[name^="items"][name$="[producto]"]', function() {
+        const $row = $(this).closest('.producto-row');
+        const precioInput = $row.find('input[name$="[precio]"]');
+        const precio = $(this).find('option:selected').data('precio') || '0';
+
+        precioInput.val(precio);
+
+        const nombreProducto = $(this).find('option:selected').text().split('-')[1]?.trim();
+        $row.find('input[name$="[nombre_producto]"]').val(nombreProducto);
+    });
+
+    function addNewProductRow(itemGroup, productoData = null) {
         const productoIndex = itemGroup.find('.producto-row').length;
         const itemGroupIndex = itemGroup.data('index');
 
@@ -735,22 +999,24 @@ $(document).ready(function() {
                         <option value="">{{ __('Select Producto') }}</option>
                         ${productoData ? `
                             <option value="${productoData.producto}" selected>
-                                ${productoData.producto} - ${productoData.nombre_producto || 'Producto'}
+                                ${productoData.codigo_producto || productoData.producto} - ${productoData.nombre_producto || 'Producto'}
                             </option>
                         ` : ''}
                     </select>
+                    <input type="hidden" name="items[${itemGroupIndex}][productos][${productoIndex}][nombre_producto]" 
+                        value="${productoData ? productoData.nombre_producto : ''}">
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">{{ __('Cantidad') }}</label>
                     <input type="number" name="items[${itemGroupIndex}][productos][${productoIndex}][cantidad]"
-                           class="form-control" placeholder="Cantidad" min="1"
-                           value="${productoData ? productoData.cantidad : ''}">
+                        class="form-control" placeholder="Cantidad" min="1"
+                        value="${productoData ? productoData.cantidad : '0'}">
                 </div>
                 <div class="col-md-2">
-                <label class="form-label">{{ __('Precio') }}</label>
-                <input type="number" name="items[${itemGroupIndex}][productos][${productoIndex}][precio]"
-                        class="form-control" placeholder="Precio" min="1"
-                        value="${productoData ? productoData.precio : ''}">
+                    <label class="form-label">{{ __('Precio') }}</label>
+                    <input type="number" step="0.01" name="items[${itemGroupIndex}][productos][${productoIndex}][precio]"
+                            class="form-control" placeholder="Precio" min="0" readonly
+                            value="${productoData ? productoData.precio : '0'}">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">{{ __('Almacén') }}</label>
@@ -782,8 +1048,7 @@ $(document).ready(function() {
                 $selectProducto,
                 productoData.almacen,
                 productoData.producto,
-                productoData.nombre_producto,
-                productoData.cantidad
+                productoData.nombre_producto
             );
         }
     }

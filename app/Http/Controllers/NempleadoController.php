@@ -9,6 +9,7 @@ use App\Models\Pnomina;
 use App\Models\Empleado;
 use App\Models\Cuota;
 use App\Models\Abono;
+use App\Models\TiposDePago;
 use App\Models\Descuento;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -30,7 +31,8 @@ class NempleadoController extends Controller
     {
         $nempleado = new Nempleado();
         $empleados = Empleado::all();
-        return view('nempleado.create', compact('nempleado', 'empleados'));
+        $metodosPago = TiposDePago::all();
+        return view('nempleado.create', compact('nempleado', 'empleados', 'metodosPago'));
     }
 
     public function store(Request $request)
@@ -185,7 +187,8 @@ class NempleadoController extends Controller
     public function edit($id): View
     {
         $nempleado = Nempleado::find($id);
-        return view('nempleado.edit', compact('nempleado'));
+        $metodosPago = TiposDePago::all();
+        return view('nempleado.edit', compact('nempleado', 'metodosPago'));
     }
 
     public function update(NempleadoRequest $request, Nempleado $nempleado): RedirectResponse
@@ -248,67 +251,11 @@ class NempleadoController extends Controller
         try {
             $nominaEmpleado = Nempleado::with(['empleado'])
                 ->findOrFail($idNempleado);
-            
-            $abonos = [];
-            if (!empty($nominaEmpleado->id_abonos)) {
-                if (is_string($nominaEmpleado->id_abonos)) {
-                    $abonosIds = json_decode($nominaEmpleado->id_abonos, true);
-                } 
-                elseif (is_array($nominaEmpleado->id_abonos)) {
-                    $abonosIds = $nominaEmpleado->id_abonos;
-                } 
-                else {
-                    $abonosIds = [];
-                }
-                
-                if (!empty($abonosIds)) {
-                    $abonos = Abono::whereIn('id_abonos', $abonosIds)->get();
-                }
-            }
-
-            $descuentos = [];
-            if (!empty($nominaEmpleado->id_descuentos)) {
-                if (is_string($nominaEmpleado->id_descuentos)) {
-                    $descuentosIds = json_decode($nominaEmpleado->id_descuentos, true);
-                } 
-                elseif (is_array($nominaEmpleado->id_descuentos)) {
-                    $descuentosIds = $nominaEmpleado->id_descuentos;
-                } 
-                else {
-                    $descuentosIds = [];
-                }
-                
-                if (!empty($descuentosIds)) {
-                    $descuentos = Descuento::whereIn('id_descuentos', $descuentosIds)->get();
-                }
-            }
-
-            $metodosPago = [];
-            if (!empty($nominaEmpleado->metodo_pago)) {
-                if (is_string($nominaEmpleado->metodo_pago)) {
-                    $metodosData = json_decode($nominaEmpleado->metodo_pago, true);
-                } 
-                elseif (is_array($nominaEmpleado->metodo_pago)) {
-                    $metodosData = $nominaEmpleado->metodo_pago;
-                } 
-                else {
-                    $metodosData = [];
-                }
-                
-                if (!empty($metodosData)) {
-                    foreach ($metodosData as $metodo) {
-                        if (!isset($metodo['metodo_id']) || !isset($metodo['monto'])) {
-                            continue;
-                        }
-                        
-                        $metodosPago[] = [
-                            'nombre' => $this->getNombreMetodoPago($metodo['metodo_id']),
-                            'monto' => $metodo['monto']
-                        ];
-                    }
-                }
-            }
-
+    
+            $abonos = $this->procesarRelacion($nominaEmpleado->id_abonos, Abono::class, 'id_abonos', 'a_fecha');
+            $descuentos = $this->procesarRelacion($nominaEmpleado->id_descuentos, Descuento::class, 'id_descuentos', 'd_fecha');
+            $metodosPago = $this->procesarMetodosPago($nominaEmpleado->metodo_pago);
+    
             $data = [
                 'nomina' => $nominaEmpleado,
                 'empleado' => $nominaEmpleado->empleado,
@@ -323,16 +270,46 @@ class NempleadoController extends Controller
                 'neto_pagado' => $nominaEmpleado->total_pagado,
                 'descuentos' => $descuentos,
                 'abonos' => $abonos,
-                'metodos_pago' => $metodosPago
+                'metodos_pago' => $metodosPago,
+                'debug' => [
+                    'metodos_raw' => $nominaEmpleado->metodo_pago,
+                    'metodos_processed' => $metodosPago
+                ]
             ];
             
             return PDF::loadView('nempleado.pdf', $data)
                 ->stream('recibo-'.$nominaEmpleado->empleado->cedula.'-'.$nominaEmpleado->created_at->format('Ymd').'.pdf');
                 
         } catch (\Exception $e) {
-            abort(500, "Error al generar el recibo de pago");
+            abort(500, "Error al generar el recibo de pago: " . $e->getMessage());
         }
     }
+    
+    private function procesarRelacion($data, $model, $idField, $fechaField)
+    {
+        if (empty($data)) {
+            return [];
+        }
+    
+        $ids = [];
+    
+        if (is_string($data)) {
+            $ids = json_decode($data, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $ids = [];
+            }
+        } elseif (is_array($data)) {
+            $ids = $data;
+        }
+    
+        if (!empty($ids)) {
+            return $model::whereIn($idField, $ids)
+                ->orderBy($fechaField, 'desc')
+                ->get();
+        }
+        
+        return [];
+    }    
 
     public function generarReciboGeneral($fechaDesde, $fechaHasta)
     {
@@ -511,18 +488,14 @@ class NempleadoController extends Controller
     
     private function getNombreMetodoPago($id)
     {
+
         if (!is_numeric($id)) {
             return strtolower($id);
         }
-    
-        $metodos = [
-            1 => 'transferencia',
-            2 => 'cheque', 
-            3 => 'efectivo',
-            4 => 'otro'
-        ];
         
-        return $metodos[$id] ?? 'otro';
+        $metodo = TiposDePago::find($id);
+        
+        return $metodo ? strtolower($metodo->name) : 'otro';
     }
 
     public function getRegistros(Request $request) {

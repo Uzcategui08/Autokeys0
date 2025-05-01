@@ -116,33 +116,33 @@ class PresupuestoController extends Controller
      * Update the specified resource in storage.
      */
 
-     public function update(PresupuestoRequest $request, Presupuesto $presupuesto): RedirectResponse
-     {
-         $validatedData = $request->validated();
+    public function update(PresupuestoRequest $request, Presupuesto $presupuesto): RedirectResponse
+    {
+        $validatedData = $request->validated();
 
-         $items = [];
-         foreach ($request->input('items', []) as $item) {
-             if (!empty($item['descripcion'])) {
-                 $items[] = [
-                     'descripcion' => $item['descripcion'],
-                     'precio' => (float)($item['precio'] ?? 0),
-                 ];
-             }
-         }
+        $items = [];
+        foreach ($request->input('items', []) as $item) {
+            if (!empty($item['descripcion'])) {
+                $items[] = [
+                    'descripcion' => $item['descripcion'],
+                    'precio' => (float)($item['precio'] ?? 0),
+                ];
+            }
+        }
 
-         $presupuesto->update([
-             'id_cliente' => $validatedData['id_cliente'],
-             'f_presupuesto' => $validatedData['f_presupuesto'],
-             'validez' => $validatedData['validez'],
-             'descuento' => $validatedData['descuento'],
-             'iva' => $validatedData['iva'],
-             'estado' => $validatedData['estado'],
-             'items' => $items
-         ]);
-     
-         return Redirect::route('presupuestos.index')
-             ->with('success', 'Presupuesto actualizado satisfactoriamente.');
-     }
+        $presupuesto->update([
+            'id_cliente' => $validatedData['id_cliente'],
+            'f_presupuesto' => $validatedData['f_presupuesto'],
+            'validez' => $validatedData['validez'],
+            'descuento' => $validatedData['descuento'],
+            'iva' => $validatedData['iva'],
+            'estado' => $validatedData['estado'],
+            'items' => $items
+        ]);
+    
+        return Redirect::route('presupuestos.index')
+            ->with('success', 'Presupuesto actualizado satisfactoriamente.');
+    }
     
     
 

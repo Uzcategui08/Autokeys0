@@ -26,6 +26,8 @@ class PresupuestoRequest extends FormRequest
             'f_presupuesto' => 'required|date',
             'validez' => 'required|date',
             'estado' => 'required',
+            'iva' => 'nullable|numeric',
+            'descuento' => 'nullable|numeric',
             'items' => 'required|array',
         ];
     }

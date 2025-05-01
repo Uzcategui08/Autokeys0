@@ -47,7 +47,7 @@
                                 <tbody>
                                     @foreach ($registroVs as $registroV)
                                         <tr>
-                                            <td>{{ ++$i }}</td>
+                                            <td>{{ $registroV->id }}</td>
                                             <td>{{ $registroV->fecha_h->format('m/d/Y') }}</td>
                                             <td>{{ $registroV->tecnico }}</td>
                                             <td>{{ $registroV->trabajo }}</td>

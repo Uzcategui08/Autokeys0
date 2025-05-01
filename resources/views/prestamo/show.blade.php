@@ -103,7 +103,9 @@
                                                     <div class="d-flex justify-content-between align-items-center">
                                                         <div>
                                                             <span class="fw-bold">${{ number_format($pago['monto'], 2) }}</span>
-                                                            <span class="text-muted ms-2">({{ $pago['metodo_pago'] }})</span>
+                                                            <span class="text-muted ms-2">
+                                                                ({{ $metodos[$pago['metodo_pago']] ?? 'Método desconocido' }})
+                                                            </span>
                                                             <small class="text-muted ms-2">{{ $pago['fecha'] }}</small>
                                                         </div>
                                                     </div>

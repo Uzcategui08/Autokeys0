@@ -423,6 +423,7 @@ return [
         [
             'text' => 'Tipos de Pago',
             'url' => 'tipos-de-pagos',
+            'icon' => 'fas fa-fw fa-money-check-alt',
         ],
 
         // ADMINISTRACIÓN

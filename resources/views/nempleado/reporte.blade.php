@@ -440,7 +440,7 @@ $(document).ready(function() {
             $('#contenido-general').show();
         },
         error: function(xhr) {
-            console.error('Error detallado:', xhr.responseText); // Ver el error real
+            console.error('Error detallado:', xhr.responseText);
             Swal.fire({
                 title: 'Error',
                 text: 'Ocurrió un error al cargar el resumen general. Por favor verifica los logs.',
@@ -462,7 +462,6 @@ $(document).ready(function() {
                 .replace(':id', $(this).data('id'));
             window.open(url, '_blank');
         } else {
-            // Para el reporte general
             const fechaDesde = $('#fecha_desde').val();
             const fechaHasta = $('#fecha_hasta').val();
             
@@ -470,8 +469,7 @@ $(document).ready(function() {
                 Swal.fire('Error', 'Seleccione ambas fechas', 'error');
                 return;
             }
-            
-            // Construye la URL correctamente
+
             const url = "{{ url('nomina/generar-recibo-general') }}/" + fechaDesde + "/" + fechaHasta;
             window.open(url, '_blank');
         }

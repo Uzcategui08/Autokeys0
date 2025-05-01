@@ -40,7 +40,7 @@ class TiposDePagoController extends Controller
         TiposDePago::create($request->validated());
 
         return Redirect::route('tipos-de-pagos.index')
-            ->with('success', 'TiposDePago created successfully.');
+            ->with('success', 'Tipo creado satisfactoriamente.');
     }
 
     /**
@@ -71,7 +71,7 @@ class TiposDePagoController extends Controller
         $tiposDePago->update($request->validated());
 
         return Redirect::route('tipos-de-pagos.index')
-            ->with('success', 'TiposDePago updated successfully');
+            ->with('success', 'Tipo editado satifactoriamente.');
     }
 
     public function destroy($id): RedirectResponse
@@ -79,6 +79,6 @@ class TiposDePagoController extends Controller
         TiposDePago::find($id)->delete();
 
         return Redirect::route('tipos-de-pagos.index')
-            ->with('success', 'TiposDePago deleted successfully');
+            ->with('success', 'Tipo eliminado satifactoriamente.');
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Gasto;
 use App\Models\Empleado;
+use App\Models\TiposDePago;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -24,7 +25,8 @@ class GastoController extends Controller
         $empleado = Empleado::where('cargo', '1')->get();
         $gasto->f_gastos = now()->format('Y-m-d');
         $gasto->estatus = 'pendiente';
-        return view('gasto.create', compact('gasto', 'empleado'));
+        $metodos = TiposDePago::all();
+        return view('gasto.create', compact('gasto', 'empleado' , 'metodos'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -34,7 +36,7 @@ class GastoController extends Controller
                 'f_gastos' => 'required|date',
                 'id_tecnico' => 'required|integer|min:1',
                 'descripcion' => 'required|string|max:500',
-                'subcategoria' => 'required|string|in:mantenimiento,repuestos,herramientas,software,consumibles,combustible,capacitacion,otros',
+                'subcategoria' => 'required|string',
                 'valor' => 'required|numeric|min:0',
                 'estatus' => 'required|in:pendiente,parcialmente_pagado,pagado',
             ]);
@@ -76,8 +78,10 @@ class GastoController extends Controller
     public function show($id): View
     {
         $gasto = Gasto::findOrFail($id);
+        $metodos = TiposDePago::all()->pluck('name', 'id');
         return view('gasto.show', [
             'gasto' => $gasto,
+            'metodos' => $metodos,
             'total_pagado' => $this->calcularTotalPagado($gasto->pagos),
             'saldo_pendiente' => $gasto->valor - $this->calcularTotalPagado($gasto->pagos)
         ]);
@@ -87,7 +91,8 @@ class GastoController extends Controller
     {
         $gasto = Gasto::findOrFail($id);
         $empleado = Empleado::where('cargo', '1')->get();
-        return view('gasto.edit', compact('gasto', 'empleado'));
+        $metodos = TiposDePago::all();
+        return view('gasto.edit', compact('gasto', 'empleado', 'metodos'));
     }
 
     public function update(Request $request, $id): RedirectResponse
@@ -97,7 +102,7 @@ class GastoController extends Controller
                 'f_gastos' => 'required|date',
                 'id_tecnico' => 'required|integer|min:1',
                 'descripcion' => 'required|string|max:500',
-                'subcategoria' => 'required|string|in:mantenimiento,repuestos,herramientas,software,consumibles,combustible,capacitacion,otros',
+                'subcategoria' => 'required|string',
                 'valor' => 'required|numeric|min:0',
                 'pagos' => 'required|json'
             ]);

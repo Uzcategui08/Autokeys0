@@ -52,10 +52,9 @@ class Nempleado extends Model
     
     public function abonos()
     {
-        // Obtener IDs de abonos desde el JSON
+
         $abonosIds = $this->id_abonos ? json_decode($this->id_abonos, true) : [];
-        
-        // Retornar una relación HasMany "filtrada" (no es óptimo, pero funciona)
+ 
         return $this->hasMany(Abono::class, 'id_empleado', 'id_empleado')
                    ->whereIn('id_abonos', $abonosIds);
     }

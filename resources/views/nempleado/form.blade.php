@@ -247,12 +247,8 @@
 
 <script>
 $(document).ready(function() {
-    const metodosPago = {
-        1: 'Transferencia Bancaria',
-        2: 'Cheque',
-        3: 'Efectivo',
-        4: 'Otro'
-    };
+
+    const metodosPago = @json($metodosPago->pluck('name', 'id'));
     
     let abonosSeleccionados = [];
     let descuentosSeleccionados = [];
@@ -398,16 +394,19 @@ $(document).ready(function() {
                 <tr data-id="${metodo.id}">
                     <td>
                         <select class="form-control metodo-pago-select" data-index="${index}">
+                            <option value="">Seleccionar método</option>
                             ${Object.entries(metodosPago).map(([id, nombre]) => `
-                                <option value="${id}" ${id == metodo.metodo_id ? 'selected' : ''}>${nombre}</option>
+                                <option value="${id}" ${id == metodo.metodo_id ? 'selected' : ''}>
+                                    ${nombre}
+                                </option>
                             `).join('')}
                         </select>
                     </td>
                     <td>
                         <input type="number" class="form-control monto-metodo" 
-                               data-index="${index}" 
-                               value="${parseFloat(metodo.monto).toFixed(2)}" 
-                               step="0.01" min="0">
+                            data-index="${index}" 
+                            value="${parseFloat(metodo.monto).toFixed(2)}" 
+                            step="0.01" min="0">
                     </td>
                     <td>
                         <button type="button" class="btn btn-sm btn-outline-danger eliminar-metodo" data-index="${index}">
@@ -417,7 +416,7 @@ $(document).ready(function() {
                 </tr>`);
         });
         
-        $('#total-distribuido').text(formatCurrency(totalDistribuido));
+        $('#total-distribuido').text('$' + formatCurrency(totalDistribuido));
         calcularRestante();
     }
 
