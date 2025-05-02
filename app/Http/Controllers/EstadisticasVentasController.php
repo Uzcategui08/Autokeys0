@@ -2,95 +2,226 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\RegistroV;
-use App\Models\Empleado;
-use Illuminate\Support\Facades\DB;
+use App\Models\Gasto;
+use App\Models\Costo;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 
-class CierreVentasController extends Controller
+class EstadisticasVentasController extends Controller
 {
+    protected $month;
+    protected $year;
+    protected $availableYears;
+
+    public function __construct()
+    {
+        // Obtener años disponibles para el filtro
+        $this->availableYears = $this->getAvailableYears();
+    }
+
     public function index(Request $request)
     {
-        // Obtener técnicos desde la tabla empleados (asumiendo tipo 1 son técnicos)
-        $tecnicos = Empleado::where('tipo', 2) // Filtra solo técnicos si es necesario
-            ->orderBy('nombre')
-            ->pluck('nombre', 'id_empleado');
+        // Obtener parámetros del request o usar valores por defecto
+        $this->month = $request->input('month', date('m'));
+        $this->year = $request->input('year', date('Y'));
         
-        $tecnicoIdSeleccionado = $request->input('tecnico');
-        $ventasQuery = RegistroV::query();
+        $stats = $this->getAllStats();
         
-        if ($tecnicoIdSeleccionado) {
-            // Obtener el nombre del técnico para filtrar en registroV
-            $tecnico = Empleado::find($tecnicoIdSeleccionado);
-            if ($tecnico) {
-                $ventasQuery->where('tecnico', $tecnico->nombre);
-            }
-        }
-        
-        $ventas = $ventasQuery->get();
-        
-        $totales = [
-            'total_general' => 0,
-            'total_pagado' => 0,
-            'total_credito' => 0,
-        ];
-        
-        foreach ($ventas as $venta) {
-            $totales['total_general'] += $venta->valor_v;
-            
-            $pagos = json_decode($venta->pagos, true) ?? [];
-            $totalPagado = array_reduce($pagos, function($total, $pago) {
-                return $total + (float)($pago['monto'] ?? 0);
-            }, 0);
-            
-            $totales['total_pagado'] += $totalPagado;
-            $totales['total_credito'] += ($venta->valor_v - $totalPagado);
-        }
-        
-        return view('estadisticas.cierre.index', [
-            'tecnicos' => $tecnicos,
-            'tecnicoSeleccionado' => $tecnicoIdSeleccionado,
-            'ventas' => $ventas,
-            'totales' => $totales
+        return view('estadisticas.ventas', [
+            'stats' => $stats,
+            'monthSelected' => $this->month,
+            'yearSelected' => $this->year,
+            'availableYears' => $this->availableYears
         ]);
     }
-    
-    // Método alternativo más eficiente para muchos registros
-    public function resumenTecnicos()
+
+    protected function getAvailableYears()
     {
-        // Obtener primero todos los técnicos
-        $tecnicos = Empleado::where('tipo', 1)->get();
+        // Obtener años únicos de todas las tablas relevantes
+        $yearsRegistroV = RegistroV::selectRaw('YEAR(fecha_h) as year')
+            ->distinct()
+            ->pluck('year');
         
-        $resumen = [];
-        
-        foreach ($tecnicos as $tecnico) {
-            $ventas = RegistroV::where('tecnico', $tecnico->nombre)
-                ->select(
-                    DB::raw('SUM(valor_v) as total_general'),
-                    DB::raw('SUM(
-                        CASE 
-                            WHEN estatus = "pagado" THEN valor_v
-                            WHEN estatus = "parcialemente pagado" THEN 
-                                (SELECT SUM(JSON_EXTRACT(p.monto, "$")) 
-                                FROM JSON_TABLE(pagos, "$[*]" COLUMNS(
-                                    monto DECIMAL(10,2) PATH "$.monto"
-                                )) as p
-                            ELSE 0
-                        END
-                    ) as total_pagado')
-                )
-                ->first();
+        $yearsGastos = Gasto::selectRaw('YEAR(f_gastos) as year')
+            ->distinct()
+            ->pluck('year');
             
-            if ($ventas) {
-                $resumen[] = [
-                    'tecnico' => $tecnico->nombre,
-                    'total_general' => $ventas->total_general ?? 0,
-                    'total_pagado' => $ventas->total_pagado ?? 0,
-                    'total_credito' => ($ventas->total_general ?? 0) - ($ventas->total_pagado ?? 0)
-                ];
+        $yearsCostos = Costo::selectRaw('YEAR(f_costos) as year')
+            ->distinct()
+            ->pluck('year');
+            
+        // Combinar y obtener años únicos
+        $allYears = $yearsRegistroV->merge($yearsGastos)->merge($yearsCostos)->unique()->sortDesc();
+        
+        return $allYears->values()->all();
+    }
+
+    // Métodos para estadísticas de ventas
+    protected function cobradoDelMes()
+    {
+        $registros = RegistroV::whereYear('fecha_h', $this->year)
+            ->whereMonth('fecha_h', $this->month)
+            ->get();
+
+        $total = 0;
+        foreach ($registros as $registro) {
+            if ($registro->pagos) {
+                foreach ($registro->pagos as $pago) {
+                    $total += $pago['monto'];
+                }
             }
         }
-        
-        return view('estadisticas.cierre.resumen', ['resumen' => $resumen]);
+        return $total;
+    }
+
+    protected function facturacionDelMes()
+    {
+        return RegistroV::whereYear('fecha_h', $this->year)
+            ->whereMonth('fecha_h', $this->month)
+            ->sum('valor_v');
+    }
+
+    protected function evolucionFacturacion()
+    {
+        $currentMonthFact = $this->facturacionDelMes();
+        $lastMonth = Carbon::create($this->year, $this->month, 1)->subMonth();
+        $lastMonthFact = (new self($lastMonth->month, $lastMonth->year))->facturacionDelMes();
+        return $lastMonthFact == 0 ? 0 : ($currentMonthFact / $lastMonthFact) * 100;
+    }
+
+    protected function numeroTransacciones()
+    {
+        return RegistroV::whereYear('fecha_h', $this->year)
+            ->whereMonth('fecha_h', $this->month)
+            ->count();
+    }
+
+    protected function ticketPromedio()
+    {
+        $transacciones = $this->numeroTransacciones();
+        return $transacciones == 0 ? 0 : $this->facturacionDelMes() / $transacciones;
+    }
+
+    // Métodos para costos y gastos
+    protected function totalCostoVenta()
+    {
+        return RegistroV::whereYear('fecha_h', $this->year)
+            ->whereMonth('fecha_h', $this->month)
+            ->sum('monto_ce');
+    }
+
+    protected function totalGastoPersonal()
+    {
+        return Gasto::whereYear('f_gastos', $this->year)
+            ->whereMonth('f_gastos', $this->month)
+            ->where('subcategoria', 'personal')
+            ->sum('valor');
+    }
+
+    protected function totalGastosOperativos()
+    {
+        return Gasto::whereYear('f_gastos', $this->year)
+            ->whereMonth('f_gastos', $this->month)
+            ->where('subcategoria', 'operativos')
+            ->sum('valor');
+    }
+
+    protected function totalOtrosGastos()
+    {
+        return Gasto::whereYear('f_gastos', $this->year)
+            ->whereMonth('f_gastos', $this->month)
+            ->where('subcategoria', 'otros')
+            ->sum('valor');
+    }
+
+    protected function totalFinancierosImpuestos()
+    {
+        return Gasto::whereYear('f_gastos', $this->year)
+            ->whereMonth('f_gastos', $this->month)
+            ->where('subcategoria', 'financieros_impuestos')
+            ->sum('valor');
+    }
+
+    protected function totalGastos()
+    {
+        return Gasto::whereYear('f_gastos', $this->year)
+            ->whereMonth('f_gastos', $this->month)
+            ->sum('valor');
+    }
+
+    // Métodos auxiliares
+    protected function calcularPorcentaje($valor, $facturacion)
+    {
+        return $facturacion == 0 ? 0 : ($valor / $facturacion) * 100;
+    }
+
+    protected function calcularUtilidadBruta()
+    {
+        return $this->facturacionDelMes() - $this->totalCostoVenta();
+    }
+
+    protected function calcularUtilidadNeta()
+    {
+        return $this->calcularUtilidadBruta() - $this->totalGastos();
+    }
+
+    // Método principal que obtiene todas las estadísticas
+    protected function getAllStats()
+    {
+        $facturacion = $this->facturacionDelMes();
+        $utilidadBruta = $this->calcularUtilidadBruta();
+        $utilidadNeta = $this->calcularUtilidadNeta();
+
+        return [
+            // Datos básicos
+            'month' => $this->month,
+            'year' => $this->year,
+            
+            // Estadísticas de ventas
+            'ventas' => [
+                'cobrado_mes' => $this->cobradoDelMes(),
+                'facturacion' => $facturacion,
+                'evolucion_facturacion' => $this->evolucionFacturacion(),
+                'num_transacciones' => $this->numeroTransacciones(),
+                'ticket_promedio' => $this->ticketPromedio(),
+            ],
+            
+            // Costos y utilidad
+            'costos' => [
+                'total_costo_venta' => $this->totalCostoVenta(),
+                'porcentaje_costo_venta' => $this->calcularPorcentaje($this->totalCostoVenta(), $facturacion),
+                'utilidad_bruta' => $utilidadBruta,
+                'porcentaje_utilidad_bruta' => $this->calcularPorcentaje($utilidadBruta, $facturacion),
+            ],
+            
+            // Gastos detallados
+            'gastos' => [
+                'personal' => [
+                    'total' => $this->totalGastoPersonal(),
+                    'porcentaje' => $this->calcularPorcentaje($this->totalGastoPersonal(), $facturacion)
+                ],
+                'operativos' => [
+                    'total' => $this->totalGastosOperativos(),
+                    'porcentaje' => $this->calcularPorcentaje($this->totalGastosOperativos(), $facturacion)
+                ],
+                'otros' => [
+                    'total' => $this->totalOtrosGastos(),
+                    'porcentaje' => $this->calcularPorcentaje($this->totalOtrosGastos(), $facturacion)
+                ],
+                'financieros_impuestos' => [
+                    'total' => $this->totalFinancierosImpuestos(),
+                    'porcentaje' => $this->calcularPorcentaje($this->totalFinancierosImpuestos(), $facturacion)
+                ],
+                'total_gastos' => $this->totalGastos(),
+                'porcentaje_gastos' => $this->calcularPorcentaje($this->totalGastos(), $facturacion)
+            ],
+            
+            // Resultados finales
+            'resultados' => [
+                'utilidad_neta' => $utilidadNeta,
+                'porcentaje_utilidad_neta' => $this->calcularPorcentaje($utilidadNeta, $facturacion)
+            ]
+        ];
     }
 }

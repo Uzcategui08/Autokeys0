@@ -53,18 +53,6 @@
         <p class="mt-3">Por favor, seleccione otro período.</p>
     </div>
 @else
-    <!-- Tu código actual de visualización de estadísticas -->
-    <div class="row">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5>Facturación del Mes</h5>
-                </div>
-                <div class="card-body">
-                    <h3 class="text-center">${{ number_format($stats['ventas']['facturacion'], 2) }}</h3>
-                </div>
-            </div>
-        </div>
     <div class="card mb-4">
         <div class="card-header bg-dark text-white d-flex justify-content-between">
             <h3 class="card-title">Resumen Ejecutivo</h3>
