@@ -44,7 +44,7 @@
                                     <td class="text-center align-middle">{{ $ajuste->producto->item }}</td>
                                     <td class="text-center align-middle">{{ $ajuste->almacene->nombre }}</td>
                                     <td class="text-center align-middle">
-                                        @if($ajuste->tipo == 'carga')
+                                    @if($ajuste->tipo_ajuste == 'compra' || $ajuste->tipo_ajuste == 'ajuste')
                                             <span class="badge bg-success">Carga</span>
                                         @else
                                             <span class="badge bg-danger">Descarga</span>

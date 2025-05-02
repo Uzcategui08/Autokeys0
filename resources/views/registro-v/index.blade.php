@@ -66,9 +66,11 @@
                                                     </a>
                                                     <a href="{{ route('registro-vs.pdf', $registroV->id) }}" class="btn btn-sm btn-warning" target="_blank">
                                                         <i class="fa fa-fw fa-print"></i> 
+                                                        Es
                                                     </a>
                                                     <a href="{{ route('invoice.pdf', $registroV->id) }}" class="btn btn-sm btn-info" target="_blank">
                                                         <i class="fa fa-fw fa-print"></i>
+                                                        En
                                                     </a>
                                                     @csrf
                                                     @method('DELETE')
