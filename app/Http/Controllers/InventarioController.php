@@ -69,9 +69,15 @@ $inventarios1 = Inventario::with(['producto', 'almacene'])
     }
     public function cargas(Request $request)
     {
-        $cargas = AjusteInventario::with(['producto', 'almacene','user'])
-                        ->orderBy('created_at', 'desc')
-                        ->paginate(10);
+        $query = AjusteInventario::with(['producto', 'almacene', 'user'])
+                    ->orderBy('created_at', 'desc');
+        
+        // Si el usuario es limited_user, filtrar solo sus cargas
+        if (auth()->user()->hasRole('limited_user')) {
+            $query->where('user_id', auth()->id());
+        }
+        
+        $cargas = $query->paginate(10);
         
         return view('inventario.cargas', [
             'cargas' => $cargas,
@@ -82,10 +88,11 @@ $inventarios1 = Inventario::with(['producto', 'almacene'])
     public function edit($id_inventario): View
     {
         $inventario = Inventario::with(['producto', 'almacene'])->findOrFail($id_inventario);
-        return view('inventario.edit', compact('inventario')); // Changed from 'inventarios.edit' to 'inventario.edit'
+        return view('inventario.edit', compact('inventario')); 
     }
 
     /**
+     * 
      * Actualizar cantidad con ajuste y registrar el ajuste.
      */
     public function update(Request $request, $id_inventario)
@@ -107,7 +114,6 @@ $inventarios1 = Inventario::with(['producto', 'almacene'])
             case 'ajuste':
                 $cantidadNueva += $request->cantidad_ajuste;
                 break;
-            case 'ajuste2':
             case 'resta':
                 $cantidadNueva -= $request->cantidad_ajuste;
                 if ($cantidadNueva < 0) {

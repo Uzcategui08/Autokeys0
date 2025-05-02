@@ -76,7 +76,7 @@
             </div>
 
         </div>
-
+        @unless(auth()->user()->hasRole('limited_user'))
         <div class="row">
     <!-- Card de Ventas por Lugar - Versión Compacta -->
     <section class="col-lg-7 connectedSortable mb-4">
@@ -128,7 +128,7 @@
         </div>
     </section>
 </div>
-
+@endunless
 <style>
     .card-footer {
         display: flex;

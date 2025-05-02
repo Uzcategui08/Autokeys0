@@ -18,67 +18,42 @@
                             {!! $errors->first('fecha_h', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                         </div>
                         <div class="form-group mb-3">
-                            <label for="select_empleado" class="form-label">{{ __('Técnico') }}</label>
-                            
-                            <!-- Campo oculto para el ID del empleado -->
-                            <input 
-                                type="hidden" 
-                                name="id_empleado" 
-                                id="id_empleado"
-                                value="{{ old('id_empleado', $empleadoId ?? '') }}"
-                            >
-                            
-                            <!-- Campo oculto para el nombre del técnico -->
-                            <input 
-                                type="hidden" 
-                                name="tecnico" 
-                                id="tecnico" 
-                                value="{{ old('tecnico', $registroV->tecnico ?? '') }}"
-                            >
-                            
-                            <!-- Select visible -->
-                            <select 
-                                id="select_empleado"
-                                class="form-control @error('tecnico') is-invalid @enderror"
-                                onchange="updateEmpleadoFields(this)"
-                            >
-                                <option value="">Seleccionar...</option>
-                                @foreach($empleados as $empleado)
-                                    <option 
-                                        value="{{ $empleado->id_empleado }}"
-                                        @selected(old('id_empleado', $empleadoId ?? null) == $empleado->id_empleado)
-                                    >
-                                        {{ $empleado->nombre }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            
-                            @error('tecnico')
-                                <div class="invalid-feedback d-block"><strong>{{ $message }}</strong></div>
-                            @enderror
-                        </div>
-                        <script>
-                            function updateEmpleadoFields(select) {
-                                const empleadoId = select.value;
-                                const empleadoNombre = select.options[select.selectedIndex].text;
-                                
-                                document.getElementById('id_empleado').value = empleadoId;
-                                document.getElementById('tecnico').value = empleadoNombre;
-                            }
-                            
-                            // Inicialización cuando el DOM está listo
-                            document.addEventListener('DOMContentLoaded', function() {
-                                const select = document.getElementById('select_empleado');
-                                const idEmpleado = "{{ old('id_empleado', $empleadoId ?? '') }}";
-                                
-                                if (idEmpleado) {
-                                    select.value = idEmpleado;
-                                    // Disparar el evento change para actualizar los campos ocultos
-                                    const event = new Event('change');
-                                    select.dispatchEvent(event);
-                                }
-                            });
-                            </script>
+    <label for="select_empleado" class="form-label">{{ __('Técnico') }}</label>
+    
+    @if(auth()->user()->hasRole('limited_user'))
+        @if(auth()->user()->empleado)
+            <!-- Mostrar solo el nombre del usuario actual (solo lectura) -->
+            <input type="text" class="form-control" value="{{ auth()->user()->empleado->nombre }}" readonly>
+            <input type="hidden" name="id_empleado" value="{{ auth()->user()->empleado->id_empleado }}">
+        @else
+            <div class="alert alert-danger">
+                No tienes un empleado asociado en el sistema. Contacta al administrador.
+            </div>
+        @endif
+    @else
+        <!-- Select normal para otros roles -->
+        <select 
+            id="select_empleado"
+            name="id_empleado"  
+            class="form-control @error('id_empleado') is-invalid @enderror"
+        >
+            <option value="">Seleccionar...</option>
+            @foreach($empleados as $empleado)
+                <option 
+                    value="{{ $empleado->id_empleado }}"
+                    @selected(old('id_empleado', $registroV->id_empleado ?? null) == $empleado->id_empleado)
+                >
+                    {{ $empleado->nombre }}
+                </option>
+            @endforeach
+        </select>
+    @endif
+    
+    @error('id_empleado')
+        <div class="invalid-feedback d-block"><strong>{{ $message }}</strong></div>
+    @enderror
+</div>
+
                         <div class="form-group mb-3">
                             <label for="lugarventa" class="form-label">{{ __('Lugar de Venta') }}</label>
                             <select name="lugarventa" class="form-control select2 @error('lugarventa') is-invalid @enderror" id="lugarventa">
@@ -687,7 +662,7 @@ $(document).ready(function() {
                             <input type="text" name="costos_extras[${currentIndex}][descripcion]" 
                                 class="form-control descripcion-ce" 
                                 value="${isExisting ? (costoData.descripcion || '') : ''}" 
-                                required>
+                                >
                         </div>
                     </div>
                     
@@ -697,7 +672,7 @@ $(document).ready(function() {
                             <input type="number" step="0.01" name="costos_extras[${currentIndex}][monto]" 
                                 class="form-control monto-ce" 
                                 value="${isExisting ? (costoData.monto || '0.00') : '0.00'}" 
-                                required>
+                                >
                         </div>
                     </div>
 
@@ -705,7 +680,7 @@ $(document).ready(function() {
                         <div class="form-group mb-3">
                             <label class="form-label">Método de Pago</label>
                             <select name="costos_extras[${currentIndex}][metodo_pago]" 
-                                    class="form-control metodo-pago select2" required>
+                                    class="form-control metodo-pago select2" >
                                 ${metodoPagoOptions}
                             </select>
                         </div>
@@ -741,21 +716,6 @@ $(document).ready(function() {
         costoIndex++;
     }
 
-    function calcularTotalCostos() {
-        let total = 0;
-        $('.monto-ce').each(function() {
-            total += parseFloat($(this).val()) || 0;
-        });
-        return total;
-    }
-
-    function calcularPorcentajeCerrajero() {
-        const totalCostos = calcularTotalCostos();
-        const valorVenta = parseFloat($('#valor_v').val()) || 0;
-        const porcentaje = (valorVenta - totalCostos) * 0.36;
-        $('#porcentaje_c').val(porcentaje.toFixed(2));
-    }
-
     $(document).on('click', '.btn-add-costo', function() {
         addNewCostoGroup();
     });
@@ -768,19 +728,42 @@ $(document).ready(function() {
     $(document).on('input', '.monto-ce, #valor_v', function() {
         calcularPorcentajeCerrajero();
     });
+// Listener para eliminar gastos (similar al de costos)
+$(document).on('click', '.btn-remove-gasto', function() {
+    $(this).closest('.gasto-group').remove();
+    calcularPorcentajeCerrajero();
+    actualizarTotales(); // Nueva función para mostrar totales
+});
 
-    $(document).ready(function() {
-        if (costosExistentes && costosExistentes.length > 0) {
-            costosExistentes.forEach(costo => {
-                addNewCostoGroup(costo);
-            });
-        } else {
-            addNewCostoGroup(); 
-        }
+// Listener para cambios en montos de gastos y valor de venta
+$(document).on('input', '.monto-ce, .monto-gasto, #valor_v', function() {
+    calcularPorcentajeCerrajero();
+    actualizarTotales();
+});
 
-        calcularPorcentajeCerrajero();
-    });
+// Listener para inicialización de gastos existentes
+$(document).ready(function() {
+    // Inicialización de costos (tu código existente)
+    if (costosExistentes && costosExistentes.length > 0) {
+        costosExistentes.forEach(costo => {
+            addNewCostoGroup(costo);
+        });
+    } else {
+        addNewCostoGroup(); 
+    }
 
+    calcularPorcentajeCerrajero();
+    actualizarTotales();
+});
+
+// Función para actualizar visualización de totales (nueva)
+function actualizarTotales() {
+    const totalGastos = calcularTotalGastos();
+    $('#total-gastos').text(totalGastos.toFixed(2));
+    
+    const totalCostos = calcularTotalCostos();
+    $('#total-costos').text(totalCostos.toFixed(2));
+}
     /**************************************
      * SECCIÓN DE GASTOS 
      **************************************/
@@ -806,7 +789,7 @@ $(document).ready(function() {
                             <input type="text" name="gastos[${currentIndex}][descripcion]" 
                                 class="form-control descripcion-gasto" 
                                 value="${isExisting ? (gastoData.descripcion || '') : ''}" 
-                                required>
+                                >
                         </div>
                     </div>
                     
@@ -816,7 +799,7 @@ $(document).ready(function() {
                             <input type="number" step="0.01" name="gastos[${currentIndex}][monto]" 
                                 class="form-control monto-gasto" 
                                 value="${isExisting ? (gastoData.valor || '0.00') : '0.00'}" 
-                                required>
+                                >
                         </div>
                     </div>
 
@@ -824,7 +807,7 @@ $(document).ready(function() {
                         <div class="form-group mb-3">
                             <label class="form-label">Método de Pago</label>
                             <select name="gastos[${currentIndex}][metodo_pago]" 
-                                    class="form-control metodo-pago-gasto select2" required>
+                                    class="form-control metodo-pago-gasto select2" >
                                 ${metodoPagoOptions}
                             </select>
                         </div>
@@ -867,25 +850,50 @@ $(document).ready(function() {
     $(document).on('click', '.btn-remove-gasto', function() {
         $(this).closest('.gasto-group').remove();
     });
+    function calcularTotalCostos() {
+        let total = 0;
+        $('.monto-ce').each(function() {
+            total += parseFloat($(this).val()) || 0;
+        });
+        return total;
+    }
 
-    $(document).ready(function() {
-        if (gastosExistentes && gastosExistentes.length > 0) {
-            gastosExistentes.forEach(gasto => {
-                const formattedGasto = {
-                    id_gastos: gasto.id_gastos,
-                    descripcion: gasto.descripcion,
-                    valor: gasto.monto || gasto.valor,
-                    metodo_pago: gasto.metodo_pago,
-                    estatus: gasto.estatus,
-                    fecha: gasto.fecha
-                };
-                addNewGastoGroup(formattedGasto);
-            });
-        } else {
-            addNewGastoGroup();
-        }
+    function calcularTotalGastos() {
+    let total = 0;
+    $('.monto-gasto').each(function() {
+        const value = $(this).val();
+        total += parseFloat(value) || 0;
     });
+    return total;
+}
 
+// Función para calcular porcentaje cerrajero (mejorada)
+function calcularPorcentajeCerrajero() {
+    const totalCostos = calcularTotalCostos();
+    const totalGastos = calcularTotalGastos();
+    const valorVenta = parseFloat($('#valor_v').val()) || 0;
+    const porcentaje = (valorVenta - totalCostos - totalGastos) * 0.36;
+    $('#porcentaje_c').val(porcentaje.toFixed(2));
+}
+
+// Mantén solo este bloque de inicialización (al final de tu código)
+$(document).ready(function() {
+    if (gastosExistentes && gastosExistentes.length > 0) {
+        gastosExistentes.forEach(gasto => {
+            const formattedGasto = {
+                id_gastos: gasto.id_gastos,
+                descripcion: gasto.descripcion,
+                valor: gasto.monto || gasto.valor,
+                metodo_pago: gasto.metodo_pago,
+                estatus: gasto.estatus,
+                fecha: gasto.fecha
+            };
+            addNewGastoGroup(formattedGasto);
+        });
+    } else {
+        addNewGastoGroup();
+    }
+});
     /**************************************
      * SECCIÓN DE ITEMS DE TRABAJO
      **************************************/

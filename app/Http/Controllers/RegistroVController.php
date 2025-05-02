@@ -30,23 +30,34 @@ class RegistroVController extends Controller
      */
     public function index(Request $request): View
     {
-        $registroVs = RegistroV::with('cliente')
-            ->where('estatus', 'pagado')  
-            ->paginate(20);    
-            
+        $query = RegistroV::with('cliente')
+        ->where('estatus', 'pagado');
+    
+    // Si el usuario es limited_user, filtrar solo sus registros
+    if (auth()->user()->hasRole('limited_user')) {
+        $query->where('id_empleado', auth()->id());
+    }
+    $registroVs = $query->paginate(20);
+
         return view('registro-v.index', compact('registroVs'))
             ->with('i', ($request->input('page', 1) - 1) * $registroVs->perPage());
     }
 
-    public function cxc(Request $request): View
-    {
-        $registroVs = RegistroV::with('cliente')
-            ->where('estatus', '!=', 'pagado')  
-            ->paginate(20);
+public function cxc(Request $request): View
+{
+    $query = RegistroV::with('cliente')
+        ->where('estatus', '!=', 'pagado');
     
-        return view('registro-v.cxc', compact('registroVs'))
-            ->with('i', ($request->input('page', 1) - 1) * $registroVs->perPage());
+    // Si el usuario es limited_user, filtrar solo sus registros
+    if (auth()->user()->hasRole('limited_user')) {
+        $query->where('id_empleado', auth()->id());
     }
+    
+    $registroVs = $query->paginate(20);
+
+    return view('registro-v.cxc', compact('registroVs'))
+        ->with('i', ($request->input('page', 1) - 1) * $registroVs->perPage());
+}
     
     /**
      * Show the form for creating a new resource.
@@ -89,6 +100,7 @@ class RegistroVController extends Controller
      */
     public function store(RegistroVRequest $request): RedirectResponse
     {
+        
         DB::beginTransaction();
     
         try {
@@ -822,40 +834,41 @@ class RegistroVController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id): RedirectResponse
-    {
-        DB::beginTransaction();
-    
-        try {
-            $registroV = RegistroV::findOrFail($id);
+ public function destroy($id): RedirectResponse
+{
+    DB::beginTransaction();
 
-            $costosIds = $registroV->costos ? json_decode($registroV->costos, true) : [];
-            $gastosIds = $registroV->gastos ? json_decode($registroV->gastos, true) : [];
+    try {
+        $registroV = RegistroV::findOrFail($id);
 
-            if ($registroV->id_abono) {
-                Abono::where('id_abonos', $registroV->id_abono)->delete();
-            }
+        // No need to json_decode since Laravel already converts JSON columns to arrays
+        $costosIds = $registroV->costos ?: [];
+        $gastosIds = $registroV->gastos ?: [];
 
-            if (!empty($costosIds)) {
-                Costo::whereIn('id_costos', $costosIds)->delete();
-            }
-
-            if (!empty($gastosIds)) {
-                Gasto::whereIn('id_gastos', $gastosIds)->delete();
-            }
-
-            $registroV->delete();
-    
-            DB::commit();
-    
-            return Redirect::route('registro-vs.index')
-                ->with('success', 'Registro eliminado satisfactoriamente.');
-    
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Error al eliminar el registro: ' . $e->getMessage());
+        if ($registroV->id_abono) {
+            Abono::where('id_abonos', $registroV->id_abono)->delete();
         }
+
+        if (!empty($costosIds)) {
+            Costo::whereIn('id_costos', $costosIds)->delete();
+        }
+
+        if (!empty($gastosIds)) {
+            Gasto::whereIn('id_gastos', $gastosIds)->delete();
+        }
+
+        $registroV->delete();
+
+        DB::commit();
+
+        return Redirect::route('registro-vs.index')
+            ->with('success', 'Registro eliminado satisfactoriamente.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->with('error', 'Error al eliminar el registro: ' . $e->getMessage());
     }
+}
 
     /**
      * Generar PDF del registro

@@ -476,6 +476,12 @@ return [
         'icon' => 'fas fa-fw fa-chart-line',
         'can' => 'admin',
     ],
+    [
+        'text' => 'Cierres',
+        'url' => 'cierre-ventas',
+        'icon' => 'fas fa-fw fa-chart-line',
+        'can' => 'admin',
+    ],
 
     // ========================================
     // SECCIÓN ADMINISTRACIÓN (solo admin)

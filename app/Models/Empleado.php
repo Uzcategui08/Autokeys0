@@ -65,6 +65,9 @@ class Empleado extends Model
         return $this->hasMany(Costo::class, 'id_tecnico', 'id_empleado');
     }
 
-
+    public function registrosV()
+    {
+        return $this->hasMany(RegistroV::class, 'id_empleado', 'id_empleado');
+    }
 
 }

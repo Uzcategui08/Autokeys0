@@ -49,7 +49,7 @@
                                         <tr>
                                             <td>{{ $registroV->id }}</td>
                                             <td>{{ $registroV->fecha_h->format('m/d/Y') }}</td>
-                                            <td>{{ $registroV->tecnico }}</td>
+                                            <td>{{ $registroV->empleado->nombre }}</td>
                                             <td>{{ $registroV->trabajo }}</td>
                                             <td>{{ $registroV->modelo }}</td>
                                             <td>{{ $registroV->cliente }}</td>

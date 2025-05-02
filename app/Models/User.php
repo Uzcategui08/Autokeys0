@@ -56,4 +56,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    // app/Models/User.php
+public function empleado()
+{
+    return $this->belongsTo(Empleado::class, 'id_empleado', 'id_empleado');
+}
 }

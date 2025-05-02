@@ -66,8 +66,7 @@
                     <label for="iva" class="form-label fw-bold">{{ __('IVA') }}</label>
                     <select name="iva" class="form-control @error('iva') is-invalid @enderror" id="iva">
                         <option value="0" {{ old('iva', $presupuesto?->iva) == 0 ? 'selected' : '' }}>0%</option>
-                        <option value="10" {{ old('iva', $presupuesto?->iva) == 10 ? 'selected' : '' }}>10%</option>
-                        <option value="21" {{ old('iva', $presupuesto?->iva) == 21 ? 'selected' : '' }}>21%</option>
+                        <option value="7.5" {{ old('iva', $presupuesto?->iva) == 7.5 ? 'selected' : '' }}>7.5%</option>
                     </select>
                     @error('iva')
                         <div class="invalid-feedback">{{ $message }}</div>
