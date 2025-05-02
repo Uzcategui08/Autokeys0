@@ -107,6 +107,7 @@ Route::get('/nomina/generar-recibo-general/{fechaDesde}/{fechaHasta}', [Nemplead
 
 Route::get('/nempleados/reporte', [NempleadoController::class, 'reporte'])->name('nempleados.reporte');
 
+Route::get('/verificar-stock', [RegistroVController::class, 'verificarStock'])->name('verificar.stock');
 
 Route::resource('prestamos', PrestamoController::class);
 Route::get('prestamos/empleado/{id}', [PrestamoController::class, 'porEmpleado'])

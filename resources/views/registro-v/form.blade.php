@@ -892,88 +892,159 @@ $(document).ready(function() {
     let itemGroupIndex = 0;
     const itemsExistentes = @json($registroV->items ?? []);
 
+    function verificarStock() {
+        let sinStock = false;
+        let mensajesError = [];
+        
+        $('.producto-row').each(function() {
+            const $row = $(this);
+            const productoSelect = $row.find('select[name$="[producto]"]');
+            const cantidadInput = $row.find('input[name$="[cantidad]"]');
+            const almacenSelect = $row.find('select[name$="[almacen]"]');
+            
+            const productoId = productoSelect.val();
+            const cantidad = parseInt(cantidadInput.val()) || 0;
+            const almacenId = almacenSelect.val();
+            
+            if (productoId && almacenId && cantidad > 0) {
+                $.ajax({
+                    url: '/verificar-stock',
+                    type: 'GET',
+                    async: false, 
+                    data: {
+                        producto_id: productoId,
+                        almacen_id: almacenId,
+                        cantidad: cantidad
+                    },
+                    success: function(response) {
+                        if (!response.suficiente) {
+                            sinStock = true;
+                            mensajesError.push(`No hay suficiente stock para el producto ${productoSelect.find('option:selected').text()}. Stock disponible: ${response.stock}`);
+                        }
+                    },
+                    error: function() {
+                        console.error('Error al verificar el stock');
+                    }
+                });
+            }
+        });
+        
+        return {
+            valido: !sinStock,
+            mensajes: mensajesError
+        };
+    }
+
+    $('form').on('submit', function(e) {
+        e.preventDefault();
+        
+        const verificacionStock = verificarStock();
+        
+        if (!verificacionStock.valido) {
+            Swal.fire({
+                title: 'Error de Stock',
+                html: verificacionStock.mensajes.join('<br>'),
+                icon: 'warning',
+                confirmButtonText: 'Entendido'
+            });
+            return false;
+        }
+        
+        this.submit();
+    });
+
     function cargarProductosEnSelect($select, idAlmacen, productoSeleccionado = null, nombreProducto = null, precio = null) {
-    if (idAlmacen) {
-        $.ajax({
-            url: '/obtener-productos-orden',
-            type: 'GET',
-            data: { id_almacen: idAlmacen },
-            success: function(response) {
-                let options = '<option value="">{{ __('Select Producto') }}</option>';
-                
-                if (productoSeleccionado) {
-                    const productoEncontrado = response.find(p => p.id_producto == productoSeleccionado);
+        if (idAlmacen) {
+            $.ajax({
+                url: '/obtener-productos-orden',
+                type: 'GET',
+                data: { id_almacen: idAlmacen },
+                success: function(response) {
+                    let options = '<option value="">{{ __('Select Producto') }}</option>';
                     
-                    if (productoEncontrado) {
-                        options += `
-                            <option 
-                                value="${productoEncontrado.id_producto}" 
-                                data-precio="${productoEncontrado.precio_venta || productoEncontrado.precio || '0'}"
-                                selected>
-                                ${productoEncontrado.id_producto} - ${productoEncontrado.item}
-                            </option>`;
-                    } else if (nombreProducto) {
-                        options += `
+                    if (productoSeleccionado) {
+                        const productoEncontrado = response.find(p => p.id_producto == productoSeleccionado);
+                        
+                        if (productoEncontrado) {
+                            options += `
+                                <option 
+                                    value="${productoEncontrado.id_producto}" 
+                                    data-precio="${productoEncontrado.precio_venta || productoEncontrado.precio || '0'}"
+                                    data-stock="${productoEncontrado.stock || 0}"
+                                    selected>
+                                    ${productoEncontrado.id_producto} - ${productoEncontrado.item} (Stock: ${productoEncontrado.stock || 0})
+                                </option>`;
+                        } else if (nombreProducto) {
+                            options += `
+                                <option 
+                                    value="${productoSeleccionado}" 
+                                    data-precio="${precio || '0'}"
+                                    data-stock="0"
+                                    selected>
+                                    ${productoSeleccionado} - ${nombreProducto}
+                                </option>`;
+                        }
+                    }
+                    
+                    response.forEach(function(producto) {
+                        if (producto.id_producto != productoSeleccionado) {
+                            options += `
+                                <option 
+                                    value="${producto.id_producto}" 
+                                    data-precio="${producto.precio_venta || producto.precio || '0'}"
+                                    data-stock="${producto.stock || 0}">
+                                    ${producto.id_producto} - ${producto.item} (Stock: ${producto.stock || 0})
+                                </option>`;
+                        }
+                    });
+                    
+                    $select.html(options).prop('disabled', false);
+                    $select.select2();
+                    
+                    if (productoSeleccionado) {
+                        $select.val(productoSeleccionado).trigger('change');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error al cargar los productos');
+                    if (productoSeleccionado && nombreProducto) {
+                        $select.html(`
                             <option 
                                 value="${productoSeleccionado}" 
                                 data-precio="${precio || '0'}"
+                                data-stock="0"
                                 selected>
                                 ${productoSeleccionado} - ${nombreProducto}
-                            </option>`;
+                            </option>
+                            <option value="">{{ __('Select Producto') }}</option>
+                        `).prop('disabled', false);
+                        $select.select2();
                     }
                 }
-                
-                response.forEach(function(producto) {
-                    if (producto.id_producto != productoSeleccionado) {
-                        options += `
-                            <option 
-                                value="${producto.id_producto}" 
-                                data-precio="${producto.precio_venta || producto.precio || '0'}">
-                                ${producto.id_producto} - ${producto.item}
-                            </option>`;
-                    }
+            });
+        }
+    }
+
+    $(document).on('change', 'input[name$="[cantidad]"]', function() {
+        const $row = $(this).closest('.producto-row');
+        const productoSelect = $row.find('select[name$="[producto]"]');
+        const cantidad = parseInt($(this).val()) || 0;
+        
+        if (productoSelect.val()) {
+            const stockDisponible = parseInt(productoSelect.find('option:selected').data('stock')) || 0;
+            
+            if (cantidad > stockDisponible) {
+                Swal.fire({
+                    title: 'Stock Insuficiente',
+                    text: `Solo hay ${stockDisponible} unidades disponibles de este producto`,
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido'
                 });
-                
-                $select.html(options).prop('disabled', false);
-                $select.select2();
-                
-                if (productoSeleccionado) {
-                    $select.val(productoSeleccionado).trigger('change');
-                }
-            },
-            error: function(xhr) {
-                console.error('Error al cargar los productos');
-                if (productoSeleccionado && nombreProducto) {
-                    $select.html(`
-                        <option 
-                            value="${productoSeleccionado}" 
-                            data-precio="${precio || '0'}"
-                            selected>
-                            ${productoSeleccionado} - ${nombreProducto}
-                        </option>
-                        <option value="">{{ __('Select Producto') }}</option>
-                    `).prop('disabled', false);
-                    $select.select2();
-                }
-            }
-        });
-    } else {
-        if (productoSeleccionado && nombreProducto) {
-            $select.html(`
-                <option 
-                    value="${productoSeleccionado}" 
-                    data-precio="${precio || '0'}"
-                        selected>
-                        ${productoSeleccionado} - ${nombreProducto}
-                    </option>
-                    <option value="">{{ __('Select Producto') }}</option>
-                `).prop('disabled', false);
-                $select.select2();
-            } else {
-                $select.html('<option value="">{{ __('Select Producto') }}</option>').prop('disabled', true);
+
+                $(this).val(stockDisponible > 0 ? stockDisponible : 0);
             }
         }
-    };
+    });
 
     $(document).on('change', 'select[name^="items"][name$="[producto]"]', function() {
         const $row = $(this).closest('.producto-row');

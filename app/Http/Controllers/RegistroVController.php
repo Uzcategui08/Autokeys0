@@ -577,6 +577,48 @@ class RegistroVController extends Controller
         }
         return null;
     }
+
+    public function verificarStock(Request $request)
+    {
+        Log::info('Inicio de verificación de stock', [
+            'request_data' => $request->all(),
+            'time' => now()
+        ]);
+    
+        $productoId = $request->input('producto_id');
+        $almacenId = $request->input('almacen_id');
+        $cantidadRequerida = $request->input('cantidad');
+        
+        Log::debug('Datos recibidos', [
+            'producto_id' => $productoId,
+            'almacen_id' => $almacenId,
+            'cantidad_requerida' => $cantidadRequerida
+        ]);
+    
+        $inventario = Inventario::where('id_producto', $productoId)
+                            ->where('id_almacen', $almacenId)
+                            ->first();
+        
+        Log::debug('Resultado de consulta de inventario', [
+            'inventario' => $inventario,
+            'exists' => !is_null($inventario)
+        ]);
+    
+        $stockDisponible = $inventario ? $inventario->cantidad : 0;
+        
+        Log::info('Resultado de verificación de stock', [
+            'stock_disponible' => $stockDisponible,
+            'cantidad_requerida' => $cantidadRequerida,
+            'suficiente' => $stockDisponible >= $cantidadRequerida
+        ]);
+    
+        return response()->json([
+            'suficiente' => $stockDisponible >= $cantidadRequerida,
+            'stock' => $stockDisponible,
+            'producto_id' => $productoId,
+            'almacen_id' => $almacenId
+        ]);
+    }
      
     // Método para actualizar el inventario
     private function actualizarInventario($productoId, $cantidad, $almacen)

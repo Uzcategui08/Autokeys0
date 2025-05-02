@@ -159,6 +159,7 @@ class OrdenController extends Controller
                                     'id_producto' => $item->id_producto,
                                     'item' => $item->producto->item,
                                     'cantidad' => $item->cantidad,
+                                    'stock' => $item->cantidad,
                                     'precio_venta' => $item->producto ? $item->producto->precio : 0,
                                    ];
                                });
