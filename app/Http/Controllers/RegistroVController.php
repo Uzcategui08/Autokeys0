@@ -873,44 +873,42 @@ public function cxc(Request $request): View
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
- public function destroy($id): RedirectResponse
-{
-    DB::beginTransaction();
-
-    try {
-        $registroV = RegistroV::findOrFail($id);
-
-        // No need to json_decode since Laravel already converts JSON columns to arrays
-        $costosIds = $registroV->costos ?: [];
-        $gastosIds = $registroV->gastos ?: [];
-
-        if ($registroV->id_abono) {
-            Abono::where('id_abonos', $registroV->id_abono)->delete();
+    public function destroy($id): RedirectResponse
+    {
+        DB::beginTransaction();
+    
+        try {
+            $registroV = RegistroV::findOrFail($id);
+    
+            // Convertir los JSON strings a arrays si es necesario
+            $costosIds = is_string($registroV->costos) ? json_decode($registroV->costos, true) ?? [] : ($registroV->costos ?: []);
+            $gastosIds = is_string($registroV->gastos) ? json_decode($registroV->gastos, true) ?? [] : ($registroV->gastos ?: []);
+    
+            if ($registroV->id_abono) {
+                Abono::where('id_abonos', $registroV->id_abono)->delete();
+            }
+    
+            // Verificar si los arrays no están vacíos
+            if (is_array($costosIds) && count($costosIds) > 0) {
+                Costo::whereIn('id_costos', $costosIds)->delete();
+            }
+    
+            if (is_array($gastosIds) && count($gastosIds) > 0) {
+                Gasto::whereIn('id_gastos', $gastosIds)->delete();
+            }
+    
+            $registroV->delete();
+    
+            DB::commit();
+    
+            return Redirect::route('registro-vs.index')
+                ->with('success', 'Registro eliminado satisfactoriamente.');
+    
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error al eliminar el registro: ' . $e->getMessage());
         }
-
-        if (!empty($costosIds)) {
-            Costo::whereIn('id_costos', $costosIds)->delete();
-        }
-
-        if (!empty($gastosIds)) {
-            Gasto::whereIn('id_gastos', $gastosIds)->delete();
-        }
-
-        $registroV->delete();
-
-        DB::commit();
-
-        return Redirect::route('registro-vs.index')
-            ->with('success', 'Registro eliminado satisfactoriamente.');
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return back()->with('error', 'Error al eliminar el registro: ' . $e->getMessage());
     }
-}
 
     /**
      * Generar PDF del registro
