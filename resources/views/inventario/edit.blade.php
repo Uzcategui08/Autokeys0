@@ -72,14 +72,15 @@
                         @csrf
                         @method('PUT')
 
-                        <div class="form-group">
-                            <label for="tipo_ajuste" class="form-label">Tipo de Ajuste</label>
-                            <select name="tipo_ajuste" id="tipo_ajuste" class="form-control select2" required>
+                        <div class="form-group mb-3">
+                            <label for="tipo_ajuste" class="form-label fw-bold">Tipo de Ajuste</label>
+                            <select name="tipo_ajuste" id="tipo_ajuste" 
+                                 class="form-select form-select-lg shadow-sm" required
+                                 style="border: 2px solid #dee2e6; border-radius: 0.375rem; padding: 0.375rem 0.75rem;">
                                 <option value="">Seleccione tipo</option>
                                 <option value="compra" {{ old('tipo_ajuste') == 'compra' ? 'selected' : '' }}>Compra (sumar)</option>
-                                <option value="resta" {{ old('tipo_ajuste') == 'resta' ? 'selected' : '' }}>Resta (disminuir)</option>
+                                <option value="resta" {{ old('tipo_ajuste') == 'resta' ? 'selected' : '' }}>Ajuste (disminuir)</option>
                                 <option value="ajuste" {{ old('tipo_ajuste') == 'ajuste' ? 'selected' : '' }}>Ajuste (sumar)</option>
-                                <option value="ajuste2" {{ old('tipo_ajuste') == 'ajuste2' ? 'selected' : '' }}>Ajuste (restar)</option>
                             </select>
                         </div>
 

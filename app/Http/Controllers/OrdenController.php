@@ -23,13 +23,18 @@ class OrdenController extends Controller
      */
     public function index(Request $request): View
     {
-
-        $ordens = Orden::with('cliente', 'empleado')->paginate();
+        $query = Orden::with('cliente', 'empleado');
+        
+        // Si el usuario es limited_user, filtrar solo sus órdenes
+        if (auth()->user()->hasRole('limited_user')) {
+            $query->where('id_tecnico', auth()->id());
+        }
+        
+        $ordens = $query->paginate();
 
         return view('orden.index', compact('ordens'))
             ->with('i', ($request->input('page', 1) - 1) * $ordens->perPage());
     }
-
     /**
      * Show the form for creating a new resource.
      */

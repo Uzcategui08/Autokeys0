@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @property $id
  * @property $fecha_h
- * @property $tecnico
+ * @property $id_empleado
  * @property $trabajo
  * @property $cliente
  * @property $telefono
@@ -43,7 +43,7 @@ class RegistroV extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['fecha_h', 'tecnico', 'trabajo', 'cliente', 'telefono', 'valor_v', 'estatus', 'metodo_p', 'titular_c', 'pagos', 'descripcion_ce', 'monto_ce', 'cobro', 'porcentaje_c', 'marca', 'modelo', 'año', 'items','lugarventa', 'id_cliente', 'metodo_pce', 'costos', 'gastos', 'id_abono'];
+    protected $fillable = ['fecha_h', 'trabajo', 'id_empleado', 'cliente', 'telefono', 'valor_v', 'estatus', 'metodo_p', 'titular_c', 'pagos', 'descripcion_ce', 'monto_ce', 'cobro', 'porcentaje_c', 'marca', 'modelo', 'año', 'items','lugarventa', 'id_cliente', 'metodo_pce', 'costos', 'gastos', 'id_abono'];
 
     protected $casts = [
         'pagos' => 'array',
@@ -65,6 +65,11 @@ class RegistroV extends Model
     public function inventarios()
     {
         return $this->hasMany(Inventario::class, 'id_producto', 'id_producto');
+    }
+
+    public function empleado()
+    {
+        return $this->belongsTo(Empleado::class, 'id_empleado', 'id_empleado');
     }
 
     public function registroVs()

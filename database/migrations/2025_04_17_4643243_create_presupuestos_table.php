@@ -17,7 +17,7 @@ return new class extends Migration
             $table->date('f_presupuesto');
             $table->date('validez');
             $table->integer('descuento')->nullable();
-            $table->integer('iva')->nullable();
+            $table->decimal('iva',5, 2)->nullable();
             $table->string('estado');
             $table->json('items');
             $table->timestamps();

@@ -19,6 +19,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TiposDePagoController;
 use App\Http\Controllers\EstadisticasVentasController;
+use App\Http\Controllers\CierreVentasController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -59,6 +60,9 @@ Route::resource('registro-vs', RegistroVController::class);
 
 Route::get('/estadisticas-ventas/{month?}/{year?}', [EstadisticasVentasController::class, 'index'])
     ->name('estadisticas.ventas');
+
+    Route::get('/cierre-ventas', [CierreVentasController::class, 'index'])->name('cierre.ventas');
+
 
 Route::resource('tipos-de-pagos', TiposDePagoController::class);
 
