@@ -22,17 +22,22 @@ class EstadisticasVentasController extends Controller
 
     public function index(Request $request)
     {
-        // Obtener parámetros del request o usar valores por defecto
         $this->month = $request->input('month', date('m'));
         $this->year = $request->input('year', date('Y'));
         
-        $stats = $this->getAllStats();
+        // Verificar si hay datos de ventas para el mes seleccionado
+        $hasData = RegistroV::whereYear('fecha_h', $this->year)
+            ->whereMonth('fecha_h', $this->month)
+            ->exists();
+        
+        $stats = $hasData ? $this->getAllStats() : null;
         
         return view('estadisticas.ventas', [
             'stats' => $stats,
             'monthSelected' => $this->month,
             'yearSelected' => $this->year,
-            'availableYears' => $this->availableYears
+            'availableYears' => $this->availableYears,
+            'noData' => !$hasData // Pasamos explícitamente si no hay datos
         ]);
     }
 

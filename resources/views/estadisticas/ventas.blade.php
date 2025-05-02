@@ -44,15 +44,14 @@
 @stop
 
 @section('content')
-<div class="container-fluid">
-    <!-- Resumen Ejecutivo -->
-    @if($noData ?? false)
+@if($noData)
     <div class="alert alert-info text-center py-5">
         <i class="fas fa-info-circle fa-3x mb-3"></i>
         <h3>No hay datos de ventas para {{ DateTime::createFromFormat('!m', $monthSelected)->format('F') }} de {{ $yearSelected }}</h3>
         <p class="mt-3">Por favor, seleccione otro período.</p>
     </div>
 @else
+
     <div class="card mb-4">
         <div class="card-header bg-dark text-white d-flex justify-content-between">
             <h3 class="card-title">Resumen Ejecutivo</h3>
