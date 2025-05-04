@@ -47,7 +47,7 @@
                                             <td>${{ number_format($nempleado->total_abonos, 2) }}</td>
                                             <td>${{ number_format($nempleado->total_pagado, 2) }}</td>
                                             <td>
-                                                <form onsubmit="return confirmDelete(this)" action="{{ route('nempleados.destroy', $nempleado->id_nempleado) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
+                                                <form onsubmit="return confirmDelete(this)" action="{{ route('nempleados.destroy', $nempleado->id_nempleado) }}" method="POST" class="delete-form" style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-danger btn-sm">

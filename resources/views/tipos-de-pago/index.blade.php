@@ -43,7 +43,7 @@
 										<td >{{ $tiposDePago->name }}</td>
 
                                             <td>
-                                                <form onsubmit="return confirmDelete(this)"  action="{{ route('tipos-de-pagos.destroy', $tiposDePago->id) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
+                                                <form onsubmit="return confirmDelete(this)"  action="{{ route('tipos-de-pagos.destroy', $tiposDePago->id) }}" method="POST" class="delete-form" style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
                                                     <a class="btn btn-sm btn-primary " href="{{ route('tipos-de-pagos.show', $tiposDePago->id) }}"><i class="fa fa-fw fa-eye"></i></a>
                                                     <a class="btn btn-sm btn-success" href="{{ route('tipos-de-pagos.edit', $tiposDePago->id) }}"><i class="fa fa-fw fa-edit"></i></a>
                                                     @csrf

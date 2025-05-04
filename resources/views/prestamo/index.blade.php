@@ -48,7 +48,7 @@
                                             <td>{{ $prestamo->valor }}</td>
                                             <td>{{ $prestamo->estatus }}</td>
                                             <td>
-                                                <form onsubmit="return confirmDelete(this)" action="{{ route('prestamos.destroy', $prestamo->id_prestamo) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
+                                                <form onsubmit="return confirmDelete(this)" action="{{ route('prestamos.destroy', $prestamo->id_prestamo) }}" method="POST" class="delete-form" style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
                                                     <a class="btn btn-sm btn-primary" href="{{ route('prestamos.show', $prestamo->id_prestamo) }}">
                                                         <i class="fa fa-fw fa-eye"></i>
                                                     </a>

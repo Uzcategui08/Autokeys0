@@ -50,7 +50,7 @@
                                             <td>{{ $costo->valor }}</td>
                                             <td>{{ $costo->estatus }}</td>
                                             <td>
-                                                <form onsubmit="return confirmDelete(this)" action="{{ route('costos.destroy', $costo->id_costos) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
+                                                <form onsubmit="return confirmDelete(this)" action="{{ route('costos.destroy', $costo->id_costos) }}" method="POST" class="delete-form" style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
                                                     <a class="btn btn-sm btn-primary" href="{{ route('costos.show', $costo->id_costos) }}">
                                                         <i class="fa fa-fw fa-eye"></i>
                                                     </a>

@@ -48,7 +48,7 @@
 										<td >{{ $cliente->direccion }}</td>
 
                                             <td>
-                                                <form onsubmit="return confirmDelete(this)" action="{{ route('clientes.destroy', $cliente->id_cliente) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
+                                                <form onsubmit="return confirmDelete(this)" action="{{ route('clientes.destroy', $cliente->id_cliente) }}" method="POST" class="delete-form" style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
                                                     <a class="btn btn-sm btn-primary " href="{{ route('clientes.show', $cliente->id_cliente) }}"><i class="fa fa-fw fa-eye"></i> </a>
                                                     <a class="btn btn-sm btn-success" href="{{ route('clientes.edit', $cliente->id_cliente) }}"><i class="fa fa-fw fa-edit"></i> </a>
                                                     @csrf

@@ -38,7 +38,7 @@
                                             <td>{{ $almacene->id_almacen }}</td>
                                             <td>{{ $almacene->nombre }}</td>
                                             <td>
-                                                <form onsubmit="return confirmDelete(this)" action="{{ route('almacenes.destroy', $almacene->id_almacen) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
+                                                <form onsubmit="return confirmDelete(this)" action="{{ route('almacenes.destroy', $almacene->id_almacen) }}" method="POST" class="delete-form" style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
                                                     <a class="btn btn-sm btn-success" href="{{ route('almacenes.edit', $almacene->id_almacen) }}"><i class="fa fa-fw fa-edit"></i></a>
                                                     @csrf
                                                     @method('DELETE')

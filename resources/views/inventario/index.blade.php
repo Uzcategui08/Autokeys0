@@ -65,7 +65,7 @@
                                     <td class="text-center align-middle">$ {{ number_format($inventario->cantidad * $inventario->producto->precio, 2) }}</td>
 
                                     <td class="text-center align-middle">
-                                        <form onsubmit="return confirmDelete(this)" action="{{ route('inventarios.destroy', $inventario->id_inventario) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
+                                        <form onsubmit="return confirmDelete(this)" action="{{ route('inventarios.destroy', $inventario->id_inventario) }}" method="POST" class="delete-form" style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
                                             <a class="btn btn-sm btn-primary" href="{{ route('inventarios.show', $inventario->id_inventario) }}">
                                                 <i class="fa fa-fw fa-eye"></i> 
                                             </a>

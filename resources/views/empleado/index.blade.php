@@ -56,7 +56,7 @@
                                         </td>
 
                                             <td>
-                                                <form onsubmit="return confirmDelete(this)" action="{{ route('empleados.destroy', $empleado->id_empleado) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
+                                                <form onsubmit="return confirmDelete(this)" action="{{ route('empleados.destroy', $empleado->id_empleado) }}" method="POST" class="delete-form" style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
                                                     <a class="btn btn-sm btn-primary " href="{{ route('empleados.show', $empleado->id_empleado) }}"><i class="fa fa-fw fa-eye"></i> </a>
                                                     <a class="btn btn-sm btn-success" href="{{ route('empleados.edit', $empleado->id_empleado) }}"><i class="fa fa-fw fa-edit"></i> </a>
                                                     @csrf

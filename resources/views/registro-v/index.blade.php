@@ -57,7 +57,7 @@
                                             <td>{{ $registroV->estatus }}</td>
                                             <td>{{ $registroV->lugarventa }}</td>
                                             <td>
-                                                <form onsubmit="return confirmDelete(this)"  action="{{ route('registro-vs.destroy', $registroV->id) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
+                                                <div style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
                                                     <a class="btn btn-sm btn-primary" href="{{ route('registro-vs.show', $registroV->id) }}">
                                                         <i class="fa fa-fw fa-eye"></i>
                                                     </a>
@@ -65,18 +65,17 @@
                                                         <i class="fa fa-fw fa-edit"></i> 
                                                     </a>
                                                     <a href="{{ route('registro-vs.pdf', $registroV->id) }}" class="btn btn-sm btn-warning" target="_blank">
-                                                        <i class="fa fa-fw fa-print"></i> 
-                                                        Es
+                                                        <i class="fa fa-fw fa-print"></i>
                                                     </a>
                                                     <a href="{{ route('invoice.pdf', $registroV->id) }}" class="btn btn-sm btn-info" target="_blank">
                                                         <i class="fa fa-fw fa-print"></i>
-                                                        En
                                                     </a>
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger btn-sm"> 
-                                                        <i class="fa fa-fw fa-trash"></i>
-                                                    </button>
+                                                    <form onsubmit="return confirmDelete(this)" action="{{ route('registro-vs.destroy', $registroV->id) }}" method="POST" style="display: inline;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-sm btn-danger"> 
+                                                            <i class="fa fa-fw fa-trash"></i>
+                                                        </button>
                                                 </form>
                                             </td>
                                         </tr>

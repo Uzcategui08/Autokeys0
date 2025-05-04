@@ -62,7 +62,7 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                <form onsubmit="return confirmDelete(this)" action="{{ route('presupuestos.destroy', $presupuesto->id_presupuesto) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
+                                                <form onsubmit="return confirmDelete(this)" action="{{ route('presupuestos.destroy', $presupuesto->id_presupuesto) }}" method="POST" class="delete-form" style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
                                                     <a class="btn btn-sm btn-primary" href="{{ route('presupuestos.show', $presupuesto->id_presupuesto) }}">
                                                         <i class="fa fa-fw fa-eye"></i> 
                                                     </a>

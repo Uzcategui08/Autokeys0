@@ -51,7 +51,8 @@
                                         <td>{{ \Carbon\Carbon::parse($abono->a_fecha)->format('m/d/Y') }}</td>
 
                                             <td>
-                                                <form onsubmit="return confirmDelete(this)" action="{{ route('abonos.destroy', $abono->id_abonos) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
+                                                <div style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
+                                                <form onsubmit="return confirmDelete(this)" action="{{ route('abonos.destroy', $abono->id_abonos) }}" method="POST" class="delete-form" >
                                                     <a class="btn btn-sm btn-primary " href="{{ route('abonos.show', $abono->id_abonos) }}"><i class="fa fa-fw fa-eye"></i> </a>
                                                     <a class="btn btn-sm btn-success" href="{{ route('abonos.edit', $abono->id_abonos) }}"><i class="fa fa-fw fa-edit"></i> </a>
                                                     @csrf
@@ -60,6 +61,7 @@
                                                         <i class="fa fa-fw fa-trash"></i>
                                                     </button>                                                
                                                 </form>
+                                                </div>
                                             </td>
                                         </tr>
                                     @endforeach
