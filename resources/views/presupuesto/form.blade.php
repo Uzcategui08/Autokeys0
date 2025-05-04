@@ -63,7 +63,7 @@
 
             <div class="col-md-4">
                 <div class="form-group mb-3">
-                    <label for="iva" class="form-label fw-bold">{{ __('IVA') }}</label>
+                    <label for="iva" class="form-label fw-bold">{{ __('Taxes') }}</label>
                     <select name="iva" class="form-control @error('iva') is-invalid @enderror" id="iva">
                         <option value="0" {{ old('iva', $presupuesto?->iva) == 0 ? 'selected' : '' }}>0%</option>
                         <option value="7.5" {{ old('iva', $presupuesto?->iva) == 7.5 ? 'selected' : '' }}>7.5%</option>
@@ -73,12 +73,12 @@
                     @enderror
                 </div>
             </div>
-
+            @if(auth()->user()->hasRole('admin'))
             <div class="col-md-4">
                 <div class="form-group mb-3">
                     <label for="estado" class="form-label fw-bold">{{ __('Estado') }}</label>
                     <select name="estado" class="form-control @error('estado') is-invalid @enderror" id="estado">
-                        <option value="pendiente" {{ old('estado', $presupuesto?->estado) == 'pendiente' ? 'selected' : '' }}>
+                        <option value="pendiente" {{ (old('estado', $presupuesto?->estado) == 'pendiente' || !isset($presupuesto)) ? 'selected' : '' }}>
                             Pendiente
                         </option>
                         <option value="aprobado" {{ old('estado', $presupuesto?->estado) == 'aprobado' ? 'selected' : '' }}>
@@ -93,6 +93,7 @@
                     @enderror
                 </div>
             </div>
+            @endif
         </div>
 
         <!-- Sección de trabajos -->

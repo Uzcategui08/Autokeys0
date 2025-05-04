@@ -173,7 +173,7 @@
                     <table width="100%">
                         <tr>
                             <td class="info-label">Técnico:</td>
-                            <td class="info-value">{{ $registroV->tecnico }}</td>
+                            <td class="info-value">{{ $registroV->empleado->nombre}}</td>
                         </tr>
                         <tr>
                             <td class="info-label">Estatus:</td>

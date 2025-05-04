@@ -14,7 +14,8 @@ class GastoController extends Controller
 {
     public function index(Request $request): View
     {
-        $gastos = Gasto::paginate(10);
+        $gastos = Gasto::orderBy('created_at', 'desc')->paginate(10);
+        
         return view('gasto.index', compact('gastos'))
             ->with('i', ($request->input('page', 1) - 1) * $gastos->perPage());
     }

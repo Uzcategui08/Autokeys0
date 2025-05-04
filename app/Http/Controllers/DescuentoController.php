@@ -17,7 +17,7 @@ class DescuentoController extends Controller
      */
     public function index(Request $request): View
     {
-        $descuentos = Descuento::paginate();
+        $descuentos = Descuento::orderBy('created_at', 'desc')->paginate(10);
 
         return view('descuento.index', compact('descuentos'))
             ->with('i', ($request->input('page', 1) - 1) * $descuentos->perPage());

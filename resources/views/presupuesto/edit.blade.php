@@ -14,6 +14,10 @@
                     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="float-left">
                             <span class="card-title">{{ __('Presupuesto') }}</span>
+                            <span class="ml-3 badge badge-info" style="font-weight: normal; font-size: 1rem;">
+                                {{ $presupuesto->user->name ?? 'Sin técnico asignado' }}
+                            </span>
+                            
                         </div>
                     </div>
                     <div class="card-body bg-white">
@@ -22,7 +26,6 @@
                             @csrf
 
                             @include('presupuesto.form')
-
                         </form>
                     </div>
                 </div>

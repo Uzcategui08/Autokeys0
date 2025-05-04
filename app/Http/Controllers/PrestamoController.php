@@ -17,7 +17,7 @@ class PrestamoController extends Controller
      */
     public function index(Request $request): View
     {
-        $prestamos = Prestamo::paginate();
+        $prestamos = Prestamo::orderBy('created_at', 'desc')->paginate(10);
 
         return view('prestamo.index', compact('prestamos'))
             ->with('i', ($request->input('page', 1) - 1) * $prestamos->perPage());

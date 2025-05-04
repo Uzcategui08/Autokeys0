@@ -22,6 +22,7 @@ use App\Models\Almacene;
 use App\Models\Inventario;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use Carbon\Carbon;
 
 class RegistroVController extends Controller
 {
@@ -37,7 +38,7 @@ class RegistroVController extends Controller
     if (auth()->user()->hasRole('limited_user')) {
         $query->where('id_empleado', auth()->id());
     }
-    $registroVs = $query->paginate(20);
+    $registroVs = $query->orderBy('fecha_h', 'desc')->paginate(20);
 
         return view('registro-v.index', compact('registroVs'))
             ->with('i', ($request->input('page', 1) - 1) * $registroVs->perPage());
@@ -53,7 +54,7 @@ public function cxc(Request $request): View
         $query->where('id_empleado', auth()->id());
     }
     
-    $registroVs = $query->paginate(20);
+    $registroVs = $query->orderBy('fecha_h', 'desc')->paginate(20);
 
     return view('registro-v.cxc', compact('registroVs'))
         ->with('i', ($request->input('page', 1) - 1) * $registroVs->perPage());
@@ -984,4 +985,6 @@ public function cxc(Request $request): View
     
         return $pdf->stream('invoice' . $registroV->id . '.pdf');
     }
+
+   
 }

@@ -23,7 +23,7 @@ use App\Http\Controllers\CierreVentasController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('auth/login');
 });
 
 Route::get('/dashboard', [DashboardController::class, "index"])->middleware(['auth', 'verified'])->name('dashboard');
@@ -54,7 +54,7 @@ Route::get('/cargas', [InventarioController::class, 'cargas'])->name('inventario
 
 Route::resource('almacenes', AlmaceneController::class);
 
-Route::resource('presupuestos', PresupuestoController::class);
+Route::resource('presupuestos', PresupuestoController::class)->middleware('auth');
 
 Route::resource('registro-vs', RegistroVController::class);
 
@@ -62,7 +62,7 @@ Route::get('/estadisticas-ventas/{month?}/{year?}', [EstadisticasVentasControlle
     ->name('estadisticas.ventas');
 
     Route::get('/cierre-ventas', [CierreVentasController::class, 'index'])->name('cierre.ventas');
-
+    Route::get('/estadisticas/RegistroVpdf', [EstadisticasVentasController::class, 'generatePdfTotal'])->name('generatePdfTotal.pdf');
 
 Route::resource('tipos-de-pagos', TiposDePagoController::class);
 

@@ -30,6 +30,9 @@
                                 <thead>
                                     <tr>
                                         <th>ID Presupuesto</th>
+                                        @if(auth()->user()->hasRole('admin'))
+                                        <th>Técnico</th>
+                                        @endif
                                         <th>Cliente</th>
                                         <th>Fecha</th>
                                         <th>Validez</th>
@@ -41,6 +44,9 @@
                                     @foreach ($presupuestos as $presupuesto)
                                         <tr>
                                             <td>{{ $presupuesto->id_presupuesto }}</td>
+                                            @if(auth()->user()->hasRole('admin'))
+                                            <td>{{ $presupuesto->user->name }}</td>
+                                            @endif
                                             <td>{{ $presupuesto->cliente->nombre }}</td>
                                             <td>{{ $presupuesto->f_presupuesto }}</td>
                                             <td>{{ $presupuesto->validez }}</td>
@@ -65,9 +71,11 @@
                                                     </a>
                                                     <a class="btn btn-sm btn-warning" href="{{ route('presupuestos.pdf', $presupuesto->id_presupuesto) }}" target="_blank">
                                                         <i class="fa fa-fw fa-print"></i> 
+                                                        Es
                                                     </a>
                                                     <a class="btn btn-sm btn-info" href="{{ route('budget.pdf', $presupuesto->id_presupuesto) }}" target="_blank">
-                                                        <i class="fa fa-fw fa-print"></i> 
+                                                        <i class="fa fa-fw fa-print"></i>
+                                                        En 
                                                     </a>
                                                     @csrf
                                                     @method('DELETE')

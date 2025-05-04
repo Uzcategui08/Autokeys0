@@ -20,12 +20,19 @@ class PresupuestoController extends Controller
     /**
      * Display a listing of the resource.
      */
+    
     public function index(Request $request): View
     {
-        $presupuestos = Presupuesto::with('cliente')->paginate();
+        $query = Presupuesto::with('cliente');
+    
+            if (!auth()->user()->hasAnyRole('admin')) {
+                $query->where('user_id', auth()->id())
+                      ->whereIn('estado', ['aprobado', 'rechazado']);
+            }
 
-        return view('presupuesto.index', compact('presupuestos'))
-            ->with('i', ($request->input('page', 1) - 1) * $presupuestos->perPage());
+        $presupuestos = $query->paginate(20);
+            return view('presupuesto.index', compact('presupuestos'))
+                ->with('i', ($request->input('page', 1) - 1) * $presupuestos->perPage());
     }
 
     /**
@@ -50,7 +57,10 @@ class PresupuestoController extends Controller
     public function store(PresupuestoRequest $request): RedirectResponse
     {
         $validatedData = $request->validated();
-
+    
+        // Agregar el ID del usuario autenticado automáticamente
+        $validatedData['user_id'] = auth()->id();
+    
         $items = [];
         foreach ($request->input('items', []) as $item) {
             if (!empty($item['descripcion'])) {
@@ -60,9 +70,9 @@ class PresupuestoController extends Controller
                 ];
             }
         }    
-
+    
         $validatedData['items'] = json_encode($items);
-
+    
         Presupuesto::create($validatedData);
     
         return Redirect::route('presupuestos.index')

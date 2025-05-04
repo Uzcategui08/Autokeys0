@@ -117,19 +117,16 @@
                             <td><hr style="border: 1px solid #000;"></td>
                         </tr>
                         <tr>
-                            <td><strong>Nombre:</strong> Nombre de la empresa</td>
+                            <td><strong>Nombre:</strong> Autokeys Locksmith</td>
                         </tr>
                         <tr>
-                            <td><strong>Dirección:</strong> Dirección de la empresa</td>
+                            <td><strong>Dirección:</strong> 1989 Covington Pike, Memphis TN 38128, United States</td>
                         </tr>
                         <tr>
-                            <td><strong>CUIT-NIF:</strong> CUIT-NIF de la empresa</td>
+                            <td><strong>Teléfono:</strong>  +1 (901) 513-9541</td>
                         </tr>
                         <tr>
-                            <td><strong>Teléfono:</strong> Teléfono de la empresa</td>
-                        </tr>
-                        <tr>
-                            <td><strong>E-mail:</strong> Email de la empresa</td>
+                            <td><strong>E-mail:</strong> usa.autokeyslocksmith@gmail.com</td>
                         </tr>
                     </table>
                 </td>

@@ -25,10 +25,16 @@ class PresupuestoRequest extends FormRequest
 			'id_cliente' => 'required',
             'f_presupuesto' => 'required|date',
             'validez' => 'required|date',
-            'estado' => 'required',
+            'estado' => 'sometimes|in:pendiente,aprobado,rechazado',
             'iva' => 'nullable|numeric',
             'descuento' => 'nullable|numeric',
             'items' => 'required|array',
         ];
     }
+    protected function prepareForValidation()
+{
+    $this->merge([
+        'estado' => $this->estado ?? 'pendiente'
+    ]);
+}
 }

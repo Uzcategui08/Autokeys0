@@ -71,7 +71,7 @@
                                 <div class="form-group mb-4 d-flex align-items-center">
                                     <i class="fas fa-file-invoice-dollar text-info mr-3 fa-lg"></i>
                                     <div>
-                                        <strong class="d-block">IVA:</strong>
+                                        <strong class="d-block">Taxes:</strong>
                                         <span class="text-muted">{{ number_format($presupuesto->iva, 2) }}%</span>
                                     </div>
                                 </div>

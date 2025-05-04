@@ -4,259 +4,352 @@
     <meta charset="UTF-8">
     <title>Presupuesto - {{ $presupuesto->id_presupuesto }}</title>
     <style>
+        :root {
+            --color-primario: #3498db;
+            --color-secundario: #2c3e50;
+            --color-destacado: #e74c3c;
+            --gris-claro: #f8f9fa;
+            --gris-oscuro: #343a40;
+            --borde: #dee2e6;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding: 20px;
-            position: relative; 
-            min-height: 100vh; 
-            box-sizing: border-box;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-            padding: 10px;
-        }
-        .header h1 {
-            font-size: 24px;
-            margin: 0;
-        }
-        .info-container {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        .info-box {
-            width: 45%;
-            border: 1px solid #000;
-            padding: 10px;
-        }
-        .info-box th, .info-box td {
-            border: none; 
-            padding: 8px;
-            text-align: left;
-        }
-        .info-box th {
-            background-color: #f2f2f2;
-        }
-        .date-line {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        .items-table th, .items-table td {
-            border: 1px solid #000;
-            padding: 8px;
-            text-align: left;
-        }
-        .items-table th {
-            background-color: #f2f2f2;
-        }
-        .totals {
-            margin-top: 20px;
-            text-align: right;
-        }
-        .totals table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .totals th, .totals td {
-            padding: 8px;
-            text-align: right;
-        }
-        .footer {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        .footer table {
-            width: 100%;
-            border-collapse: collapse;
-            height: 100px;
-            padding: 20px;
-        }
-        .footer td {
-            width: 50%;
-            border: 1px solid #000;
-            vertical-align: top;
+            padding: 15px;
+            color: var(--gris-oscuro);
+            line-height: 1.4;
             font-size: 12px;
+            background-color: #fff;
         }
-        .footer p {
+        
+        .contenedor-presupuesto {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid var(--borde);
+            padding: 15px;
+            position: relative;
+        }
+        
+        .encabezado {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--color-primario);
+        }
+        
+        .logo {
+            max-height: 50px;
+        }
+        
+        .titulo-presupuesto {
+            color: var(--color-secundario);
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .numero-presupuesto {
+            color: var(--color-primario);
+            font-weight: bold;
+        }
+        
+        .grid-informacion {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
             margin-bottom: 15px;
         }
-        hr {
-            border: 1px solid #000;
+        
+        .caja-informacion {
+            border: 1px solid var(--borde);
+            border-radius: 3px;
+            padding: 8px;
+            background-color: var(--gris-claro);
         }
-        table {
+        
+        .titulo-informacion {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--color-secundario);
+            margin-top: 0;
+            margin-bottom: 8px;
+            padding-bottom: 3px;
+            border-bottom: 1px solid var(--borde);
+        }
+        
+        .item-informacion {
+            margin-bottom: 5px;
+        }
+        
+        .etiqueta-informacion {
+            font-weight: 600;
+            display: inline-block;
+            width: 60px;
+        }
+        
+        .contenedor-fechas {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 11px;
+        }
+        
+        .item-fecha {
+            background-color: var(--gris-claro);
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+        
+        .tabla-items {
+            width: 100%;
             border-collapse: collapse;
+            margin-bottom: 12px;
+            font-size: 11px;
+        }
+        
+        .tabla-items th {
+            background-color: var(--color-primario);
+            color: white;
+            text-align: left;
+            padding: 6px 8px;
+            font-weight: 600;
+        }
+        
+        .tabla-items td {
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--borde);
+        }
+        
+        .tabla-items tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        .tabla-totales {
+            width: 250px;
+            margin-left: auto;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+        
+        .tabla-totales th, 
+        .tabla-totales td {
+            padding: 5px 8px;
+            text-align: right;
+        }
+        
+        .tabla-totales th {
+            background-color: var(--gris-claro);
+            font-weight: 600;
+        }
+        
+        .total-general {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--color-destacado);
+            border-top: 2px solid var(--color-primario);
+            border-bottom: 2px solid var(--color-primario);
+        }
+        
+        .pie-pagina {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid var(--borde);
+            font-size: 11px;
+        }
+        
+        .caja-firma {
+            text-align: center;
+        }
+        
+        .titulo-firma {
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .linea-firma {
+            border-top: 1px solid var(--gris-oscuro);
+            width: 70%;
+            margin: 0 auto;
+            padding-top: 15px;
+        }
+        
+        .etiqueta-estado {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 10px;
+            text-transform: uppercase;
+            margin-left: 10px;
+        }
+        
+        .estado-pendiente {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .estado-aprobado {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .estado-rechazado {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .texto-derecha {
+            text-align: right;
+        }
+        
+        .texto-centro {
+            text-align: center;
+        }
+        
+        @media print {
+            body {
+                padding: 5px;
+                font-size: 11px;
+            }
+            .contenedor-presupuesto {
+                border: none;
+                padding: 5px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <img src="" alt="Logo de la empresa" style="float: right; max-height: 50px;">
-        <h1 style="text-align: left;">Presupuesto Nº {{ $presupuesto->id_presupuesto }}</h1>
-    </div>
+    <div class="contenedor-presupuesto">
+        <div class="encabezado">
+            <div>
+                <h1 class="titulo-presupuesto">PRESUPUESTO <span class="numero-presupuesto">#{{ $presupuesto->id_presupuesto }}</span></h1>
+            </div>
+        </div>
 
-    <div class="info-container">
-        <table style="width: 100%;">
-            <tr>
-                <td style="width: 50%; border: 1px solid #000; padding: 10px; vertical-align: top;">
-                    <table style="width: 100%;">
-                        <tr>
-                            <th style="width: 100%; font-size: 12px; text-align: left;">Datos de la empresa</th>
-                        </tr>
-                        <tr>
-                            <td><hr style="border: 1px solid #000;"></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Nombre:</strong> Nombre de la empresa</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Dirección:</strong> Dirección de la empresa</td>
-                        </tr>
-                        <tr>
-                            <td><strong>CUIT-NIF:</strong> CUIT-NIF de la empresa</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Teléfono:</strong> Teléfono de la empresa</td>
-                        </tr>
-                        <tr>
-                            <td><strong>E-mail:</strong> Email de la empresa</td>
-                        </tr>
-                    </table>
-                </td>
-                <td style="width: 50%; border: 1px solid #000; padding: 10px; vertical-align: top;">
-                    <table style="width: 100%;">
-                        <tr>
-                            <th style="width: 100%; font-size: 12px; text-align: left;">Datos del cliente</th>
-                        </tr>
-                        <tr>
-                            <td><hr style="border: 1px solid #000;"></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Nombre:</strong> {{ $presupuesto->cliente->nombre ?? 'N/A' }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Dirección:</strong> {{ $presupuesto->cliente->direccion ?? 'N/A' }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>CUIT-NIF:</strong> {{ $presupuesto->cliente->cuit ?? 'N/A' }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Teléfono:</strong> {{ $presupuesto->cliente->telefono ?? 'N/A' }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>E-mail:</strong> {{ $presupuesto->cliente->email ?? 'N/A' }}</td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-    </div>
+        <div class="grid-informacion">
+            <div class="caja-informacion">
+                <h3 class="titulo-informacion">INFORMACIÓN DE LA EMPRESA</h3>
+                <div class="item-informacion">
+                    <span class="etiqueta-informacion">Nombre:</span> Autokeys Locksmith
+                </div>
+                <div class="item-informacion">
+                    <span class="etiqueta-informacion">Dirección:</span> 1989 Covington Pike, Memphis TN 38128
+                </div>
+                <div class="item-informacion">
+                    <span class="etiqueta-informacion">Teléfono:</span> +1 (901) 513-9541
+                </div>
+                <div class="item-informacion">
+                    <span class="etiqueta-informacion">Email:</span> usa.autokeyslocksmith@gmail.com
+                </div>
+            </div>
 
-    <div class="date-line">
-        <table style="width: 100%;">
-            <tr>
-                <td style="text-align: left;"><strong>Fecha presupuesto:</strong> {{ \Carbon\Carbon::parse($presupuesto->f_presupuesto)->format('Y/m/d') }}</td>
-                <td style="text-align: right;">
-                    <strong>Validez:</strong> 
-                    @php
-                        $f_presupuesto = \Carbon\Carbon::parse($presupuesto->f_presupuesto);
-                        $fechaValidez = \Carbon\Carbon::parse($presupuesto->validez);
-                        $diferenciaDias = $f_presupuesto->diffInDays($fechaValidez);
-                    @endphp
-                    Hasta {{ $fechaValidez->format('Y/m/d') }} ({{ $diferenciaDias }} días)
-                </td>
-            </tr>
-        </table>
-    </div>
+            <div class="caja-informacion">
+                <h3 class="titulo-informacion">INFORMACIÓN DEL CLIENTE</h3>
+                <div class="item-informacion">
+                    <span class="etiqueta-informacion">Nombre:</span> {{ $presupuesto->cliente->nombre ?? 'N/A' }}
+                </div>
+                <div class="item-informacion">
+                    <span class="etiqueta-informacion">Dirección:</span> {{ $presupuesto->cliente->direccion ?? 'N/A' }}
+                </div>
+                <div class="item-informacion">
+                    <span class="etiqueta-informacion">Teléfono:</span> {{ $presupuesto->cliente->telefono ?? 'N/A' }}
+                </div>
+            </div>
+        </div>
 
-    @if (is_array($presupuesto->items) && count($presupuesto->items) > 0)
-        <table class="items-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>DESCRIPCIÓN</th>
-                    <th>SUBTOTAL</th>
-                </tr>
-            </thead>
-            <tbody>
+        <div class="contenedor-fechas">
+            <div class="item-fecha">
+                <strong>Fecha presupuesto:</strong> {{ \Carbon\Carbon::parse($presupuesto->f_presupuesto)->format('d/m/Y') }}
+            </div>
+            <div class="item-fecha">
                 @php
-                    $subtotal = 0;
+                    $f_presupuesto = \Carbon\Carbon::parse($presupuesto->f_presupuesto);
+                    $fechaValidez = \Carbon\Carbon::parse($presupuesto->validez);
+                    $diferenciaDias = $f_presupuesto->diffInDays($fechaValidez);
                 @endphp
-                @foreach ($presupuesto->items as $index => $item)
-                    @php
-                        $subtotal += $item['precio'] ?? 0;
-                    @endphp
-                    <tr>
-                        <td>{{ $index + 1 }}</td>
-                        <td>{{ $item['descripcion'] ?? 'Descripción no disponible' }}</td>
-                        <td>${{ number_format($item['precio'] ?? 0, 2) }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    @else
-        <p>No hay items en este presupuesto</p>
-    @endif
+                <strong>Validez:</strong> Hasta {{ $fechaValidez->format('d/m/Y') }} ({{ $diferenciaDias }} días)
+            </div>
+        </div>
 
-    <div class="totals">
+        @if (is_array($presupuesto->items) && count($presupuesto->items) > 0)
+            <table class="tabla-items">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>DESCRIPCIÓN</th>
+                        <th class="texto-derecha">SUBTOTAL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @php
+                        $subtotal = 0;
+                    @endphp
+                    @foreach ($presupuesto->items as $index => $item)
+                        @php
+                            $subtotal += $item['precio'] ?? 0;
+                        @endphp
+                        <tr>
+                            <td>{{ $index + 1 }}</td>
+                            <td>{{ $item['descripcion'] ?? 'Sin descripción' }}</td>
+                            <td class="texto-derecha">${{ number_format($item['precio'] ?? 0, 2) }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @else
+            <p class="texto-centro">No hay items en este presupuesto</p>
+        @endif
+
         @php
             $descuentoAmount = $subtotal * ($presupuesto->descuento / 100);
             $subtotalConDescuento = $subtotal - $descuentoAmount;
             $ivaAmount = $subtotalConDescuento * ($presupuesto->iva / 100);
             $total = $subtotalConDescuento + $ivaAmount;
         @endphp
-    
-        <table>
+
+        <table class="tabla-totales">
             <tr>
-                <th>SUBTOTAL</th>
+                <th>Subtotal:</th>
                 <td>${{ number_format($subtotal, 2) }}</td>
             </tr>
             @if($presupuesto->descuento > 0)
             <tr>
-                <th>DESCUENTO ({{ $presupuesto->descuento }}%)</th>
+                <th>Descuento ({{ $presupuesto->descuento }}%):</th>
                 <td>-${{ number_format($descuentoAmount, 2) }}</td>
             </tr>
             <tr>
-                <th>SUBTOTAL CON DESCUENTO</th>
+                <th>Subtotal con descuento:</th>
                 <td>${{ number_format($subtotalConDescuento, 2) }}</td>
             </tr>
             @endif
             @if($presupuesto->iva > 0)
             <tr>
-                <th>IVA ({{ $presupuesto->iva }}%)</th>
+                <th>IVA ({{ $presupuesto->iva }}%):</th>
                 <td>${{ number_format($ivaAmount, 2) }}</td>
             </tr>
             @endif
-            <tr>
-                <th><strong>TOTAL PRESUPUESTADO</strong></th>
-                <td><strong>${{ number_format($total, 2) }}</strong></td>
+            <tr class="total-general">
+                <th>TOTAL:</th>
+                <td>${{ number_format($total, 2) }}</td>
             </tr>
         </table>
-    </div>
 
-    <div class="footer">
-        <table style="width: 100%;">
-            <tr>
-                <td style="width: 50%; border: 1px solid #000; padding: 10px; vertical-align: top; font-size: 12px;">
-                    <p style="margin-bottom: 15px;">Firma de la persona que confecciona el presupuesto</p>
-                    <hr style="border: 1px solid #000; margin-top: 50px;">
-                </td>
-                <td style="width: 50%; border: 1px solid #000; padding: 10px; vertical-align: top; font-size: 12px;">
-                    <p style="margin-bottom: 15px;">Firma de aceptación del cliente</p>
-                    <hr style="border: 1px solid #000;margin-top: 50px;">
-                </td>
-            </tr>
-        </table>
+        <div class="pie-pagina">
+            <div class="caja-firma">
+                <div class="titulo-firma">Preparado por</div>
+                <div class="linea-firma"></div>
+            </div>
+            <div class="caja-firma">
+                <div class="titulo-firma">Aceptación del cliente</div>
+                <div class="linea-firma"></div>
+            </div>
+        </div>
     </div>
 </body>
 </html>

@@ -5,9 +5,6 @@
 @section('content_header')
 <div class="d-flex justify-content-between align-items-center">
         <h1>Reporte Financiero - {{ \Carbon\Carbon::create($yearSelected, $monthSelected, 1)->format('F Y') }}</h1>
-        <button onclick="window.print()" class="btn btn-success mr-2">
-            <i class="fas fa-print"></i> Imprimir Reporte
-        </button>
         
         <form method="GET" action="{{ route('estadisticas.ventas') }}" class="form-inline">
             <div class="form-group mr-2">
@@ -65,6 +62,30 @@
             <div class="row">
                 <div class="col-md-4">
                     <div class="card border-primary mb-3">
+                        <div class="container">
+                            <form action="{{ route('generatePdfTotal.pdf') }}" method="GET">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                                        <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" 
+                                               value="{{ old('fecha_inicio', $fecha_inicio ?? '') }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                                        <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" 
+                                               value="{{ old('fecha_fin', $fecha_fin ?? '') }}">
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-file-pdf"></i> Generar PDF
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info">
+                                    <strong>Nota:</strong> Si no selecciona fechas, se usará el mes actual por defecto.
+                                </div>
+                            </form>
+                        </div>
                         <div class="card-header bg-primary text-white">Facturación</div>
                         <div class="card-body">
                             <h4 class="card-title">${{ number_format($stats['ventas']['facturacion'], 2) }}</h4>

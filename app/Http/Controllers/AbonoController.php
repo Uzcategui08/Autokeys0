@@ -17,7 +17,7 @@ class AbonoController extends Controller
      */
     public function index(Request $request): View
     {
-        $abonos = Abono::paginate();
+        $abonos = Abono::orderBy('created_at', 'desc')->paginate(10);
 
         return view('abono.index', compact('abonos'))
             ->with('i', ($request->input('page', 1) - 1) * $abonos->perPage());

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('registroV', function (Blueprint $table) {
             $table->id();
             $table->date('fecha_h');
-            $table->unsignedBigInteger('id_empleado')->constrained('empleados', 'id_empleado')->onDelete('cascade');;
+            $table->unsignedBigInteger('id_empleado')->constrained('empleados', 'id_empleado')->onDelete('cascade');
             $table->string('trabajo');
             $table->string('cliente');
             $table->string('telefono');

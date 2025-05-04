@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 
 /**
  * Class Presupuesto
@@ -34,7 +36,7 @@ class Presupuesto extends Model
      */
 
     protected $primaryKey = 'id_presupuesto';
-    protected $fillable = ['id_cliente', 'f_presupuesto', 'validez', 'descuento', 'iva', 'estado', 'items'];
+    protected $fillable = ['id_cliente', 'f_presupuesto','user_id', 'validez', 'descuento', 'iva', 'estado', 'items'];
 
 
     /**
@@ -43,6 +45,11 @@ class Presupuesto extends Model
     public function cliente()
     {
         return $this->belongsTo(\App\Models\Cliente::class, 'id_cliente', 'id_cliente');
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
     
 }
