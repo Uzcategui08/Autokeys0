@@ -649,25 +649,94 @@ $(document).ready(function() {
     $('form').submit(function(e) {
         $('#metodo_pago_json').val(JSON.stringify(metodosPagoSeleccionados));
 
-        const totalDistribuido = parseFloat($('#total-distribuido').text().replace(/[^0-9.-]+/g,"")) || 0;
+        const totalPagar = parseFloat($('#total_pagado').val().replace(/[^0-9.-]+/g,"")) || 0;
+        const totalDistribuido = metodosPagoSeleccionados.reduce((sum, metodo) => sum + (parseFloat(metodo.monto) || 0), 0);
+        const diferencia = totalDistribuido - totalPagar;
 
-        const totalPagado = $('#total_pagado').val().replace(/,/g, '');
-        $('#total_pagado').val(totalPagado);
-        
-        if (totalPagar > 0 && totalDistribuido !== totalPagar) {
+        if (totalPagar <= 0) {
             e.preventDefault();
-            const restante = totalPagar - totalDistribuido;
-            
             Swal.fire({
-                title: 'Distribución incompleta',
-                html: `El total distribuido ($${formatCurrency(totalDistribuido)}) no coincide con el total a pagar ($${formatCurrency(totalPagar)}).<br>
-                    <strong>Faltan distribuir: $${formatCurrency(Math.abs(restante))}</strong>`,
+                title: 'Error en nómina',
+                text: 'El total a pagar debe ser mayor a cero',
                 icon: 'error',
                 confirmButtonText: 'Entendido'
             });
             return false;
         }
+
+        if (totalDistribuido <= 0) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Distribución requerida',
+                html: `Debe especificar al menos un método de pago para distribuir el total de <strong>$${formatCurrency(totalPagar)}</strong>`,
+                icon: 'warning',
+                confirmButtonText: 'Entendido'
+            });
+            return false;
+        }
+
+        if (Math.abs(diferencia) > 0.01) { 
+            e.preventDefault();
+            
+            if (diferencia > 0) {
+                Swal.fire({
+                    title: 'Distribución excedida',
+                    html: `Ha distribuido <strong>$${formatCurrency(totalDistribuido)}</strong> pero el total a pagar es <strong>$${formatCurrency(totalPagar)}</strong>.<br><br>
+                        <strong class="text-danger">Está distribuyendo de más: $${formatCurrency(diferencia)}</strong>`,
+                    icon: 'error',
+                    confirmButtonText: 'Ajustar distribución',
+                    showCancelButton: true,
+                    cancelButtonText: 'Cancelar envío'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        if (metodosPagoSeleccionados.length > 0) {
+                            const ultimoMetodo = metodosPagoSeleccionados[metodosPagoSeleccionados.length - 1];
+                            const nuevoMonto = Math.max(0, (ultimoMetodo.monto || 0) - diferencia);
+                            ultimoMetodo.monto = parseFloat(nuevoMonto.toFixed(2));
+                            renderizarMetodosPago();
+                        }
+                    }
+                });
+            } else {
+                Swal.fire({
+                    title: 'Distribución incompleta',
+                    html: `Ha distribuido <strong>$${formatCurrency(totalDistribuido)}</strong> pero el total a pagar es <strong>$${formatCurrency(totalPagar)}</strong>.<br><br>
+                        <strong class="text-danger">Faltan distribuir: $${formatCurrency(Math.abs(diferencia))}</strong>`,
+                    icon: 'error',
+                    confirmButtonText: 'Ajustar distribución',
+                    showCancelButton: true,
+                    cancelButtonText: 'Cancelar envío'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        if (metodosPagoSeleccionados.length > 0) {
+                            const ultimoMetodo = metodosPagoSeleccionados[metodosPagoSeleccionados.length - 1];
+                            ultimoMetodo.monto = parseFloat(((ultimoMetodo.monto || 0) + Math.abs(diferencia)).toFixed(2));
+                            renderizarMetodosPago();
+                        } else {
+                            agregarMetodoPago(1, Math.abs(diferencia));
+                        }
+                    }
+                });
+            }
+            
+            return false;
+        }
+
+        const metodosIncompletos = metodosPagoSeleccionados.filter(metodo => 
+            !metodo.metodo_id || metodo.monto <= 0
+        );
         
+        if (metodosIncompletos.length > 0) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Métodos incompletos',
+                html: `Tiene ${metodosIncompletos.length} método(s) de pago sin seleccionar o con monto cero.`,
+                icon: 'error',
+                confirmButtonText: 'Corregir'
+            });
+            return false;
+        }
+
         return true;
     });
 
