@@ -92,4 +92,9 @@ class Costo extends Model
         return $this->valor - $this->totalPagado();
     }
 
+    public function tecnico()
+    {
+        return $this->belongsTo(Empleado::class, 'id_empleado', 'id_tecnico');
+    }
+
 }

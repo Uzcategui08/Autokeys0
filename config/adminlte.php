@@ -336,6 +336,12 @@ return [
         'can' => 'admin', // Solo admin
     ],
     [
+        'text' => 'Transferencias',
+        'url' => 'transferencias',
+        'icon' => 'fas fa-fw fa-exchange-alt',
+        'can' => 'admin',
+    ],
+    [
         'text' => 'Productos',
         'url' => 'productos',
         'icon' => 'fas fa-fw fa-box-open',
@@ -477,8 +483,14 @@ return [
         'can' => 'admin',
     ],
     [
-        'text' => 'Cierres',
+        'text' => 'Cierre Mensual',
         'url' => 'cierre-ventas',
+        'icon' => 'fas fa-fw fa-chart-line',
+        'can' => 'admin',
+    ],
+    [
+        'text' => 'Cierre Semanal',
+        'url' => 'cierre-ventas-semanal',
         'icon' => 'fas fa-fw fa-chart-line',
         'can' => 'admin',
     ],

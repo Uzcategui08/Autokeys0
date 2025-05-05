@@ -43,6 +43,20 @@
             </div>
             <div class="col-md-4">
                 <div class="form-group mb-2 mb20">
+                    <label for="tipo_pago" class="form-label">{{ __('Tipo de Pago') }}</label>
+                    <select name="tipo_pago" class="form-control @error('tipo_pago') is-invalid @enderror" id="tipo_pago">
+                        <option value="">{{ __('Seleccionar') }}</option>
+                        <option value="sueldo" {{ old('tipo_pago', $empleado?->tipo_pago) == 'sueldo' ? 'selected' : '' }}>Sueldo</option>
+                        <option value="comision" {{ old('tipo_pago', $empleado?->tipo_pago) == 'comision' ? 'selected' : '' }}>Comisión</option>
+                        <option value="horas" {{ old('tipo_pago', $empleado?->tipo_pago) == 'horas' ? 'selected' : '' }}>Horas</option>
+                    </select>
+                    {!! $errors->first('tipo_pago', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
+                </div>
+            </div>
+        </div>
+        <div class="row" id="row-salario-base">
+            <div class="col-md-4">
+                <div class="form-group mb-2 mb20">
                     <label for="salario_base" class="form-label">{{ __('Salario Base') }}</label>
                     <input type="text" name="salario_base" class="form-control @error('salario_base') is-invalid @enderror" value="{{ old('salario_base', $empleado?->salario_base) }}" id="salario_base" placeholder="Salario Base">
                     {!! $errors->first('salario_base', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
@@ -56,3 +70,21 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoPago = document.getElementById('tipo_pago');
+    const rowSalarioBase = document.getElementById('row-salario-base');
+
+    function actualizarVisibilidad() {
+        if (tipoPago.value === 'sueldo') {
+            rowSalarioBase.style.display = 'flex';
+        } else {
+            rowSalarioBase.style.display = 'none';
+        }
+    }
+
+    actualizarVisibilidad();
+    tipoPago.addEventListener('change', actualizarVisibilidad);
+});
+</script>

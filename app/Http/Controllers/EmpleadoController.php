@@ -82,4 +82,15 @@ class EmpleadoController extends Controller
         return Redirect::route('empleados.index')
             ->with('success', 'Empleado eliminado satisfactoriamente.');
     }
+
+    public function getDatosPago($id)
+    {
+        $empleado = Empleado::findOrFail($id);
+        
+        return response()->json([
+            'success' => true,
+            'tipo_pago' => $empleado->tipo_pago,
+            'sueldo_base' => $empleado->salario_base
+        ]);
+    }
 }

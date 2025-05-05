@@ -240,49 +240,69 @@ $(document).ready(function() {
 
     $('#btn-agregar-pago').click(function() {
         const monto = parseFloat($('#pago_monto').val());
-        const metodoId = $('#pago_metodo').val();
+        const metodo = $('#pago_metodo').val();
         const fecha = $('#pago_fecha').val();
-        
-        if (!monto || monto <= 0) {
-            alert('Error: Ingrese un monto válido mayor a cero');
-            return;
-        }
-        
-        if (monto > saldoPendiente) {
-            alert('Error: El monto excede el saldo pendiente de $' + saldoPendiente.toFixed(2));
-            return;
-        }
-        
-        if (!metodoId) {
-            alert('Error: Seleccione un método de pago');
-            return;
-        }
-        
-        const pagosJson = $('#pagos_json').val() || '[]';
-        let pagos = [];
-        
-        try {
-            pagos = JSON.parse(pagosJson);
-            if (!Array.isArray(pagos)) pagos = [];
-        } catch (e) {
-            console.error('Error parseando pagos:', e);
-        }
-        
-        pagos.push({
-            monto: monto,
-            metodo_pago: metodoId,
-            fecha: fecha
-        });
-        
-        $('#pagos_json').val(JSON.stringify(pagos));
-        
-        actualizarListaPagos();
-        actualizarResumen();
-        actualizarMaximoPago();
-        
-        $('#pago_monto').val('').focus();
-    });
 
+        if (!monto || monto <= 0 || isNaN(monto)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Monto inválido',
+                html: 'Por favor ingrese un <b>monto válido</b> mayor a cero',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Entendido'
+            }).then(() => {
+                $('#pago_monto').val('').focus();
+            });
+            return;
+        }
+
+        if (!metodo) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Método requerido',
+                html: 'Por favor seleccione un <b>método de pago</b>',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Entendido'
+            }).then(() => {
+                $('#pago_metodo').focus();
+            });
+            return;
+        }
+
+        if (monto > saldoPendiente) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Saldo insuficiente',
+                html: `El monto excede el saldo pendiente de <strong>$${saldoPendiente.toFixed(2)}</strong>`,
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Entendido'
+            }).then(() => {
+                $('#pago_monto').val(saldoPendiente.toFixed(2)).focus();
+            });
+            return;
+        }
+
+        if (!fecha) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Fecha no especificada',
+                text: 'Se usará la fecha actual para este pago',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Continuar',
+                showCancelButton: true,
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (!result.isConfirmed) {
+                    return;
+                }
+                agregarPago(monto, metodo, new Date().toISOString().split('T')[0]);
+            });
+            return;
+        }
+
+        agregarPago(monto, metodo, fecha);
+    });
+    
     function actualizarListaPagos() {
         const pagosJson = $('#pagos_json').val() || '[]';
         $('#lista-pagos').empty();

@@ -64,12 +64,72 @@
 
         <div class="card mb-4">
             <div class="card-header" style="background-color: #fff8e1;">
-                <h5 class="mb-0">Sueldo Base</h5>
+                <h5 class="mb-0">Información</h5>
             </div>
             <div class="card-body">
-                <div class="form-group">
+                <div class="form-group" id="sueldo-base-group">
                     <label for="sueldo_base" class="form-label">Ingrese el Sueldo Base</label>
                     <input type="number" step="0.01" class="form-control" id="sueldo_base" name="sueldo_base" value="0.00">
+                </div>
+
+                <div class="form-group" id="horas-trabajadas-group" style="display: none;">
+                    <label for="horas_trabajadas" class="form-label">Horas Trabajadas</label>
+                    <input type="number" step="0.1" class="form-control" id="horas_trabajadas" name="horas_trabajadas" value="0">
+                </div>
+            </div>
+        </div>
+        <div class="card mb-4" id="desglose-horas-group" style="display: none;">
+            <div class="card-header" style="background-color: #e1f5fe;">
+                <h5 class="mb-0">Desglose de Horas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="form-label">Horas Normales (1-40)</label>
+                            <input type="number" step="0.1" class="form-control" id="horas_normales_cantidad" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="form-label">Precio Hora Normal</label>
+                            <input type="number" step="0.01" class="form-control" id="precio_hora_normal" name="precio_hora_normal" value="0">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="form-label">Total Horas Normales</label>
+                            <input type="text" class="form-control" id="total_horas_normales" readonly>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="form-label">Horas Extras (41+)</label>
+                            <input type="number" step="0.1" class="form-control" id="horas_extras_cantidad" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="form-label">Precio Hora Extra</label>
+                            <input type="number" step="0.01" class="form-control" id="precio_hora_extra" name="precio_hora_extra" value="0">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="form-label">Total Horas Extras</label>
+                            <input type="text" class="form-control" id="total_horas_extras" readonly>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-12">
+                        <div class="alert alert-info">
+                            <strong>Total horas:</strong> <span id="total_horas_calculadas">0</span> | 
+                            <strong>Total a pagar:</strong> $<span id="total_pago_horas">0.00</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -132,6 +192,9 @@
                         <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="agregar-metodo">
                             Agregar Método
                         </button>
+                        <input type="hidden" name="metodo_pago_json" id="metodo_pago_json" value="">
+                        <input type="hidden" name="id_abonos_json" id="id_abonos_json" value="[]">
+                        <input type="hidden" name="id_descuentos_json" id="id_descuentos_json" value="[]">
                     </div>
                 </div>
             </div>
@@ -224,20 +287,6 @@
         background-color: #ffebee;
         border-color: #ffcdd2;
     }
-    
-    .select2-container--default .select2-selection--single {
-        height: 38px;
-        border-radius: 3px;
-        border: 1px solid #ced4da;
-    }
-    
-    .select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: 36px;
-    }
-    
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 36px;
-    }
 </style>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -247,7 +296,6 @@
 
 <script>
 $(document).ready(function() {
-
     const metodosPago = @json($metodosPago->pluck('name', 'id'));
     
     let abonosSeleccionados = [];
@@ -264,15 +312,44 @@ $(document).ready(function() {
         $('#id_empleado').change(function() {
             const empleadoId = $(this).val();
             if (empleadoId) {
-                $.get('/empleados/' + empleadoId + '/sueldo')
+                $.get('/empleados/' + empleadoId + '/datos-pago')
                     .done(response => {
                         if (response.success) {
+                        if (response.tipo_pago === 'horas') {
+                            $('#sueldo-base-group').closest('.card').show();
+                            $('#sueldo-base-group label').text('Tarifa por Hora');
+                            $('#horas-trabajadas-group, #desglose-horas-group').show();
+                            $('#sueldo_base').val('16.25');
+                        } 
+                        else if (response.tipo_pago === 'comision') {
+                            $('#sueldo-base-group').closest('.card').hide(); 
+                            $('#horas-trabajadas-group, #desglose-horas-group').hide();
+                        }
+                        else {
+                            $('#sueldo-base-group').closest('.card').show();
+                            $('#sueldo-base-group label').text('Sueldo Base');
+                            $('#horas-trabajadas-group, #desglose-horas-group').hide();
                             $('#sueldo_base').val(response.sueldo_base);
                         }
+                        } else {
+                            console.error("Error en los datos:", response.message);
+                            resetCamposPago();
+                        }
                     })
-                    .fail(xhr => console.error("Error al obtener sueldo:", xhr.responseText));
+                    .fail(xhr => {
+                        console.error("Error en AJAX:", xhr.responseText);
+                        resetCamposPago();
+                    });
+            } else {
+                resetCamposPago();
             }
         });
+    }
+
+    function resetCamposPago() {
+        $('#sueldo_base').val(0);
+        $('#horas-trabajadas-group').hide();
+        $('#sueldo-base-group label').text('Sueldo Base');
     }
 
     function calcularTotalGeneral() {
@@ -284,76 +361,113 @@ $(document).ready(function() {
         $('.check-abono:checked').each(function() {
             const id = $(this).data('id');
             const monto = parseFloat($(this).data('monto')) || 0;
-
-            if (id !== undefined && id !== null && id !== "") {
+            if (id) {
                 abonosSeleccionados.push(id);
                 totalAbonos += monto;
             }
         });
 
+        $('#id_abonos_json').val(JSON.stringify(abonosSeleccionados));
+
         $('.check-descuento:checked').each(function() {
             const id = $(this).data('id');
             const monto = parseFloat($(this).data('monto')) || 0;
-
-            if (id !== undefined && id !== null && id !== "") {
+            if (id) {
                 descuentosSeleccionados.push(id);
                 totalDescuentos += monto;
             }
         });
 
-        $('#id_abonos_json').val(JSON.stringify(abonosSeleccionados));
         $('#id_descuentos_json').val(JSON.stringify(descuentosSeleccionados));
 
-        $('#total_abonos').val(formatCurrency(totalAbonos));
-        $('#total_descuentos').val(formatCurrency(totalDescuentos));
+        const empleadoId = $('#id_empleado').val();
+        if (empleadoId) {
+            $.get('/empleados/' + empleadoId + '/datos-pago', function(response) {
+                let sueldoCalculado = 0;
+                
+                if (response.success && response.tipo_pago === 'horas') {
+                    const horasTrabajadas = parseFloat($('#horas_trabajadas').val()) || 0;
+                    const precioNormal = parseFloat($('#precio_hora_normal').val()) || 0;
+                    const precioExtra = parseFloat($('#precio_hora_extra').val()) || 0;
 
-        const totalPagar = sueldoBaseManual + totalAbonos - totalDescuentos;
-        $('#total_pagado').val(formatCurrency(Math.max(totalPagar, 0)));
-        
-        actualizarDistribucionPagos();
+                    const horasNormales = Math.min(horasTrabajadas, 40);
+                    const horasExtras = Math.max(horasTrabajadas - 40, 0);
+                    
+                    sueldoCalculado = (horasNormales * precioNormal) + (horasExtras * precioExtra);
+
+                    $('#horas_normales_cantidad').val(horasNormales);
+                    $('#horas_extras_cantidad').val(horasExtras);
+                    $('#total_horas_normales').val('$' + (horasNormales * precioNormal).toFixed(2));
+                    $('#total_horas_extras').val('$' + (horasExtras * precioExtra).toFixed(2));
+                    $('#total_horas_calculadas').text(horasTrabajadas);
+                    $('#total_pago_horas').text(sueldoCalculado.toFixed(2));
+                    
+                } else {
+                    sueldoCalculado = parseFloat($('#sueldo_base').val()) || 0;
+                }
+
+                $('#total_abonos').val(formatCurrency(totalAbonos));
+                $('#total_descuentos').val(formatCurrency(totalDescuentos));
+
+                const totalPagado = sueldoCalculado + totalAbonos - totalDescuentos;
+                $('#total_pagado').val(totalPagado.toFixed(2));
+                
+                actualizarDistribucionPagos();
+            });
+        }
     }
 
-    $('form').submit(function(e) {
+    $('#id_empleado').change(function() {
+        const empleadoId = $(this).val();
+        if (empleadoId) {
+            $.get('/empleados/' + empleadoId + '/datos-pago')
+                .done(response => {
+                    if (response.success) {
+                        if (response.tipo_pago === 'horas') {
+                            $('#sueldo-base-group').hide();
+                            $('#horas-trabajadas-group, #desglose-horas-group').show();
 
-    const totalPagar = parseFloat($('#total_pagado').val().replace(/[^0-9.-]+/g,"")) || 0;
-    const totalDistribuido = parseFloat($('#total-distribuido').text().replace(/[^0-9.-]+/g,"")) || 0;
-    
-    if (totalPagar > 0 && totalDistribuido !== totalPagar) {
-        e.preventDefault();
-        const restante = totalPagar - totalDistribuido;
+                            if (response.precio_hora_normal) {
+                                $('#precio_hora_normal').val(response.precio_hora_normal);
+                            }
+                            if (response.precio_hora_extra) {
+                                $('#precio_hora_extra').val(response.precio_hora_extra);
+                            }
+                        } else {
+                            $('#sueldo-base-group').show();
+                            $('#horas-trabajadas-group, #desglose-horas-group').hide();
+                            $('#sueldo_base').val(response.sueldo_base);
+                        }
+                    }
+                });
+        }
+    });
+
+    function actualizarDesgloseHoras() {
+        const horasTrabajadas = parseFloat($('#horas_trabajadas').val()) || 0;
+        const precioNormal = parseFloat($('#precio_hora_normal').val()) || 0;
+        const precioExtra = parseFloat($('#precio_hora_extra').val()) || 0;
         
-        Swal.fire({
-            title: 'Distribución incompleta',
-            html: `El total distribuido ($${formatCurrency(totalDistribuido)}) no coincide con el total a pagar ($${formatCurrency(totalPagar)}).<br>
-                  <strong>Faltan distribuir: $${formatCurrency(Math.abs(restante))}</strong>`,
-            icon: 'error',
-            confirmButtonText: 'Entendido'
-        });
-        return false;
+        const horasNormales = Math.min(horasTrabajadas, 40);
+        const horasExtras = Math.max(horasTrabajadas - 40, 0);
+        
+        const totalNormales = horasNormales * precioNormal;
+        const totalExtras = horasExtras * precioExtra;
+        const total = totalNormales + totalExtras;
+
+        $('#horas_normales_cantidad').val(horasNormales);
+        $('#horas_extras_cantidad').val(horasExtras);
+        $('#total_horas_normales').val('$' + totalNormales.toFixed(2));
+        $('#total_horas_extras').val('$' + totalExtras.toFixed(2));
+        $('#total_horas_calculadas').text(horasTrabajadas);
+        $('#total_pago_horas').text(total.toFixed(2));
+
+        $('#sueldo_base').val(total.toFixed(2));
     }
 
-        $('<input>').attr({
-            type: 'hidden',
-            name: 'id_abonos_json',
-            value: JSON.stringify(abonosSeleccionados)
-        }).appendTo(this);
-
-        $('<input>').attr({
-            type: 'hidden',
-            name: 'id_descuentos_json',
-            value: JSON.stringify(descuentosSeleccionados)
-        }).appendTo(this);
-
-        $('<input>').attr({
-            type: 'hidden',
-            name: 'metodo_pago_json',
-            value: JSON.stringify(metodosPagoSeleccionados.map(m => ({
-                metodo_id: parseInt(m.metodo_id),
-                monto: parseFloat(m.monto)
-            })))
-        }).appendTo(this);
-
-        return true;
+    $('#precio_hora_normal, #precio_hora_extra').on('input', function() {
+        actualizarDesgloseHoras();
+        calcularTotalGeneral();
     });
 
     function actualizarDistribucionPagos() {
@@ -428,8 +542,10 @@ $(document).ready(function() {
             totalDistribuido += parseFloat(metodo.monto) || 0;
         });
         
-        $('#total-distribuido').text(formatCurrency(totalDistribuido));
-        $('#restante-pagar').text(formatCurrency(totalPagar - totalDistribuido));
+        $('#total-distribuido').text('$' + formatCurrency(totalDistribuido));
+        $('#restante-pagar').text('$' + formatCurrency(totalPagar - totalDistribuido));
+
+        $('#metodo_pago_json').val(JSON.stringify(metodosPagoSeleccionados));
     }
 
     function formatDate(dateString) {
@@ -438,7 +554,7 @@ $(document).ready(function() {
     }
 
     function formatCurrency(amount) {
-        return parseFloat(amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+        return parseFloat(amount || 0).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
     }
 
     $('#buscarRegistros').click(function() {
@@ -483,7 +599,7 @@ $(document).ready(function() {
                         <td><span class="badge badge-abono">Abono</span></td>
                         <td>${abono.concepto || 'Sin concepto'}</td>
                         <td class="text-right text-success font-weight-bold">
-                            $${parseFloat(abono.valor).toFixed(2)}
+                            $${formatCurrency(abono.valor)}
                         </td>
                         <td>${abono.a_fecha ? formatDate(abono.a_fecha) : 'N/A'}</td>
                     </tr>`;
@@ -501,7 +617,7 @@ $(document).ready(function() {
                         <td><span class="badge badge-descuento">Descuento</span></td>
                         <td>${descuento.concepto || 'Sin concepto'}</td>
                         <td class="text-right text-danger font-weight-bold">
-                            $${parseFloat(descuento.valor).toFixed(2)}
+                            $${formatCurrency(descuento.valor)}
                         </td>
                         <td>${descuento.d_fecha ? formatDate(descuento.d_fecha) : 'N/A'}</td>
                     </tr>`;
@@ -514,8 +630,8 @@ $(document).ready(function() {
             }
 
             $('#cuerpoTabla').html(html);
-            $('#total_abonos').val(totalAbonos.toFixed(2));
-            $('#total_descuentos').val(totalDescuentos.toFixed(2));
+            $('#total_abonos').val(formatCurrency(totalAbonos));
+            $('#total_descuentos').val(formatCurrency(totalDescuentos));
             calcularTotalGeneral();
         })
         .fail(xhr => {
@@ -530,28 +646,52 @@ $(document).ready(function() {
         });
     });
 
-    $('#sueldo_base').on('input', function() {
-        sueldoBaseManual = parseFloat($(this).val()) || 0;
-        calcularTotalGeneral();
+    $('form').submit(function(e) {
+        $('#metodo_pago_json').val(JSON.stringify(metodosPagoSeleccionados));
+
+        const totalDistribuido = parseFloat($('#total-distribuido').text().replace(/[^0-9.-]+/g,"")) || 0;
+
+        const totalPagado = $('#total_pagado').val().replace(/,/g, '');
+        $('#total_pagado').val(totalPagado);
+        
+        if (totalPagar > 0 && totalDistribuido !== totalPagar) {
+            e.preventDefault();
+            const restante = totalPagar - totalDistribuido;
+            
+            Swal.fire({
+                title: 'Distribución incompleta',
+                html: `El total distribuido ($${formatCurrency(totalDistribuido)}) no coincide con el total a pagar ($${formatCurrency(totalPagar)}).<br>
+                    <strong>Faltan distribuir: $${formatCurrency(Math.abs(restante))}</strong>`,
+                icon: 'error',
+                confirmButtonText: 'Entendido'
+            });
+            return false;
+        }
+        
+        return true;
     });
 
+    $('#sueldo_base, #horas_trabajadas').on('input', calcularTotalGeneral);
     $(document).on('change', '.check-abono, .check-descuento', calcularTotalGeneral);
-
     $('#agregar-metodo').click(() => agregarMetodoPago(1, 0));
     $(document).on('change', '.metodo-pago-select', function() {
         const index = $(this).data('index');
         metodosPagoSeleccionados[index].metodo_id = $(this).val();
     });
     $(document).on('input', '.monto-metodo', function() {
-        const index = $(this).data('index');
-        metodosPagoSeleccionados[index].monto = parseFloat($(this).val()) || 0;
-        calcularRestante();
+    const index = $(this).data('index');
+    metodosPagoSeleccionados[index].monto = parseFloat($(this).val()) || 0;
+    calcularRestante(); 
     });
+
     $(document).on('click', '.eliminar-metodo', function() {
         metodosPagoSeleccionados.splice($(this).data('index'), 1);
         renderizarMetodosPago();
+        calcularRestante(); 
     });
 
     init();
+
 });
+
 </script>

@@ -41,11 +41,33 @@ class NempleadoController extends Controller
         DB::beginTransaction();
         
         try {
+            // Log inicial con todos los datos recibidos
+            Log::debug('Datos recibidos del frontend', [
+                'all' => $request->all(),
+                'headers' => $request->headers->all(),
+                'content' => $request->getContent(),
+                'metodo_pago_json_raw' => $request->metodo_pago_json,
+                'metodo_pago_json_decoded' => json_decode($request->metodo_pago_json, true),
+                'precio_hora_normal' => $request->precio_hora_normal,
+                'precio_hora_extra' => $request->precio_hora_extra
+            ]);
+    
+            Log::info('Iniciando proceso de guardado de nómina', ['empleado_id' => $request->id_empleado]);
+    
+            // 1. Obtener empleado
+            Log::debug('Buscando empleado', ['id_empleado' => $request->id_empleado]);
             $empleado = Empleado::find($request->id_empleado);
             if (!$empleado) {
                 throw new \Exception("Empleado no encontrado");
             }
+            Log::debug('Empleado encontrado', [
+                'id' => $empleado->id_empleado,
+                'nombre' => $empleado->nombre,
+                'tipo_pago' => $empleado->tipo_pago
+            ]);
     
+            // 2. Validación condicional
+            Log::debug('Preparando reglas de validación', ['tipo_pago' => $empleado->tipo_pago]);
             $reglasValidacion = [
                 'id_empleado' => 'required|exists:empleados,id_empleado',
                 'fecha_desde' => 'required|date',
@@ -58,7 +80,10 @@ class NempleadoController extends Controller
                 'sueldo_base' => $empleado->tipo_pago === 'sueldo' ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
                 'precio_hora_normal' => $empleado->tipo_pago === 'horas' ? 'required|numeric|min:0' : 'nullable',
                 'precio_hora_extra' => $empleado->tipo_pago === 'horas' ? 'required|numeric|min:0' : 'nullable',
+
             ];
+    
+            Log::debug('Reglas de validación aplicadas', $reglasValidacion);
     
             $validator = Validator::make($request->all(), $reglasValidacion, [
                 'id_abonos_json.required' => 'Para pago por comisión debe seleccionar al menos un concepto',
@@ -66,29 +91,56 @@ class NempleadoController extends Controller
             ]);
     
             if ($validator->fails()) {
+                Log::warning('Validación fallida', [
+                    'errors' => $validator->errors()->all(),
+                    'input' => $request->except(['_token'])
+                ]);
                 return back()->withErrors($validator)->withInput();
             }
     
+            // 3. Procesar IDs
+            Log::debug('Procesando IDs de abonos y descuentos');
             $abonosIds = $this->procesarIds($request->id_abonos_json ?? '[]', 'abono');
             $descuentosIds = $this->procesarIds($request->id_descuentos_json ?? '[]', 'descuento');
             $metodosPago = $this->procesarMetodosPago($request->metodo_pago_json);
             
+            Log::debug('Resultados del procesamiento', [
+                'abonos_ids' => $abonosIds,
+                'descuentos_ids' => $descuentosIds,
+                'metodos_pago' => $metodosPago
+            ]);
+    
             if (empty($metodosPago)) {
+                Log::error('No se encontraron métodos de pago válidos', [
+                    'metodo_pago_json' => $request->metodo_pago_json,
+                    'metodos_procesados' => $metodosPago
+                ]);
                 throw new \Exception("Debe seleccionar al menos un método de pago válido");
             }
     
+            // 4. Validar pertenencia
+            Log::debug('Validando pertenencia de abonos/descuentos al empleado');
             $this->validarPertenenciaEmpleado($request->id_empleado, $abonosIds, $descuentosIds);
     
+            // 5. Calcular totales
+            Log::debug('Calculando totales de abonos y descuentos');
             $totalAbonos = $abonosIds ? Abono::whereIn('id_abonos', $abonosIds)->sum('valor') : 0;
             $totalDescuentos = $descuentosIds ? Descuento::whereIn('id_descuentos', $descuentosIds)->sum('valor') : 0;
+            
+            Log::debug('Totales calculados', [
+                'total_abonos' => $totalAbonos,
+                'total_descuentos' => $totalDescuentos
+            ]);
     
+            // 6. Calcular sueldo según tipo de pago
+            Log::debug('Calculando sueldo según tipo de pago', ['tipo_pago' => $empleado->tipo_pago]);
             $sueldoCalculado = 0;
             $detallePago = null;
     
             if ($empleado->tipo_pago === 'horas') {
                 $horasTrabajadas = $request->horas_trabajadas ?? 0;
-                $precioNormal = $request->precio_hora_normal ?? 0;
-                $precioExtra = $request->precio_hora_extra ?? 0;
+                $precioNormal = $request->precio_hora_normal ?? 0; // Nuevo campo
+                $precioExtra = $request->precio_hora_extra ?? 0; // Nuevo campo
                 
                 $horasNormales = min($horasTrabajadas, 40);
                 $horasExtras = max($horasTrabajadas - 40, 0);
@@ -96,14 +148,30 @@ class NempleadoController extends Controller
                 $sueldoCalculado = ($horasNormales * $precioNormal) + ($horasExtras * $precioExtra);
                 $detallePago = "Horas normales: $horasNormales × $precioNormal = ".($horasNormales*$precioNormal)." | ".
                               "Horas extras: $horasExtras × $precioExtra = ".($horasExtras*$precioExtra);
+                
+                Log::debug('Cálculo por horas', [
+                    'horas_trabajadas' => $horasTrabajadas,
+                    'horas_normales' => $horasNormales,
+                    'horas_extras' => $horasExtras,
+                    'precio_normal' => $precioNormal,
+                    'precio_extra' => $precioExtra,
+                    'sueldo_calculado' => $sueldoCalculado
+                ]);
             }
     
+            // 7. Verificar consistencia
             $totalCalculado = $sueldoCalculado + $totalAbonos - $totalDescuentos;
+            Log::debug('Verificando consistencia de totales', [
+                'total_calculado' => $totalCalculado,
+                'total_recibido' => $request->total_pagado,
+                'diferencia' => abs($totalCalculado - $request->total_pagado)
+            ]);
     
             if (abs($totalCalculado - $request->total_pagado) > 0.01) {
                 throw new \Exception("El total a pagar no coincide con los cálculos. Calculado: $totalCalculado, Recibido: {$request->total_pagado}");
             }
     
+            // 8. Crear registro
             $nempleadoData = [
                 'id_empleado' => $request->id_empleado,
                 'id_abonos' => $abonosIds,
@@ -120,17 +188,34 @@ class NempleadoController extends Controller
                 'tipo_pago_empleado' => $empleado->tipo_pago
             ];
     
+            Log::debug('Preparando datos para crear nómina', $nempleadoData);
             $nempleado = Nempleado::create($nempleadoData);
+            Log::info('Nómina creada exitosamente', ['id_nempleado' => $nempleado->id_nempleado]);
     
+            // 9. Marcar como procesados
+            Log::debug('Marcando abonos/descuentos como procesados');
             $this->marcarComoProcesados($abonosIds, $descuentosIds);
     
             DB::commit();
+            
+            Log::info('Nómina guardada exitosamente', [
+                'id_nempleado' => $nempleado->id_nempleado,
+                'empleado' => $empleado->nombre
+            ]);
             
             return redirect()->route('nempleados.index')
                 ->with('success', 'Registro creado satisfactoriamente.');
     
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Error al guardar nómina', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->except(['_token']),
+                'empleado' => $empleado ?? null,
+                'metodo_pago_json' => $request->metodo_pago_json ?? null
+            ]);
+            
             return back()->withInput()
                 ->with('error', 'Error al guardar: ' . $e->getMessage());
         }
