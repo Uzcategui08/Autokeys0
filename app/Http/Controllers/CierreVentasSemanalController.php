@@ -267,46 +267,45 @@ class CierreVentasSemanalController extends Controller
     }
 
     private function getIngresosRecibidos($startDate, $endDate, $metodosPago)
-    {
-        return Empleado::with(['ventas'])
-            ->whereHas('ventas', function($query) {
-                $query->whereNotNull('pagos')
-                      ->where('pagos', '!=', '[]');
-            })
-            ->get()
-            ->map(function($tecnico) use ($startDate, $endDate, $metodosPago) {
-                $pagosRecibidos = collect();
+{
+    return Empleado::with(['ventas'])
+        ->whereHas('ventas', function($query) {
+            $query->whereNotNull('pagos')
+                  ->whereRaw("json_array_length(pagos) > 0"); // PostgreSQL-compatible check
+        })
+        ->get()
+        ->map(function($tecnico) use ($startDate, $endDate, $metodosPago) {
+            $pagosRecibidos = collect();
+            
+            foreach ($tecnico->ventas as $venta) {
+                $pagos = $this->parsePagos($venta->pagos);
                 
-                foreach ($tecnico->ventas as $venta) {
-                    $pagos = $this->parsePagos($venta->pagos);
+                foreach ($pagos as $pago) {
+                    if (!isset($pago['fecha'], $pago['metodo_pago'], $pago['monto'])) {
+                        continue;
+                    }
                     
-                    foreach ($pagos as $pago) {
-                        if (!isset($pago['fecha'], $pago['metodo_pago'], $pago['monto'])) {
-                            continue;
-                        }
-                        
-                        $fechaPago = Carbon::parse($pago['fecha']);
-                        $fechaVenta = Carbon::parse($venta->fecha_h);
-                        
-                        if ($fechaPago->between($startDate, $endDate) && !$fechaVenta->between($startDate, $endDate)) {
-                            $pagosRecibidos->push([
-                                'metodo_pago' => $metodosPago[$pago['metodo_pago']] ?? 'Desconocido',
-                                'monto' => $pago['monto'],
-                                'fecha_venta' => $venta->fecha_h,
-                                'fecha_pago' => $pago['fecha']
-                            ]);
-                        }
+                    $fechaPago = Carbon::parse($pago['fecha']);
+                    $fechaVenta = Carbon::parse($venta->fecha_h);
+                    
+                    if ($fechaPago->between($startDate, $endDate) && !$fechaVenta->between($startDate, $endDate)) {
+                        $pagosRecibidos->push([
+                            'metodo_pago' => $metodosPago[$pago['metodo_pago']] ?? 'Desconocido',
+                            'monto' => $pago['monto'],
+                            'fecha_venta' => $venta->fecha_h,
+                            'fecha_pago' => $pago['fecha']
+                        ]);
                     }
                 }
-        
-                return [
-                    'tecnico' => $tecnico->nombre,
-                    'pagos' => $pagosRecibidos,
-                    'total' => $pagosRecibidos->sum('monto')
-                ];
-            });
-    }
-
+            }
+    
+            return [
+                'tecnico' => $tecnico->nombre,
+                'pagos' => $pagosRecibidos,
+                'total' => $pagosRecibidos->sum('monto')
+            ];
+        });
+}
     private function getVentasPorCliente($startDate, $endDate)
     {
         return RegistroV::whereBetween('fecha_h', [$startDate, $endDate])

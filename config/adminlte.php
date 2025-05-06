@@ -344,7 +344,7 @@ return [
     [
         'text' => 'Inventario',
         'icon' => 'fas fa-fw fa-boxes',
-        'can' => 'admin',
+        'can' => ['admin', 'inventario_limited'],
         'submenu' => [
             [
                 'text' => 'Inventario',
@@ -356,7 +356,7 @@ return [
                 'text' => 'Transferencias',
                 'url' => 'transferencias',
                 'icon' => 'fas fa-fw fa-exchange-alt',
-                'can' => 'admin',
+                'can' => ['admin', 'inventario_limited'],
             ],
             
     [

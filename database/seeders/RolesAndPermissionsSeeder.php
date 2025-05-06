@@ -8,8 +8,6 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use App\Models\User;
 
-
-
 class RolesAndPermissionsSeeder extends Seeder
 {
     /**
@@ -17,52 +15,58 @@ class RolesAndPermissionsSeeder extends Seeder
      */
     public function run(): void
     {
+        // Reset cached roles and permissions
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
         // Crear roles
-        $admin = Role::firstOrCreate(['name' => 'admin']);
-        $user = Role::firstOrCreate(['name' => 'user']);
-      //  $limitedUser = Role::firstOrCreate(['name' => 'limited_user']); // Nuevo rol
-    
-        // Permisos generales
-        Permission::firstOrCreate(['name' => 'crear_user']);
-        Permission::firstOrCreate(['name' => 'editar_user']);
-        Permission::firstOrCreate(['name' => 'ver_user']);
-    
-        // Permisos específicos para limited_user
-      //  Permission::firstOrCreate(['name' => 'presupuestos_limited']);
-        //Permission::firstOrCreate(['name' => 'ordenes_limited']);
-        //Permission::firstOrCreate(['name' => 'ventas_limited']);
-        //Permission::firstOrCreate(['name' => 'inventario_limited']);
-        //Permission::firstOrCreate(['name' => 'costos_gastos_limited']);
-    
-        // Asignar TODOS los permisos al rol admin
-        $admin->syncPermissions(Permission::all());
-    
-        // Asignar permisos limitados
-      /*  $limitedUser->syncPermissions([
-            'presupuestos_limited',
-            'ordenes_limited',
-            'ventas_limited',
-            'inventario_limited',
-            'costos_gastos_limited'
-        ]);
-    */
-        // Asignar rol admin a un usuario específico
-        $adminUser = User::where('name', 'admin')->first();
-        if ($adminUser) {
-            $adminUser->assignRole('admin');
-            $adminUser->rol = 'admin';
-            $adminUser->save();
+        $adminRole = Role::firstOrCreate(['name' => 'admin']);
+        $userRole = Role::firstOrCreate(['name' => 'user']);
+        $limitedUserRole = Role::firstOrCreate(['name' => 'limited_user']);
+
+        // Permisos básicos
+        $permissions = [
+            'crear_user',
+            'editar_user',
+            'ver_user'
+        ];
+
+        // Crear todos los permisos
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
         }
-        // Obtener el usuario
-//$limitedUser = User::find(2);
 
-// Obtener el rol
-//$role = Role::where('name', 'limited_user')->first();
+        // Asignar TODOS los permisos al rol admin
+        $adminRole->syncPermissions(Permission::all());
 
-// Asignar el rol correctamente
-//$limitedUser->syncRoles([$role]);
+        // Asignar solo permiso de ver_user al rol user
+        $userRole->givePermissionTo('ver_user');
 
-// También actualizar el campo 'rol' si lo usas
-//$limitedUser->update(['rol' => 'limited_user']);
+        // Asignar roles basados en el campo 'rol' de la tabla users
+        $this->assignRolesBasedOnRolField();
+    }
+    
+    protected function assignRolesBasedOnRolField(): void
+    {
+        // Asignar rol admin
+        User::where('rol', 'admin')->each(function ($user) {
+            $user->syncRoles('admin');
+        });
+        
+        // Asignar rol user
+        User::where('rol', 'user')->each(function ($user) {
+            $user->syncRoles('user');
+        });
+
+        // Asignar rol limited_user
+        User::where('rol', 'limited_user')->each(function ($user) {
+            $user->syncRoles('limited_user');
+        });
+
+        // Asignar rol admin al usuario por defecto si existe
+        $defaultAdmin = User::where('name', 'admin')->first();
+        if ($defaultAdmin) {
+            $defaultAdmin->syncRoles('admin');
+            $defaultAdmin->update(['rol' => 'admin']);
+        }
     }
 }

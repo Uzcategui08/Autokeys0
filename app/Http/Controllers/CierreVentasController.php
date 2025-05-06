@@ -418,23 +418,29 @@ class CierreVentasController extends Controller
             });
     }
 
-    private function getIngresosRecibidos($month, $year, $startOfMonth, $metodosPago)
+    private function getIngresosRecibidos($startDate, $endDate, $metodosPago)
     {
         return Empleado::with(['ventas'])
             ->whereHas('ventas', function($query) {
                 $query->whereNotNull('pagos')
-                      ->where('pagos', '!=', '[]');
+                      ->whereRaw("json_array_length(pagos) > 0"); // PostgreSQL-compatible check
             })
             ->get()
-            ->map(function($tecnico) use ($month, $year, $metodosPago) {
+            ->map(function($tecnico) use ($startDate, $endDate, $metodosPago) {
                 $pagosRecibidos = collect();
                 
                 foreach ($tecnico->ventas as $venta) {
-                    foreach ($venta->pagos ?? [] as $pago) {
+                    $pagos = $this->parsePagos($venta->pagos);
+                    
+                    foreach ($pagos as $pago) {
+                        if (!isset($pago['fecha'], $pago['metodo_pago'], $pago['monto'])) {
+                            continue;
+                        }
+                        
                         $fechaPago = Carbon::parse($pago['fecha']);
-                        if ($fechaPago->month == $month && 
-                            $fechaPago->year == $year && 
-                            Carbon::parse($venta->fecha_h)->month != $month) {
+                        $fechaVenta = Carbon::parse($venta->fecha_h);
+                        
+                        if ($fechaPago->between($startDate, $endDate) && !$fechaVenta->between($startDate, $endDate)) {
                             $pagosRecibidos->push([
                                 'metodo_pago' => $metodosPago[$pago['metodo_pago']] ?? 'Desconocido',
                                 'monto' => $pago['monto'],

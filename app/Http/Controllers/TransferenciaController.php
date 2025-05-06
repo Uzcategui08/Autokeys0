@@ -64,15 +64,20 @@ class TransferenciaController extends Controller
     
             $inventarioOrigen->decrement('cantidad', $request->cantidad);
     
-            Inventario::updateOrCreate(
-                [
-                    'id_producto' => $request->id_producto,
-                    'id_almacen' => $request->id_almacen_destino
-                ],
-                [
-                    'cantidad' => DB::raw("cantidad + {$request->cantidad}")
-                ]
-            );
+// In your store() method, replace the updateOrCreate with:
+$inventarioDestino = Inventario::where('id_producto', $request->id_producto)
+    ->where('id_almacen', $request->id_almacen_destino)
+    ->first();
+
+if ($inventarioDestino) {
+    $inventarioDestino->increment('cantidad', $request->cantidad);
+} else {
+    Inventario::create([
+        'id_producto' => $request->id_producto,
+        'id_almacen' => $request->id_almacen_destino,
+        'cantidad' => $request->cantidad
+    ]);
+}
         });
     
         return redirect()->route('transferencias.index')->with('success', 'Transferencia realizada satisfactoriamente');

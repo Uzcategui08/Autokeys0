@@ -27,8 +27,8 @@ use App\Http\Controllers\TransferenciaController;
 use App\Models\Inventario;
 
 Route::get('/', function () {
-    return view('auth/login');
-});
+    return view('auth.login'); 
+})->name('login'); 
 
 Route::get('/dashboard', [DashboardController::class, "index"])->middleware(['auth', 'verified'])->name('dashboard');
 

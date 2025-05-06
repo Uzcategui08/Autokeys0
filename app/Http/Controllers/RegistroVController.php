@@ -22,7 +22,6 @@ use App\Models\Almacene;
 use App\Models\Inventario;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
-use Carbon\Carbon;
 
 class RegistroVController extends Controller
 {
@@ -38,7 +37,7 @@ class RegistroVController extends Controller
     if (auth()->user()->hasRole('limited_user')) {
         $query->where('id_empleado', auth()->id());
     }
-    $registroVs = $query->orderBy('fecha_h', 'desc')->paginate(20);
+    $registroVs = $query->paginate(20);
 
         return view('registro-v.index', compact('registroVs'))
             ->with('i', ($request->input('page', 1) - 1) * $registroVs->perPage());
@@ -54,7 +53,7 @@ public function cxc(Request $request): View
         $query->where('id_empleado', auth()->id());
     }
     
-    $registroVs = $query->orderBy('fecha_h', 'desc')->paginate(20);
+    $registroVs = $query->paginate(20);
 
     return view('registro-v.cxc', compact('registroVs'))
         ->with('i', ($request->input('page', 1) - 1) * $registroVs->perPage());
@@ -76,7 +75,7 @@ public function cxc(Request $request): View
     }
 
     /**
-     * Obtener productos por almacén (AJAX)
+     * Obtener productos por almacÃ©n (AJAX)
      */
     public function obtenerProductosV(Request $request)
     {
@@ -515,7 +514,7 @@ public function cxc(Request $request): View
         return view('registro-v.edit', $viewData);
     }
 
-    // Método para ajustar el inventario
+    // MÃ©todo para ajustar el inventario
     private function ajustarInventario($itemsAntiguos, $itemsNuevos)
     {
         // Recorrer los items nuevos
@@ -526,13 +525,13 @@ public function cxc(Request $request): View
                     $productoAntiguo = $this->buscarProductoAntiguo($itemsAntiguos, $trabajoNuevo['trabajo'], $productoNuevo['producto']);
 
                     if ($productoAntiguo) {
-                        // Ajustar el inventario según la diferencia
+                        // Ajustar el inventario segÃºn la diferencia
                         $diferencia = $productoAntiguo['cantidad'] - $productoNuevo['cantidad'];
                         if ($diferencia != 0) {
                             $this->actualizarInventario($productoNuevo['producto'], $diferencia, $productoNuevo['almacen']);
                         }
                     } else {
-                        // Si no se encontró el producto antiguo, restar la cantidad nueva del inventario
+                        // Si no se encontrÃ³ el producto antiguo, restar la cantidad nueva del inventario
                         $this->actualizarInventario($productoNuevo['producto'], -$productoNuevo['cantidad'], $productoNuevo['almacen']);
                     }
                 }
@@ -547,7 +546,7 @@ public function cxc(Request $request): View
                     $productoNuevo = $this->buscarProductoNuevo($itemsNuevos, $trabajoAntiguo['trabajo'], $productoAntiguo['producto']);
 
                     if (!$productoNuevo) {
-                        // Si no se encontró el producto nuevo, sumar la cantidad antigua al inventario
+                        // Si no se encontrÃ³ el producto nuevo, sumar la cantidad antigua al inventario
                         $this->actualizarInventario($productoAntiguo['producto'], $productoAntiguo['cantidad'], $productoAntiguo['almacen']);
                     }
                 }
@@ -555,7 +554,7 @@ public function cxc(Request $request): View
         }
     }
      
-    // Método para buscar un producto antiguo
+    // MÃ©todo para buscar un producto antiguo
     private function buscarProductoAntiguo($itemsAntiguos, $trabajo, $producto)
     {
         foreach ($itemsAntiguos as $trabajoAntiguo) {
@@ -573,7 +572,7 @@ public function cxc(Request $request): View
         return null;
     }
     
-    // Método para buscar un producto nuevo
+    // MÃ©todo para buscar un producto nuevo
     private function buscarProductoNuevo($itemsNuevos, $trabajo, $producto)
     {
         foreach ($itemsNuevos as $trabajoNuevo) {
@@ -593,7 +592,7 @@ public function cxc(Request $request): View
 
     public function verificarStock(Request $request)
     {
-        Log::info('Inicio de verificación de stock', [
+        Log::info('Inicio de verificaciÃ³n de stock', [
             'request_data' => $request->all(),
             'time' => now()
         ]);
@@ -619,7 +618,7 @@ public function cxc(Request $request): View
     
         $stockDisponible = $inventario ? $inventario->cantidad : 0;
         
-        Log::info('Resultado de verificación de stock', [
+        Log::info('Resultado de verificaciÃ³n de stock', [
             'stock_disponible' => $stockDisponible,
             'cantidad_requerida' => $cantidadRequerida,
             'suficiente' => $stockDisponible >= $cantidadRequerida
@@ -633,7 +632,7 @@ public function cxc(Request $request): View
         ]);
     }
      
-    // Método para actualizar el inventario
+    // MÃ©todo para actualizar el inventario
     private function actualizarInventario($productoId, $cantidad, $almacen)
     {
         $inventario = Inventario::where('id_producto', $productoId)
@@ -662,14 +661,14 @@ public function cxc(Request $request): View
             $nuevaCantidad = $inventario->cantidad - $cantidad;
             if ($nuevaCantidad < 0) {
                 // Manejar el caso cuando la cantidad a restar es mayor que la existente
-                // Puedes lanzar una excepción o mostrar un mensaje
+                // Puedes lanzar una excepciÃ³n o mostrar un mensaje
                 throw new \Exception("No hay suficiente stock para el producto $productoId");
             }
 
             $inventario->update(['cantidad' => $nuevaCantidad]);
         } else {
             // Manejar el caso cuando no se encuentra el producto en el inventario
-            // Puedes lanzar una excepción o mostrar un mensaje
+            // Puedes lanzar una excepciÃ³n o mostrar un mensaje
             throw new \Exception("El producto $productoId no existe en el inventario");
         }
     }
@@ -863,7 +862,7 @@ public function cxc(Request $request): View
                 $registroV->update(['id_abono' => $abono->id_abonos]);
             }
     
-            DB::commit();
+            DB::commit(); 
     
             return Redirect::route('registro-vs.index')
                 ->with('success', 'Registro actualizado satisfactoriamente.');
@@ -889,7 +888,7 @@ public function cxc(Request $request): View
                 Abono::where('id_abonos', $registroV->id_abono)->delete();
             }
     
-            // Verificar si los arrays no están vacíos
+            // Verificar si los arrays no estÃ¡n vacÃ­os
             if (is_array($costosIds) && count($costosIds) > 0) {
                 Costo::whereIn('id_costos', $costosIds)->delete();
             }
@@ -1027,6 +1026,4 @@ public function cxc(Request $request): View
     
         return $pdf->stream('invoice' . $registroV->id . '.pdf');
     }
-
-   
 }
