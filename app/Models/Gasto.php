@@ -93,4 +93,9 @@ class Gasto extends Model
         return $this->belongsTo(Empleado::class, 'id_tecnico', 'id_empleado');
     }
 
+    public function tecnico()
+    {
+        return $this->belongsTo(Empleado::class, 'id_empleado', 'id_tecnico');
+    }
+
 }

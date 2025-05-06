@@ -64,7 +64,7 @@
                                 <option value="Van Pequeña" {{ old('lugarventa', $registroV?->lugarventa) == 'Van Pequeña' ? 'selected' : '' }}>Van Pequeña</option>
                                 <option value="Van Pequeña-Pulga" {{ old('lugarventa', $registroV?->lugarventa) == 'Van Pequeña-Pulga' ? 'selected' : '' }}>Van Pequeña-Pulga</option>
                             </select>
-                            {!! $errors->first('trabajo', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
+                            {!! $errors->first('lugarventa', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                         </div>
 
                         <div class="form-group mb-3">
@@ -255,7 +255,7 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="form-group mb-3">
                                     <label for="valor_v" class="form-label">{{ __('Valor') }}</label>
                                     <input type="text" name="valor_v" class="form-control @error('valor_v') is-invalid @enderror" 
@@ -263,7 +263,7 @@
                                     {!! $errors->first('valor_v', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="form-group mb-3">
                                     <label for="titular_c" class="form-label">{{ __('Titular') }}</label>
                                     <input type="text" name="titular_c" class="form-control @error('titular_c') is-invalid @enderror" 
@@ -271,8 +271,18 @@
                                     {!! $errors->first('titular_c', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                                 </div>
                             </div>
-                                                        
-                            <div class="col-md-4">
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label for="tipo_venta" class="form-label">{{ __('Tipo de Venta') }}</label>
+                                    <select name="tipo_venta" id="tipo_venta" class="form-control @error('tipo_venta') is-invalid @enderror">
+                                        <option value="">Tipo de Venta</option>
+                                        <option value="contado" {{ old('tipo_venta', $registroV?->tipo_venta) == 'contado' ? 'selected' : '' }}>Contado</option>
+                                        <option value="credito" {{ old('tipo_venta', $registroV?->tipo_venta) == 'credito' ? 'selected' : '' }}>Crédito</option>
+                                    </select>
+                                    {!! $errors->first('tipo_venta', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
+                                </div>
+                            </div>                                                  
+                            <div class="col-md-3">
                                 <div class="form-group mb-3">
                                     <label for="estatus" class="form-label">{{ __('Estatus') }}</label>
                                     <select name="estatus" id="estatus" class="form-control @error('estatus') is-invalid @enderror" readonly>
@@ -517,40 +527,65 @@ $(document).ready(function() {
         const monto = parseFloat($('#pago_monto').val());
         const metodo = $('#pago_metodo').val();
         const fecha = $('#pago_fecha').val();
-        
-        if (!monto || monto <= 0) {
-            alert('Error: Ingrese un monto válido mayor a cero');
+
+        if (!monto || monto <= 0 || isNaN(monto)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Monto inválido',
+                html: 'Por favor ingrese un <b>monto válido</b> mayor a cero',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Entendido'
+            }).then(() => {
+                $('#pago_monto').val('').focus();
+            });
             return;
         }
-        
+
+        if (!metodo) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Método requerido',
+                html: 'Por favor seleccione un <b>método de pago</b>',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Entendido'
+            }).then(() => {
+                $('#pago_metodo').focus();
+            });
+            return;
+        }
+
         if (monto > saldoPendiente) {
-            alert('Error: El monto excede el saldo pendiente de $' + saldoPendiente.toFixed(2));
+            Swal.fire({
+                icon: 'error',
+                title: 'Saldo insuficiente',
+                html: `El monto excede el saldo pendiente de <strong>$${saldoPendiente.toFixed(2)}</strong>`,
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Entendido'
+            }).then(() => {
+                $('#pago_monto').val(saldoPendiente.toFixed(2)).focus();
+            });
             return;
         }
-        
-        const pagosJson = $('#pagos_json').val() || '[]';
-        let pagos = [];
-        
-        try {
-            pagos = JSON.parse(pagosJson);
-            if (!Array.isArray(pagos)) pagos = [];
-        } catch (e) {
-            console.error('Error parseando pagos:', e);
+
+        if (!fecha) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Fecha no especificada',
+                text: 'Se usará la fecha actual para este pago',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Continuar',
+                showCancelButton: true,
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (!result.isConfirmed) {
+                    return;
+                }
+                agregarPago(monto, metodo, new Date().toISOString().split('T')[0]);
+            });
+            return;
         }
-        
-        pagos.push({
-            monto: monto,
-            metodo_pago: metodo,
-            fecha: fecha
-        });
-        
-        $('#pagos_json').val(JSON.stringify(pagos));
-        
-        actualizarListaPagos();
-        actualizarResumen();
-        actualizarMaximoPago();
-        
-        $('#pago_monto').val('').focus();
+
+        agregarPago(monto, metodo, fecha);
     });
 
     function actualizarListaPagos() {
@@ -716,6 +751,14 @@ $(document).ready(function() {
         costoIndex++;
     }
 
+    function calcularTotalCostos() {
+        let total = 0;
+        $('.monto-ce').each(function() {
+            total += parseFloat($(this).val()) || 0;
+        });
+        return total;
+    }
+
     $(document).on('click', '.btn-add-costo', function() {
         addNewCostoGroup();
     });
@@ -728,42 +771,20 @@ $(document).ready(function() {
     $(document).on('input', '.monto-ce, #valor_v', function() {
         calcularPorcentajeCerrajero();
     });
-// Listener para eliminar gastos (similar al de costos)
-$(document).on('click', '.btn-remove-gasto', function() {
-    $(this).closest('.gasto-group').remove();
-    calcularPorcentajeCerrajero();
-    actualizarTotales(); // Nueva función para mostrar totales
-});
 
-// Listener para cambios en montos de gastos y valor de venta
-$(document).on('input', '.monto-ce, .monto-gasto, #valor_v', function() {
-    calcularPorcentajeCerrajero();
-    actualizarTotales();
-});
+    $(document).ready(function() {
+        if (costosExistentes && costosExistentes.length > 0) {
+            costosExistentes.forEach(costo => {
+                addNewCostoGroup(costo);
+            });
+        } else {
+            addNewCostoGroup(); 
+        }
 
-// Listener para inicialización de gastos existentes
-$(document).ready(function() {
-    // Inicialización de costos (tu código existente)
-    if (costosExistentes && costosExistentes.length > 0) {
-        costosExistentes.forEach(costo => {
-            addNewCostoGroup(costo);
-        });
-    } else {
-        addNewCostoGroup(); 
-    }
+        calcularPorcentajeCerrajero();
+    });
 
-    calcularPorcentajeCerrajero();
-    actualizarTotales();
-});
 
-// Función para actualizar visualización de totales (nueva)
-function actualizarTotales() {
-    const totalGastos = calcularTotalGastos();
-    $('#total-gastos').text(totalGastos.toFixed(2));
-    
-    const totalCostos = calcularTotalCostos();
-    $('#total-costos').text(totalCostos.toFixed(2));
-}
     /**************************************
      * SECCIÓN DE GASTOS 
      **************************************/
@@ -839,8 +860,28 @@ function actualizarTotales() {
             width: '100%',
             dropdownAutoWidth: true
         });
+
+        newGastoGroup.find('.monto-gasto').trigger('input');
         
         gastoIndex++;
+    }
+
+    function calcularTotalGastos() {
+        let total = 0;
+        $('.monto-gasto').each(function() {
+            const val = parseFloat($(this).val());
+            if (!isNaN(val)) total += val;
+        });
+        console.log("Total gastos calculado:", total); 
+        return total;
+    }
+
+    function calcularPorcentajeCerrajero() {
+        const totalCostos = calcularTotalCostos();
+        const totalGastos = calcularTotalGastos();
+        const valorVenta = parseFloat($('#valor_v').val()) || 0;
+        const porcentaje = (valorVenta - totalCostos - totalGastos) * 0.36;
+        $('#porcentaje_c').val(porcentaje.toFixed(2));
     }
 
     $(document).on('click', '.btn-add-gasto', function() {
@@ -849,139 +890,195 @@ function actualizarTotales() {
 
     $(document).on('click', '.btn-remove-gasto', function() {
         $(this).closest('.gasto-group').remove();
+        calcularPorcentajeCerrajero();
     });
-    function calcularTotalCostos() {
-        let total = 0;
-        $('.monto-ce').each(function() {
-            total += parseFloat($(this).val()) || 0;
-        });
-        return total;
-    }
 
-    function calcularTotalGastos() {
-    let total = 0;
-    $('.monto-gasto').each(function() {
-        const value = $(this).val();
-        total += parseFloat(value) || 0;
+    $(document).on('input', '.monto-gasto, #valor_v', function() {
+        calcularPorcentajeCerrajero();
     });
-    return total;
-}
 
-// Función para calcular porcentaje cerrajero (mejorada)
-function calcularPorcentajeCerrajero() {
-    const totalCostos = calcularTotalCostos();
-    const totalGastos = calcularTotalGastos();
-    const valorVenta = parseFloat($('#valor_v').val()) || 0;
-    const porcentaje = (valorVenta - totalCostos - totalGastos) * 0.36;
-    $('#porcentaje_c').val(porcentaje.toFixed(2));
-}
+    $(document).ready(function() {
+        if (gastosExistentes && gastosExistentes.length > 0) {
+            gastosExistentes.forEach(gasto => {
+                const formattedGasto = {
+                    id_gastos: gasto.id_gastos,
+                    descripcion: gasto.descripcion,
+                    valor: gasto.monto || gasto.valor,
+                    monto: gasto.monto || gasto.valor,
+                    metodo_pago: gasto.metodo_pago,
+                    estatus: gasto.estatus,
+                    fecha: gasto.fecha
+                };
+                addNewGastoGroup(formattedGasto);
+            });
+        } else {
+            addNewGastoGroup();
+        }
 
-// Mantén solo este bloque de inicialización (al final de tu código)
-$(document).ready(function() {
-    if (gastosExistentes && gastosExistentes.length > 0) {
-        gastosExistentes.forEach(gasto => {
-            const formattedGasto = {
-                id_gastos: gasto.id_gastos,
-                descripcion: gasto.descripcion,
-                valor: gasto.monto || gasto.valor,
-                metodo_pago: gasto.metodo_pago,
-                estatus: gasto.estatus,
-                fecha: gasto.fecha
-            };
-            addNewGastoGroup(formattedGasto);
-        });
-    } else {
-        addNewGastoGroup();
-    }
-});
+        setTimeout(() => {
+            calcularPorcentajeCerrajero();
+        }, 300);
+
+    });
     /**************************************
      * SECCIÓN DE ITEMS DE TRABAJO
      **************************************/
     let itemGroupIndex = 0;
     const itemsExistentes = @json($registroV->items ?? []);
 
+    function verificarStock() {
+        let sinStock = false;
+        let mensajesError = [];
+        
+        $('.producto-row').each(function() {
+            const $row = $(this);
+            const productoSelect = $row.find('select[name$="[producto]"]');
+            const cantidadInput = $row.find('input[name$="[cantidad]"]');
+            const almacenSelect = $row.find('select[name$="[almacen]"]');
+            
+            const productoId = productoSelect.val();
+            const cantidad = parseInt(cantidadInput.val()) || 0;
+            const almacenId = almacenSelect.val();
+            
+            if (productoId && almacenId && cantidad > 0) {
+                $.ajax({
+                    url: '/verificar-stock',
+                    type: 'GET',
+                    async: false, 
+                    data: {
+                        producto_id: productoId,
+                        almacen_id: almacenId,
+                        cantidad: cantidad
+                    },
+                    success: function(response) {
+                        if (!response.suficiente) {
+                            sinStock = true;
+                            mensajesError.push(`No hay suficiente stock para el producto ${productoSelect.find('option:selected').text()}. Stock disponible: ${response.stock}`);
+                        }
+                    },
+                    error: function() {
+                        console.error('Error al verificar el stock');
+                    }
+                });
+            }
+        });
+        
+        return {
+            valido: !sinStock,
+            mensajes: mensajesError
+        };
+    }
+
+    $('form').on('submit', function(e) {
+        e.preventDefault();
+        
+        const verificacionStock = verificarStock();
+        
+        if (!verificacionStock.valido) {
+            Swal.fire({
+                title: 'Error de Stock',
+                html: verificacionStock.mensajes.join('<br>'),
+                icon: 'warning',
+                confirmButtonText: 'Entendido'
+            });
+            return false;
+        }
+        
+        this.submit();
+    });
+
     function cargarProductosEnSelect($select, idAlmacen, productoSeleccionado = null, nombreProducto = null, precio = null) {
-    if (idAlmacen) {
-        $.ajax({
-            url: '/obtener-productos-orden',
-            type: 'GET',
-            data: { id_almacen: idAlmacen },
-            success: function(response) {
-                let options = '<option value="">{{ __('Select Producto') }}</option>';
-                
-                if (productoSeleccionado) {
-                    const productoEncontrado = response.find(p => p.id_producto == productoSeleccionado);
+        if (idAlmacen) {
+            $.ajax({
+                url: '/obtener-productos-orden',
+                type: 'GET',
+                data: { id_almacen: idAlmacen },
+                success: function(response) {
+                    let options = '<option value="">{{ __('Select Producto') }}</option>';
                     
-                    if (productoEncontrado) {
-                        options += `
-                            <option 
-                                value="${productoEncontrado.id_producto}" 
-                                data-precio="${productoEncontrado.precio_venta || productoEncontrado.precio || '0'}"
-                                selected>
-                                ${productoEncontrado.id_producto} - ${productoEncontrado.item}
-                            </option>`;
-                    } else if (nombreProducto) {
-                        options += `
+                    if (productoSeleccionado) {
+                        const productoEncontrado = response.find(p => p.id_producto == productoSeleccionado);
+                        
+                        if (productoEncontrado) {
+                            options += `
+                                <option 
+                                    value="${productoEncontrado.id_producto}" 
+                                    data-precio="${productoEncontrado.precio_venta || productoEncontrado.precio || '0'}"
+                                    data-stock="${productoEncontrado.stock || 0}"
+                                    selected>
+                                    ${productoEncontrado.id_producto} - ${productoEncontrado.item}
+                                </option>`;
+                        } else if (nombreProducto) {
+                            options += `
+                                <option 
+                                    value="${productoSeleccionado}" 
+                                    data-precio="${precio || '0'}"
+                                    data-stock="0"
+                                    selected>
+                                    ${productoSeleccionado} - ${nombreProducto}
+                                </option>`;
+                        }
+                    }
+                    
+                    response.forEach(function(producto) {
+                        if (producto.id_producto != productoSeleccionado) {
+                            options += `
+                                <option 
+                                    value="${producto.id_producto}" 
+                                    data-precio="${producto.precio_venta || producto.precio || '0'}"
+                                    data-stock="${producto.stock || 0}">
+                                    ${producto.id_producto} - ${producto.item}
+                                </option>`;
+                        }
+                    });
+                    
+                    $select.html(options).prop('disabled', false);
+                    $select.select2();
+                    
+                    if (productoSeleccionado) {
+                        $select.val(productoSeleccionado).trigger('change');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error al cargar los productos');
+                    if (productoSeleccionado && nombreProducto) {
+                        $select.html(`
                             <option 
                                 value="${productoSeleccionado}" 
                                 data-precio="${precio || '0'}"
+                                data-stock="0"
                                 selected>
                                 ${productoSeleccionado} - ${nombreProducto}
-                            </option>`;
+                            </option>
+                            <option value="">{{ __('Select Producto') }}</option>
+                        `).prop('disabled', false);
+                        $select.select2();
                     }
                 }
-                
-                response.forEach(function(producto) {
-                    if (producto.id_producto != productoSeleccionado) {
-                        options += `
-                            <option 
-                                value="${producto.id_producto}" 
-                                data-precio="${producto.precio_venta || producto.precio || '0'}">
-                                ${producto.id_producto} - ${producto.item}
-                            </option>`;
-                    }
+            });
+        }
+    }
+
+    $(document).on('change', 'input[name$="[cantidad]"]', function() {
+        const $row = $(this).closest('.producto-row');
+        const productoSelect = $row.find('select[name$="[producto]"]');
+        const cantidad = parseInt($(this).val()) || 0;
+        
+        if (productoSelect.val()) {
+            const stockDisponible = parseInt(productoSelect.find('option:selected').data('stock')) || 0;
+            
+            if (cantidad > stockDisponible) {
+                Swal.fire({
+                    title: 'Stock Insuficiente',
+                    text: `Solo hay ${stockDisponible} unidades disponibles de este producto`,
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido'
                 });
-                
-                $select.html(options).prop('disabled', false);
-                $select.select2();
-                
-                if (productoSeleccionado) {
-                    $select.val(productoSeleccionado).trigger('change');
-                }
-            },
-            error: function(xhr) {
-                console.error('Error al cargar los productos');
-                if (productoSeleccionado && nombreProducto) {
-                    $select.html(`
-                        <option 
-                            value="${productoSeleccionado}" 
-                            data-precio="${precio || '0'}"
-                            selected>
-                            ${productoSeleccionado} - ${nombreProducto}
-                        </option>
-                        <option value="">{{ __('Select Producto') }}</option>
-                    `).prop('disabled', false);
-                    $select.select2();
-                }
-            }
-        });
-    } else {
-        if (productoSeleccionado && nombreProducto) {
-            $select.html(`
-                <option 
-                    value="${productoSeleccionado}" 
-                    data-precio="${precio || '0'}"
-                        selected>
-                        ${productoSeleccionado} - ${nombreProducto}
-                    </option>
-                    <option value="">{{ __('Select Producto') }}</option>
-                `).prop('disabled', false);
-                $select.select2();
-            } else {
-                $select.html('<option value="">{{ __('Select Producto') }}</option>').prop('disabled', true);
+
+                $(this).val(stockDisponible > 0 ? stockDisponible : 0);
             }
         }
-    };
+    });
 
     $(document).on('change', 'select[name^="items"][name$="[producto]"]', function() {
         const $row = $(this).closest('.producto-row');

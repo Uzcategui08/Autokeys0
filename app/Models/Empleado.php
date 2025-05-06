@@ -31,12 +31,7 @@ class Empleado extends Model
      * @var array<int, string>
      */
 
-    protected $fillable = ['id_empleado', 'nombre', 'cedula', 'cargo', 'salario_base', 'tipo' ];
-
-    public function tipoNomina()
-    {
-        return $this->belongsTo(Tnomina::class, 'id_tnomina', 'id_tnomina');
-    }
+    protected $fillable = ['id_empleado', 'nombre', 'cedula', 'cargo', 'salario_base', 'tipo', 'tipo_pago' ];
 
     /** 
     public function prestamos()
@@ -68,6 +63,16 @@ class Empleado extends Model
     public function registrosV()
     {
         return $this->hasMany(RegistroV::class, 'id_empleado', 'id_empleado');
+    }
+
+    public function ventas()
+    {
+        return $this->hasMany(RegistroV::class, 'id_empleado');
+    }
+
+    public function gastos()
+    {
+        return $this->hasMany(Gasto::class, 'id_tecnico', 'id_empleado');
     }
 
 }

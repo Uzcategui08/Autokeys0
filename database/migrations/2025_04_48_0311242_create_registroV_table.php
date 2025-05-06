@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('telefono');
             $table->decimal('valor_v');
             $table->string('estatus');
+            $table->string('tipo_venta');
             $table->string('titular_c');
             $table->json('pagos')->nullable();
             $table->string('descripcion_ce')->nullable();

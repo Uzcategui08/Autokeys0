@@ -336,6 +336,12 @@ return [
         'can' => 'admin', // Solo admin
     ],
     [
+        'text' => 'Transferencias',
+        'url' => 'transferencias',
+        'icon' => 'fas fa-fw fa-exchange-alt',
+        'can' => 'admin',
+    ],
+    [
         'text' => 'Productos',
         'url' => 'productos',
         'icon' => 'fas fa-fw fa-box-open',
@@ -470,7 +476,24 @@ return [
         'icon' => 'fas fa-fw fa-credit-card',
         'can' => 'admin',
     ],
-
+    [
+        'text' => 'Estado de Resultados',
+        'url' => 'estadisticas-ventas',
+        'icon' => 'fas fa-fw fa-chart-line',
+        'can' => 'admin',
+    ],
+    [
+        'text' => 'Cierre Mensual',
+        'url' => 'cierre-ventas',
+        'icon' => 'fas fa-fw fa-chart-line',
+        'can' => 'admin',
+    ],
+    [
+        'text' => 'Cierre Semanal',
+        'url' => 'cierre-ventas-semanal',
+        'icon' => 'fas fa-fw fa-chart-line',
+        'can' => 'admin',
+    ],
 
     // ========================================
     // SECCIÓN ADMINISTRACIÓN (solo admin)

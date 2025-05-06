@@ -21,7 +21,10 @@ use App\Http\Controllers\TiposDePagoController;
 use App\Http\Controllers\EstadisticasVentasController;
 use App\Http\Controllers\CierreVentasController;
 use App\Http\Controllers\VanesController;
+use App\Http\Controllers\CierreVentasSemanalController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TransferenciaController;
+use App\Models\Inventario;
 
 Route::get('/', function () {
     return view('auth/login');
@@ -48,6 +51,7 @@ Route::resource('productos', ProductoController::class);
 
 route::get('admin/dashboard', [DashboardController::class, "index"])->name('admin.dashboard');
 
+Route::resource('transferencias', TransferenciaController::class);
 
 Route::get('/inventarios/export', [InventarioController::class, 'export'])->name('inventarios.export');
 Route::resource('inventarios', InventarioController::class);
@@ -62,9 +66,11 @@ Route::resource('registro-vs', RegistroVController::class);
 Route::get('/estadisticas-ventas/{month?}/{year?}', [EstadisticasVentasController::class, 'index'])
     ->name('estadisticas.ventas');
 
+Route::get('/cierre-ventas', [CierreVentasController::class, 'index'])->name('cierre.mensual');
     Route::get('/cierre-ventas', [CierreVentasController::class, 'index'])->name('cierre.ventas');
     Route::get('/estadisticas/RegistroVpdf', [EstadisticasVentasController::class, 'generatePdfTotal'])->name('generatePdfTotal.pdf');
 
+Route::get('/cierre-ventas-semanal', [CierreVentasSemanalController::class, 'index'])->name('cierre.semanal');
 
     Route::get('/estadisticas-vanes', [VanesController::class, 'index'])->name('ventas.reporte');
     Route::get('/estadisticas/vanespdf', [VanesController::class, 'descargarReporteFinDeSemana'])->name('ventas.descargar-reporte');
@@ -122,6 +128,7 @@ Route::get('/nomina/generar-recibo-general/{fechaDesde}/{fechaHasta}', [Nemplead
 
 Route::get('/nempleados/reporte', [NempleadoController::class, 'reporte'])->name('nempleados.reporte');
 
+Route::get('/verificar-stock', [RegistroVController::class, 'verificarStock'])->name('verificar.stock');
 
 Route::resource('prestamos', PrestamoController::class);
 Route::get('prestamos/empleado/{id}', [PrestamoController::class, 'porEmpleado'])
@@ -138,5 +145,23 @@ Route::resource('costos', CostoController::class);
 
 Route::resource('gastos', GastoController::class);
 
+Route::get('/inventario/{productoId}/{almacenId}', function ($productoId, $almacenId) {
+    $inventario = Inventario::where('id_producto', $productoId)
+        ->where('id_almacen', $almacenId)
+        ->first();
+    
+    if (!$inventario) {
+        return response()->json([
+            'cantidad' => 0
+        ]);
+    }
+    
+    return response()->json([
+        'cantidad' => $inventario->cantidad
+    ]);
+});
 
+Route::get('/verificar-stock-transferencia', [TransferenciaController::class, 'verificarStock'])->name('verificarTransferencia.stock');
 
+Route::get('/empleados/{id}/datos-pago', [EmpleadoController::class, 'getDatosPago'])->name('empleados.datos-pago');
+Route::get('/empleados/{id}/datos-pago', [EmpleadoController::class, 'getDatosPago']);

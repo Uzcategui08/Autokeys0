@@ -33,7 +33,7 @@ class Nempleado extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['id_nempleado', 'id_pnomina', 'id_empleado', 'total_descuentos', 'total_abonos', 'total_prestamos', 'total_costos', 'total_pagado', 'metodo_pago', 'id_abonos', 'id_descuentos', 'id_costos', 'fecha_desde', 'fecha_hasta', 'sueldo_base'];
+    protected $fillable = ['id_nempleado', 'id_empleado', 'total_descuentos', 'total_abonos', 'total_prestamos', 'total_costos', 'total_pagado', 'metodo_pago', 'id_abonos', 'id_descuentos', 'id_costos', 'fecha_desde', 'fecha_hasta', 'sueldo_base', 'horas_trabajadas', 'tipo_pago_empleado', 'detalle_pago'];
 
     protected $casts = [
         'id_abonos' => 'array',
@@ -66,8 +66,5 @@ class Nempleado extends Model
         return $this->hasMany(Descuento::class, 'id_empleado', 'id_empleado')
                    ->whereIn('id_descuentos', $descuentosIds);
     }
-
-
-
     
 }

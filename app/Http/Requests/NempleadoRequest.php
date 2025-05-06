@@ -37,6 +37,9 @@ class NempleadoRequest extends FormRequest
             'fecha_desde' => 'required|date',
             'fecha_hasta' => 'required|date|after_or_equal:fecha_desde',
             'sueldo_base' => 'required|numeric',
+            'horas_trabajadas' => 'nullable',
+            'tipo_pago_empleado' => 'nullable',
+            'detalle_pago' => 'nullable'
         ];
     }
 }

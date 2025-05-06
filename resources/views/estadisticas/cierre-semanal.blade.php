@@ -1,27 +1,27 @@
 @extends('adminlte::page')
 
-@section('title', 'Cierre Mensual')
+@section('title', 'Cierre Semanal')
 
 @section('content_header')
 <div class="d-flex justify-content-between align-items-center">
-    <h1 class="text-gray-800">Cierre Mensual - {{ \Carbon\Carbon::create($yearSelected, $monthSelected, 1)->format('F Y') }}</h1>
+    <h1 class="text-gray-800">Cierre Semanal - Del {{ $startOfWeek->format('d M Y') }} al {{ $endOfWeek->format('d M Y') }}</h1>
     
-    <form method="GET" action="{{ route('cierre.mensual') }}" class="form-inline">
+    <form method="GET" action="{{ route('cierre.semanal') }}" class="form-inline">
         <div class="form-group mr-2">
-            <select name="month" class="form-control form-control-sm">
-                @foreach(range(1, 12) as $month)
-                    <option value="{{ $month }}" {{ $month == $monthSelected ? 'selected' : '' }}>
-                        {{ \Carbon\Carbon::create()->month($month)->monthName }}
+            <select name="year" class="form-control form-control-sm">
+                @foreach($availableYears as $year)
+                    <option value="{{ $year }}" {{ $year == $yearSelected ? 'selected' : '' }}>
+                        {{ $year }}
                     </option>
                 @endforeach
             </select>
         </div>
         
         <div class="form-group mr-2">
-            <select name="year" class="form-control form-control-sm">
-                @foreach($availableYears as $year)
-                    <option value="{{ $year }}" {{ $year == $yearSelected ? 'selected' : '' }}>
-                        {{ $year }}
+            <select name="week" class="form-control form-control-sm">
+                @foreach($weeks as $week)
+                    <option value="{{ $week['number'] }}" {{ $week['number'] == $weekSelected ? 'selected' : '' }}>
+                        Semana {{ $week['number'] }} ({{ $week['start'] }} - {{ $week['end'] }})
                     </option>
                 @endforeach
             </select>
@@ -37,7 +37,7 @@
 @section('content')
 <div class="card mb-4 border-top-0 shadow-soft">
     <div class="card-header bg-light">
-        <h3 class="card-title text-gray-800">Resumen Financiero Mensual</h3>
+        <h3 class="card-title text-gray-800">Resumen Financiero Semanal</h3>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -154,7 +154,7 @@
                             @if($i === 0)
                                 <td rowspan="{{ $maxRows }}" class="align-middle font-weight-bold">{{ $item['tecnico'] }}</td>
                             @endif
-
+                            
                             @if(isset($item['costos'][$i]))
                                 <td class="bg-costos">{{ $item['costos'][$i]['subcategoria'] }}</td>
                                 <td class="bg-costos">{{ $item['costos'][$i]['metodo_pago'] }}</td>
@@ -303,8 +303,7 @@
                         <td class="text-right bg-ventas">${{ number_format($lugar['monto'], 2) }}</td>
                     </tr>
                     @endforeach
-                    
-                    <!-- Totales -->
+
                     <tr class="font-weight-bold bg-gray-100">
                         <td>TOTAL</td>
                         <td class="text-right bg-ventas">{{ $totalVentas }}</td>
@@ -453,19 +452,19 @@
     }
 
     .bg-ventas {
-    background-color: rgba(40, 167, 69, 0.22);   
+        background-color: rgba(40, 167, 69, 0.22);
     }
     .bg-costos {
-        background-color: rgba(220, 53, 69, 0.22);   
+        background-color: rgba(220, 53, 69, 0.22);
     }
     .bg-gastos {
-        background-color: rgba(253, 126, 20, 0.22);  
+        background-color: rgba(253, 126, 20, 0.22);
     }
     .bg-llaves {
-        background-color: rgba(23, 162, 184, 0.22);  
+        background-color: rgba(23, 162, 184, 0.22);
     }
     .bg-resumen {
-        background-color: rgba(108, 117, 125, 0.18); 
+        background-color: rgba(108, 117, 125, 0.18);
     }
 
     .border-left-ventas {
@@ -493,7 +492,7 @@
     .table-hover tbody tr:hover {
         background-color: rgba(0,0,0,0.03) !important;
     }
-    
+
     .card {
         box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
         border: 1px solid rgba(0,0,0,0.08);
@@ -581,14 +580,14 @@
                 datasets: [{
                     data: [{{ $totalContado }}, {{ $totalCredito }}, {{ $totalRecibidos }}],
                     backgroundColor: [
-                        'rgba(40, 167, 69, 0.3)',     
-                        'rgba(0, 123, 255, 0.3)',     
-                        'rgba(108, 117, 125, 0.3)'    
+                        'rgba(40, 167, 69, 0.3)',
+                        'rgba(0, 123, 255, 0.3)',
+                        'rgba(108, 117, 125, 0.3)'
                     ],
                     borderColor: [
-                        'rgba(40, 167, 69, 0.7)',   
-                        'rgba(0, 123, 255, 0.7)',   
-                        'rgba(108, 117, 125, 0.7)'  
+                        'rgba(40, 167, 69, 0.7)',
+                        'rgba(0, 123, 255, 0.7)',
+                        'rgba(108, 117, 125, 0.7)'
                     ],
                     borderWidth: 1
                 }]
@@ -652,14 +651,14 @@
                     label: 'Montos',
                     data: [{{ $totalCostos }}, {{ $totalGastos }}, {{ $totalCostosLlaves }}],
                     backgroundColor: [
-                        'rgba(220, 53, 69, 0.3)',     
-                        'rgba(253, 126, 20, 0.3)',    
-                        'rgba(23, 162, 184, 0.3)'     
+                        'rgba(220, 53, 69, 0.3)',
+                        'rgba(253, 126, 20, 0.3)',
+                        'rgba(23, 162, 184, 0.3)'
                     ],
                     borderColor: [
-                        'rgba(220, 53, 69, 0.7)',   
-                        'rgba(253, 126, 20, 0.7)',  
-                        'rgba(23, 162, 184, 0.7)'   
+                        'rgba(220, 53, 69, 0.7)',
+                        'rgba(253, 126, 20, 0.7)',
+                        'rgba(23, 162, 184, 0.7)'
                     ],
                     borderWidth: 1
                 }]

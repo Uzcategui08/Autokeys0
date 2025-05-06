@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class EmpleadoRequest extends FormRequest
+class TransferenciaRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,12 +22,13 @@ class EmpleadoRequest extends FormRequest
     public function rules(): array
     {
         return [
-			'nombre' => 'required|string',
-			'cedula' => 'required',
-			'cargo' => 'required|string',
-			'salario_base' => 'nullable',
-            'tipo' => 'required',
-            'tipo_pago' => 'required',
+			'id_transferencia' => 'required',
+			'id_producto' => 'required',
+			'id_almacen_origen' => 'required',
+			'id_almacen_destino' => 'required',
+			'cantidad' => 'required',
+			'user_id' => 'required',
+			'observaciones' => 'string',
         ];
     }
 }

@@ -443,11 +443,28 @@
                 </tr>
             </thead>
             <tbody>
+                @if($tipo_pago_empleado === 'horas')
+                <tr>
+                    <td>Pago por Horas</td>
+                    <td>
+                        Horas trabajadas: {{ $horas_trabajadas }}<br>
+                        {{ $detalle_pago }}
+                    </td>
+                    <td class="text-right">${{ number_format($sueldo_base, 2) }}</td>
+                </tr>
+                @elseif($tipo_pago_empleado === 'comision')
+                <tr>
+                    <td>Pago por Comisión</td>
+                    <td>Pago basado en comisiones</td>
+                    <td class="text-right">${{ number_format($sueldo_base, 2) }}</td>
+                </tr>
+                @else
                 <tr>
                     <td>Sueldo Base</td>
                     <td>Salario base del empleado</td>
                     <td class="text-right">${{ number_format($sueldo_base, 2) }}</td>
                 </tr>
+                @endif
                 
                 @if($total_abonos > 0 && count($abonos) > 0)
                 <tr>
@@ -505,10 +522,19 @@
             <tr>
                 <td class="total-box">
                     <div class="info-title">TOTAL DEVENGADO</div>
-                    <div>Sueldo Base: ${{ number_format($sueldo_base, 2) }}</div>
-                    @if($total_abonos > 0)
-                    <div>Abonos: <span class="positive">+${{ number_format($total_abonos, 2) }}</span></div>
+                    
+                    @if($tipo_pago_empleado === 'horas')
+                        <div>Pago por Horas: ${{ number_format($sueldo_base, 2) }}</div>
+                    @elseif($tipo_pago_empleado === 'comision')
+                        <div>Pago por Comisión: ${{ number_format($sueldo_base, 2) }}</div>
+                    @else
+                        <div>Sueldo Base: ${{ number_format($sueldo_base, 2) }}</div>
                     @endif
+                    
+                    @if($total_abonos > 0)
+                        <div>Abonos: <span class="positive">+${{ number_format($total_abonos, 2) }}</span></div>
+                    @endif
+                    
                     <div class="text-bold" style="margin-top: 8px; border-top: 1px solid #e0e0e0; padding-top: 5px;">
                         Total Devengado: ${{ number_format($sueldo_base + $total_abonos, 2) }}
                     </div>
