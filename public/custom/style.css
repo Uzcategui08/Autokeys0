@@ -1,0 +1,44 @@
+.dataTable {
+width: 100% !important;
+margin: 0 auto;
+border-collapse: collapse;
+}
+
+.dataTable th,
+.dataTable td {
+    padding: 12px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.dataTable thead th {
+    color: black;
+    font-weight: bold;
+}
+
+.dataTable tbody tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.btn-sm {
+    margin: 2px;
+}
+
+.dt-buttons .btn {
+    margin-right: 5px;
+}
+.select2-container .select2-selection--single {
+height: 38px !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 38px !important;
+}
+
+.form-control-plaintext {
+    background-color: #f8f9fa;
+    border: 1px solid #ced4da;
+    color: #495057;
+    cursor: not-allowed;
+}
+

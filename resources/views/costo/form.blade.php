@@ -64,7 +64,9 @@
                                 <option value="alquiler_pulga" {{ old('subcategoria', $costo?->subcategoria) == 'alquiler_pulga' ? 'selected' : '' }}>Alquiler Pulga</option>
                                 <option value="codigos" {{ old('subcategoria', $costo?->subcategoria) == 'codigos' ? 'selected' : '' }}>Códigos</option>
                                 <option value="servicios_subcontratados" {{ old('subcategoria', $costo?->subcategoria) == 'servicios_subcontratados' ? 'selected' : '' }}>Servicios Subcontratados</option>
+                                <option value="costo_extra" {{ old('subcategoria', $costo?->subcategoria) == 'costo_extra' ? 'selected' : '' }}>Costo Extra</option>
                             </select>
+                            
                             {!! $errors->first('subcategoria', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
                         </div>
                     </div>
@@ -177,6 +179,14 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const select = document.getElementById('subcategoria');
+    if (select.value === 'costo_extra') {
+        select.disabled = true;
+        select.classList.add('form-control-plaintext');
+    }
+});
+
 $(document).ready(function() {
     const metodosPago = @json($metodos ?? []);
 

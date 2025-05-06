@@ -79,6 +79,6 @@ class AlmaceneController extends Controller
         Almacene::find($id)->delete();
 
         return Redirect::route('almacenes.index')
-            ->with('success', 'Almacene eliminado satifactoriamente.');
+            ->with('success', 'Almacen eliminado satifactoriamente.');
     }
 }

@@ -63,6 +63,7 @@
                                 <option value="combustible" {{ old('subcategoria', $gasto?->subcategoria) == 'combustible' ? 'selected' : '' }}>Combustible y viáticos</option>
                                 <option value="capacitacion" {{ old('subcategoria', $gasto?->subcategoria) == 'capacitacion' ? 'selected' : '' }}>Capacitación</option>
                                 <option value="otros" {{ old('subcategoria', $gasto?->subcategoria) == 'otros' ? 'selected' : '' }}>Otros gastos</option>
+                                <option value="gasto_extra" {{ old('subcategoria', $gasto?->subcategoria) == 'gasto_extra' ? 'selected' : '' }}>Gasto Extra</option>
                             </select>
                             {!! $errors->first('subcategoria', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
                         </div>
@@ -176,6 +177,14 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const select = document.getElementById('subcategoria');
+    if (select.value === 'gasto_extra') {
+        select.disabled = true;
+        select.classList.add('form-control-plaintext');
+    }
+});
+
 $(document).ready(function() {
     const metodosPago = @json($metodos ?? []);
 
