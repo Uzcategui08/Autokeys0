@@ -46,7 +46,21 @@
                                             <td>{{ \Carbon\Carbon::parse($costo->f_costos)->format('m/d/Y') }}</td>
                                             <td>{{ $costo->empleado->nombre }}</td>
                                             <td>{{ $costo->descripcion }}</td>
-                                            <td>{{ $costo->subcategoria }}</td>
+                                            <?php
+                                            $subcategorias = [
+                                                'compras_insumos' => 'Compras de insumos',
+                                                'gasolina' => 'Gasolina',
+                                                'mantenimiento_vanes' => 'Mantenimiento a Vanes',
+                                                'salario_cerrajero' => 'Salario Cerrajero',
+                                                'depreciacion_maquinas' => 'Depreciación de máquinas',
+                                                'seguros_vehiculos' => 'Seguros de vehículos',
+                                                'alquiler_pulga' => 'Alquiler Pulga',
+                                                'codigos' => 'Códigos',
+                                                'servicios_subcontratados' => 'Servicios subcontratados',
+                                                'costo_extra' => 'Costo Extra',
+                                            ];
+                                            ?>
+                                            <td>{{ $subcategorias[$costo->subcategoria] ?? $costo->subcategoria }}</td>
                                             <td>{{ $costo->valor }}</td>
                                             <td>{{ $costo->estatus }}</td>
                                             <td>

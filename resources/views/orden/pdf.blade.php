@@ -101,7 +101,6 @@
 </head>
 <body>
     <div class="header">
-        <img src="{{ public_path('images/logo.webp') }}" alt="Logo de la empresa" style="float: right; max-height: 50px;">
         <h1 style="text-align: left;">Orden Nº {{ $orden->id_orden }}</h1>
     </div>
 
