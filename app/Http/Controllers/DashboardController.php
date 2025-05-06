@@ -61,7 +61,7 @@ class DashboardController extends Controller
         $ventasPorLugar = collect();
         if (!auth()->user()->hasRole('limited_user')) {
             $ventasPorLugar = RegistroV::select(
-                    DB::raw('MONTH(fecha_h) as mes'),
+                    DB::raw('EXTRACT(MONTH FROM fecha_h) as mes'),
                     'lugarventa',
                     DB::raw('COUNT(*) as total')
                 )
@@ -93,7 +93,7 @@ class DashboardController extends Controller
             $misAjustesInventario = $queryAjustes
                 ->whereYear('created_at', now()->year)
                 ->select(
-                    DB::raw('MONTH(created_at) as mes'),
+                    DB::raw('EXTRACT(MONTH FROM created_at) as mes'),
                     DB::raw('COUNT(*) as total'),
                     DB::raw('SUM(diferencia) as cantidad_total')
                 )

@@ -23,10 +23,10 @@ class InventarioController extends Controller
      */
     public function index(Request $request): View
     {
-// En el controlador
-$inventarios1 = Inventario::with(['producto', 'almacene'])
-    ->orderByRaw('CAST(cantidad AS SIGNED) ASC') // Orden numérico explícito
-    ->get();
+
+        $inventarios1 = Inventario::with(['producto', 'almacene'])
+        ->orderByRaw('CAST(cantidad AS NUMERIC) ASC')
+        ->get();
 
 
         return view('inventario.index', compact( 'inventarios1'))
