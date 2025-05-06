@@ -336,12 +336,6 @@ return [
         'can' => 'admin', // Solo admin
     ],
     [
-        'text' => 'Transferencias',
-        'url' => 'transferencias',
-        'icon' => 'fas fa-fw fa-exchange-alt',
-        'can' => 'admin',
-    ],
-    [
         'text' => 'Productos',
         'url' => 'productos',
         'icon' => 'fas fa-fw fa-box-open',
@@ -349,16 +343,32 @@ return [
     ],
     [
         'text' => 'Inventario',
-        'url' => 'inventarios',
-        'icon' => 'fas fa-fw fa-clipboard-check',
-        'can' => ['admin', 'inventario_limited'],
-    ],
+        'icon' => 'fas fa-fw fa-boxes',
+        'can' => 'admin',
+        'submenu' => [
+            [
+                'text' => 'Inventario',
+                'url' => 'inventarios',
+                'icon' => 'fas fa-fw fa-clipboard-check',
+                'can' => ['admin', 'inventario_limited'],
+            ],
+            [
+                'text' => 'Transferencias',
+                'url' => 'transferencias',
+                'icon' => 'fas fa-fw fa-exchange-alt',
+                'can' => 'admin',
+            ],
+            
     [
         'text' => 'Carga/Descarga',
         'url' => 'cargas',
-        'icon' => 'fas fa-fw fa-exchange-alt',
+        'icon' => 'fas fa-fw fa-angle-double-down',
         'can' => ['admin', 'inventario_limited'],
     ],
+
+        ],
+    ],
+
 
     // ========================================
     // SECCIÓN VENTAS (para usuarios limitados)
@@ -476,26 +486,46 @@ return [
         'icon' => 'fas fa-fw fa-credit-card',
         'can' => 'admin',
     ],
-    [
-        'text' => 'Estado de Resultados',
-        'url' => 'estadisticas-ventas',
-        'icon' => 'fas fa-fw fa-chart-line',
-        'can' => 'admin',
-    ],
-    [
-        'text' => 'Cierre Mensual',
-        'url' => 'cierre-ventas',
-        'icon' => 'fas fa-fw fa-chart-line',
-        'can' => 'admin',
-    ],
-    [
-        'text' => 'Cierre Semanal',
-        'url' => 'cierre-ventas-semanal',
-        'icon' => 'fas fa-fw fa-chart-line',
-        'can' => 'admin',
-    ],
-
+ 
     // ========================================
+    // SECCIÓN REPORTES
+    // ========================================
+    [
+        'header' => 'REPORTES',
+        'can' => 'admin',
+    ],
+    [
+        'text' => 'Movimientos',
+        'icon' => 'fas fa-fw fa-chart-area',
+        'can' => 'admin',
+        'submenu' => [
+            [
+                'text' => 'Estado de Resultados',
+                'url' => 'estadisticas-ventas',
+                'icon' => 'fas fa-fw fa-chart-line',
+                'can' => 'admin',
+            ],
+            [
+                'text' => 'Cierres',
+                'url' => 'cierre-ventas',
+                'icon' => 'fas fa-fw fa-chart-line',
+                'can' => 'admin',
+            ],
+            [
+                'text' => 'Reporte de Ventas Vanes',
+                'url' => 'estadisticas-vanes',
+                'icon' => 'fas fa-fw fa-chart-bar',
+                'can' => 'admin',
+            ],
+            [
+                'text' => 'Cierre Semanal',
+                'url' => 'cierre-ventas-semanal',
+                'icon' => 'fas fa-fw fa-chart-line',
+                'can' => 'admin',
+            ],
+        ],
+    ],
+        // ========================================
     // SECCIÓN ADMINISTRACIÓN (solo admin)
     // ========================================
     [
@@ -509,31 +539,6 @@ return [
         'can' => 'admin',
     ],
 
-    // ========================================
-    // SECCIÓN REPORTES
-    // ========================================
-    [
-        'header' => 'REPORTES',
-        'can' => 'admin',
-    ],
-    [
-        'text' => 'Estado de Resultados',
-        'url' => 'estadisticas-ventas',
-        'icon' => 'fas fa-fw fa-chart-line',
-        'can' => 'admin',
-    ],
-    [
-        'text' => 'Cierres',
-        'url' => 'cierre-ventas',
-        'icon' => 'fas fa-fw fa-chart-line',
-        'can' => 'admin',
-    ],
-    [
-        'text' => 'Reporte de Ventas Vanes',
-        'url' => 'reportes/ventas',
-        'icon' => 'fas fa-fw fa-chart-bar',
-        'can' => 'admin',
-    ],
 ],
 
     /*

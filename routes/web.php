@@ -69,7 +69,8 @@ Route::get('/estadisticas-ventas/{month?}/{year?}', [EstadisticasVentasControlle
 Route::get('/cierre-ventas', [CierreVentasController::class, 'index'])->name('cierre.mensual');
     Route::get('/cierre-ventas', [CierreVentasController::class, 'index'])->name('cierre.ventas');
     Route::get('/estadisticas/RegistroVpdf', [EstadisticasVentasController::class, 'generatePdfTotal'])->name('generatePdfTotal.pdf');
-
+    
+    Route::get('/cierre-ventas', [CierreVentasController::class, 'index'])->name('cierre.mensual');
 Route::get('/cierre-ventas-semanal', [CierreVentasSemanalController::class, 'index'])->name('cierre.semanal');
 
     Route::get('/estadisticas-vanes', [VanesController::class, 'index'])->name('ventas.reporte');
