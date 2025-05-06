@@ -695,10 +695,12 @@ return [
 
     'livewire' => false,
 
-    'custom_js' => [
-    asset('js/global.js'),
-    ],
-    'custom_css' => [
-        asset('css/global.css'),
-    ],
+'custom_js' => [
+    'js/global.js',
+],
+
+'custom_css' => [
+    'css/global.css',
+],
+
 ];
