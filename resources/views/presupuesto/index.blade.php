@@ -70,12 +70,10 @@
                                                         <i class="fa fa-fw fa-edit"></i> 
                                                     </a>
                                                     <a class="btn btn-sm btn-warning" href="{{ route('presupuestos.pdf', $presupuesto->id_presupuesto) }}" target="_blank">
-                                                        <i class="fa fa-fw fa-print"></i> 
-                                                        Es
+                                                        <i class="">Es</i> 
                                                     </a>
                                                     <a class="btn btn-sm btn-info" href="{{ route('budget.pdf', $presupuesto->id_presupuesto) }}" target="_blank">
-                                                        <i class="fa fa-fw fa-print"></i>
-                                                        En 
+                                                        <i class="">En</i>
                                                     </a>
                                                     @csrf
                                                     @method('DELETE')

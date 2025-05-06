@@ -470,18 +470,7 @@ return [
         'icon' => 'fas fa-fw fa-credit-card',
         'can' => 'admin',
     ],
-    [
-        'text' => 'Estado de Resultados',
-        'url' => 'estadisticas-ventas',
-        'icon' => 'fas fa-fw fa-chart-line',
-        'can' => 'admin',
-    ],
-    [
-        'text' => 'Cierres',
-        'url' => 'cierre-ventas',
-        'icon' => 'fas fa-fw fa-chart-line',
-        'can' => 'admin',
-    ],
+
 
     // ========================================
     // SECCIÓN ADMINISTRACIÓN (solo admin)
@@ -505,15 +494,21 @@ return [
         'can' => 'admin',
     ],
     [
-        'text' => 'Reporte de Ventas',
-        'url' => 'reportes/ventas',
-        'icon' => 'fas fa-fw fa-chart-bar',
+        'text' => 'Estado de Resultados',
+        'url' => 'estadisticas-ventas',
+        'icon' => 'fas fa-fw fa-chart-line',
         'can' => 'admin',
     ],
     [
-        'text' => 'Reporte de Inventario',
-        'url' => 'reportes/inventario',
-        'icon' => 'fas fa-fw fa-boxes',
+        'text' => 'Cierres',
+        'url' => 'cierre-ventas',
+        'icon' => 'fas fa-fw fa-chart-line',
+        'can' => 'admin',
+    ],
+    [
+        'text' => 'Reporte de Ventas Vanes',
+        'url' => 'reportes/ventas',
+        'icon' => 'fas fa-fw fa-chart-bar',
         'can' => 'admin',
     ],
 ],
