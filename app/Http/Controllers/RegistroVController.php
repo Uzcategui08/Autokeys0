@@ -862,7 +862,7 @@ public function cxc(Request $request): View
                 $registroV->update(['id_abono' => $abono->id_abonos]);
             }
     
-            DB::commit();
+            DB::commit(); 
     
             return Redirect::route('registro-vs.index')
                 ->with('success', 'Registro actualizado satisfactoriamente.');
@@ -879,16 +879,14 @@ public function cxc(Request $request): View
     
         try {
             $registroV = RegistroV::findOrFail($id);
-    
-            // Convertir los JSON strings a arrays si es necesario
+
             $costosIds = is_string($registroV->costos) ? json_decode($registroV->costos, true) ?? [] : ($registroV->costos ?: []);
             $gastosIds = is_string($registroV->gastos) ? json_decode($registroV->gastos, true) ?? [] : ($registroV->gastos ?: []);
     
             if ($registroV->id_abono) {
                 Abono::where('id_abonos', $registroV->id_abono)->delete();
             }
-    
-            // Verificar si los arrays no están vacíos
+
             if (is_array($costosIds) && count($costosIds) > 0) {
                 Costo::whereIn('id_costos', $costosIds)->delete();
             }

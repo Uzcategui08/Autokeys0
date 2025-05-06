@@ -240,10 +240,10 @@ $(document).ready(function() {
 
     $('#btn-agregar-pago').click(function() {
         const monto = parseFloat($('#pago_monto').val());
-        const metodo = $('#pago_metodo').val();
+        const metodoId = $('#pago_metodo').val();
         const fecha = $('#pago_fecha').val();
-
-        if (!monto || monto <= 0 || isNaN(monto)) {
+        
+        if (!monto || monto <= 0) {
             Swal.fire({
                 icon: 'error',
                 title: 'Monto inválido',
@@ -255,20 +255,7 @@ $(document).ready(function() {
             });
             return;
         }
-
-        if (!metodo) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Método requerido',
-                html: 'Por favor seleccione un <b>método de pago</b>',
-                confirmButtonColor: '#3085d6',
-                confirmButtonText: 'Entendido'
-            }).then(() => {
-                $('#pago_metodo').focus();
-            });
-            return;
-        }
-
+        
         if (monto > saldoPendiente) {
             Swal.fire({
                 icon: 'error',
@@ -281,26 +268,43 @@ $(document).ready(function() {
             });
             return;
         }
-
-        if (!fecha) {
+        
+        if (!metodoId) {
             Swal.fire({
-                icon: 'warning',
-                title: 'Fecha no especificada',
-                text: 'Se usará la fecha actual para este pago',
+                icon: 'error',
+                title: 'Método requerido',
+                html: 'Por favor seleccione un <b>método de pago</b>',
                 confirmButtonColor: '#3085d6',
-                confirmButtonText: 'Continuar',
-                showCancelButton: true,
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (!result.isConfirmed) {
-                    return;
-                }
-                agregarPago(monto, metodo, new Date().toISOString().split('T')[0]);
+                confirmButtonText: 'Entendido'
+            }).then(() => {
+                $('#pago_metodo').focus();
             });
             return;
         }
-
-        agregarPago(monto, metodo, fecha);
+        
+        const pagosJson = $('#pagos_json').val() || '[]';
+        let pagos = [];
+        
+        try {
+            pagos = JSON.parse(pagosJson);
+            if (!Array.isArray(pagos)) pagos = [];
+        } catch (e) {
+            console.error('Error parseando pagos:', e);
+        }
+        
+        pagos.push({
+            monto: monto,
+            metodo_pago: metodoId,
+            fecha: fecha
+        });
+        
+        $('#pagos_json').val(JSON.stringify(pagos));
+        
+        actualizarListaPagos();
+        actualizarResumen();
+        actualizarMaximoPago();
+        
+        $('#pago_monto').val('').focus();
     });
     
     function actualizarListaPagos() {
