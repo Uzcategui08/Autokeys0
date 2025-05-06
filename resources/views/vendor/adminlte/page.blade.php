@@ -94,6 +94,17 @@ $(document).ready(function() {
                 url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json'
             },
             dom: 'Bfrtip',
+            columnDefs: [
+                { 
+                    targets: -1, 
+                    width: '140px', // Ancho ajustado para los botones
+                    className: 'action-cell' 
+                },
+                {
+                    targets: '_all',
+                    className: 'compact-cell' // Clase para celdas compactas
+                }
+            ]
         });
     });
     </script>
