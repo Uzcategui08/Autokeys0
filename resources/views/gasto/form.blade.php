@@ -55,14 +55,15 @@
                             <label for="subcategoria" class="form-label">{{ __('Subcategoría') }}</label>
                             <select name="subcategoria" id="subcategoria" class="form-control @error('subcategoria') is-invalid @enderror">
                                 <option value="">-- Seleccione --</option>
-                                <option value="mantenimiento" {{ old('subcategoria', $gasto?->subcategoria) == 'mantenimiento' ? 'selected' : '' }}>Mantenimiento de equipos</option>
-                                <option value="repuestos" {{ old('subcategoria', $gasto?->subcategoria) == 'repuestos' ? 'selected' : '' }}>Repuestos y componentes</option>
-                                <option value="herramientas" {{ old('subcategoria', $gasto?->subcategoria) == 'herramientas' ? 'selected' : '' }}>Herramientas</option>
-                                <option value="software" {{ old('subcategoria', $gasto?->subcategoria) == 'software' ? 'selected' : '' }}>Licencias de software</option>
-                                <option value="consumibles" {{ old('subcategoria', $gasto?->subcategoria) == 'consumibles' ? 'selected' : '' }}>Materiales consumibles</option>
-                                <option value="combustible" {{ old('subcategoria', $gasto?->subcategoria) == 'combustible' ? 'selected' : '' }}>Combustible y viáticos</option>
-                                <option value="capacitacion" {{ old('subcategoria', $gasto?->subcategoria) == 'capacitacion' ? 'selected' : '' }}>Capacitación</option>
-                                <option value="otros" {{ old('subcategoria', $gasto?->subcategoria) == 'otros' ? 'selected' : '' }}>Otros gastos</option>
+                                <option value="compras_insumos" {{ old('subcategoria', $gasto?->subcategoria) == 'compras_insumos' ? 'selected' : '' }}>Compras de insumos</option>
+                                <option value="gasolina" {{ old('subcategoria', $gasto?->subcategoria) == 'gasolina' ? 'selected' : '' }}>Gasolina</option>
+                                <option value="mantenimiento_vanes" {{ old('subcategoria', $gasto?->subcategoria) == 'mantenimiento_vanes' ? 'selected' : '' }}>Mantenimiento a Vanes</option>
+                                <option value="salario_cerrajero" {{ old('subcategoria', $gasto?->subcategoria) == 'salario_cerrajero' ? 'selected' : '' }}>Salario Cerrajero</option>
+                                <option value="depreciacion_maquinas" {{ old('subcategoria', $gasto?->subcategoria) == 'depreciacion_maquinas' ? 'selected' : '' }}>Depreciación de Máquinas</option>
+                                <option value="seguros_vehiculos" {{ old('subcategoria', $gasto?->subcategoria) == 'seguros_vehiculos' ? 'selected' : '' }}>Seguros de Vehículos</option>
+                                <option value="alquiler_pulga" {{ old('subcategoria', $gasto?->subcategoria) == 'alquiler_pulga' ? 'selected' : '' }}>Alquiler Pulga</option>
+                                <option value="codigos" {{ old('subcategoria', $gasto?->subcategoria) == 'codigos' ? 'selected' : '' }}>Códigos</option>
+                                <option value="servicios_subcontratados" {{ old('subcategoria', $gasto?->subcategoria) == 'servicios_subcontratados' ? 'selected' : '' }}>Servicios Subcontratados</option>
                                 <option value="gasto_extra" {{ old('subcategoria', $gasto?->subcategoria) == 'gasto_extra' ? 'selected' : '' }}>Gasto Extra</option>
                             </select>
                             {!! $errors->first('subcategoria', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}

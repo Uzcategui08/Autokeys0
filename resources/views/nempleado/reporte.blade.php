@@ -10,7 +10,7 @@
 <div class="card">
     <div class="card-body">
         <form id="filtroForm">
-            <div class="row">
+            <div class="row align-items-end"> 
                 <div class="col-md-3">
                     <div class="form-group">
                         <label for="fecha_desde">Fecha Desde</label>
@@ -39,9 +39,9 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-3 d-flex align-items-end">
-                    <div class="form-group w-100">
-                        <button type="submit" class="btn btn-primary btn-block">
+                <div class="col-md-3">
+                    <div class="form-group mb-0"> 
+                        <button type="submit" class="btn btn-primary w-100 py-2"> 
                             <i class="fas fa-search mr-1"></i> Buscar
                         </button>
                     </div>
