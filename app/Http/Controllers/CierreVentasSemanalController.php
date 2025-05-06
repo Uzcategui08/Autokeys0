@@ -210,7 +210,7 @@ class CierreVentasSemanalController extends Controller
 
     private function getAvailableYears()
     {
-        return RegistroV::selectRaw('YEAR(fecha_h) as year')
+        return RegistroV::selectRaw('EXTRACT(YEAR FROM fecha_h) as year')
             ->groupBy('year')
             ->orderBy('year', 'DESC')
             ->pluck('year');

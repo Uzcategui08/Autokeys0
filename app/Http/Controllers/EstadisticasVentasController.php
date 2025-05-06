@@ -45,15 +45,15 @@ class EstadisticasVentasController extends Controller
     protected function getAvailableYears()
     {
         // Obtener años únicos de todas las tablas relevantes
-        $yearsRegistroV = RegistroV::selectRaw('YEAR(fecha_h) as year')
+        $yearsRegistroV = RegistroV::selectRaw('EXTRACT(YEAR FROM fecha_h) as year')
             ->distinct()
             ->pluck('year');
         
-        $yearsGastos = Gasto::selectRaw('YEAR(f_gastos) as year')
+        $yearsGastos = Gasto::selectRaw('EXTRACT(YEAR FROM f_gastos) as year')
             ->distinct()
             ->pluck('year');
             
-        $yearsCostos = Costo::selectRaw('YEAR(f_costos) as year')
+        $yearsCostos = Costo::selectRaw('EXTRACT(YEAR FROM f_costos) as year')
             ->distinct()
             ->pluck('year');
             
