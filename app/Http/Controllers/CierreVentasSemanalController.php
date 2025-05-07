@@ -38,13 +38,28 @@ class CierreVentasSemanalController extends Controller
     public function index(Request $request)
     {
         $yearSelected = $request->input('year', now()->year);
-
-        $weeks = $this->getWeeksWithDates($yearSelected);
-
         $weekSelected = $request->input('week', now()->weekOfYear);
 
-        $startOfWeek = Carbon::now()->setISODate($yearSelected, $weekSelected)->startOfWeek();
-        $endOfWeek = $startOfWeek->copy()->endOfWeek();
+        if ($request->has('start_date') && $request->has('end_date')) {
+            try {
+                $startOfWeek = Carbon::parse($request->input('start_date'))->startOfDay();
+                $endOfWeek = Carbon::parse($request->input('end_date'))->endOfDay();
+
+                if ($startOfWeek->diffInDays($endOfWeek) > 31) {
+                    throw new \Exception("Rango máximo excedido");
+                }
+
+                $weekSelected = $startOfWeek->weekOfYear;
+                $yearSelected = $startOfWeek->year;
+                
+            } catch (\Exception $e) {
+                $startOfWeek = now()->startOfWeek();
+                $endOfWeek = now()->endOfWeek();
+            }
+        } else {
+            $startOfWeek = Carbon::now()->setISODate($yearSelected, $weekSelected)->startOfWeek();
+            $endOfWeek = $startOfWeek->copy()->endOfWeek();
+        }
 
         $availableYears = $this->getAvailableYears();
         $metodosPago = TiposDePago::pluck('name', 'id');
@@ -175,8 +190,7 @@ class CierreVentasSemanalController extends Controller
                 'totalTrabajos' => $resumenTrabajos->sum('cantidad'),
                 'ventasPorLugarVenta' => $ventasPorLugarVenta,
                 'totalGeneralLlaves' => $llavesPorTecnico->sum('total_llaves'),
-                'totalGeneralValorLlaves' => $llavesPorTecnico->sum('total_valor'),
-                'weeks' => $weeks,
+                'totalGeneralValorLlaves' => $llavesPorTecnico->sum('total_valor')
             ],
             $totales
         ));
