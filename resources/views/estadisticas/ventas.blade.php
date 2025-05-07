@@ -48,7 +48,31 @@
         <p class="mt-3">Por favor, seleccione otro período.</p>
     </div>
 @else
-
+<div class="container-fluid px-0">  <!-- px-0 para eliminar padding horizontal -->
+    <div class="card shadow-sm rounded-0" style="border-left: 4px solid #0d6efd;">  <!-- rounded-0 para esquinas rectas -->
+    <div class="card-body p-4">
+        <form action="{{ route('generatePdfTotal.pdf') }}" method="GET">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <label for="fecha_inicio" class="form-label small mb-1">Fecha Inicio</label>
+                    <input type="date" class="form-control form-control-sm" id="fecha_inicio" name="fecha_inicio" 
+                           value="{{ old('fecha_inicio', $fecha_inicio ?? '') }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="fecha_fin" class="form-label small mb-1">Fecha Fin</label>
+                    <input type="date" class="form-control form-control-sm" id="fecha_fin" name="fecha_fin" 
+                           value="{{ old('fecha_fin', $fecha_fin ?? '') }}">
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-sm btn-primary mt-3">
+                        <i class="fas fa-file-pdf me-1"></i> Generar PDF
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
     <div class="card mb-4">
         <div class="card-header bg-dark text-white d-flex justify-content-between">
             <h3 class="card-title">Resumen Ejecutivo</h3>
@@ -58,34 +82,11 @@
                 </span>
             </div>
         </div>
+        
         <div class="card-body">
             <div class="row">
                 <div class="col-md-4">
                     <div class="card border-primary mb-3">
-                        <div class="container">
-                            <form action="{{ route('generatePdfTotal.pdf') }}" method="GET">
-                                <div class="row mb-3">
-                                    <div class="col-md-4">
-                                        <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
-                                        <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" 
-                                               value="{{ old('fecha_inicio', $fecha_inicio ?? '') }}">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="fecha_fin" class="form-label">Fecha Fin</label>
-                                        <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" 
-                                               value="{{ old('fecha_fin', $fecha_fin ?? '') }}">
-                                    </div>
-                                    <div class="col-md-4 d-flex align-items-end">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-file-pdf"></i> Generar PDF
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="alert alert-info">
-                                    <strong>Nota:</strong> Si no selecciona fechas, se usará el mes actual por defecto.
-                                </div>
-                            </form>
-                        </div>
                         <div class="card-header bg-primary text-white">Facturación</div>
                         <div class="card-body">
                             <h4 class="card-title">${{ number_format($stats['ventas']['facturacion'], 2) }}</h4>
@@ -232,6 +233,7 @@
     </div>
 </div>
 </div>
+
 @endif
 @stop
 

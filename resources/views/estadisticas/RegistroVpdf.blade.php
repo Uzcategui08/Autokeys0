@@ -35,7 +35,6 @@
                 <th width="8%">Vehículo</th>
                 <th width="6%">Año</th>
                 <th width="8%">Venta</th>
-                <th width="8%">Venta</th>
                 <th width="8%">Estatus</th>
                 <th width="8%">Lugar</th>
                 <th width="8%">Empleado</th>
@@ -69,14 +68,6 @@
               <tr class="text-bold">
                   <td>Total Ventas:</td>
                   <td class="text-right">${{ number_format($totalVentas, 2) }}</td>
-              </tr>
-              <tr class="text-bold">
-                  <td>Total Gastos:</td>
-                  <td class="text-right">${{ number_format($totalGastos, 2) }}</td>
-              </tr>
-              <tr class="text-bold" style="border-top: 1px solid #000;">
-                  <td>Utilidad Neta:</td>
-                  <td class="text-right">${{ number_format($utilidad, 2) }}</td>
               </tr>
           </table>
       </div>

@@ -33,6 +33,7 @@ Route::get('/', function () {
 Route::get('/dashboard', [DashboardController::class, "index"])->middleware(['auth', 'verified'])->name('dashboard');
 
 
+
 // Permisos (opcional, si quieres gestionarlos por separado)
 //Route::resource('permissions', PermissionController::class)->middleware(['auth', 'role:admin']);
 Route::middleware('auth')->group(function () {

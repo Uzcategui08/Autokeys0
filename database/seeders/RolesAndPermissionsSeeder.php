@@ -21,13 +21,19 @@ class RolesAndPermissionsSeeder extends Seeder
         // Crear roles
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
         $userRole = Role::firstOrCreate(['name' => 'user']);
-        $limitedUserRole = Role::firstOrCreate(['name' => 'limited_user']);
+        $limitedUserRole = Role::firstOrCreate(['name' => 'limited']);
 
         // Permisos básicos
         $permissions = [
             'crear_user',
             'editar_user',
-            'ver_user'
+            'ver_user',
+            // Permisos para limited
+            'dashboard',
+            'inventario_limited',
+            'presupuestos_limited',
+            'ordenes_limited',
+            'ventas_limited'
         ];
 
         // Crear todos los permisos
@@ -40,6 +46,16 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // Asignar solo permiso de ver_user al rol user
         $userRole->givePermissionTo('ver_user');
+
+        // Asignar permisos al rol limited
+        $limitedPermissions = [
+            'dashboard',
+            'inventario_limited',
+            'presupuestos_limited',
+            'ordenes_limited',
+            'ventas_limited'
+        ];
+        $limitedUserRole->syncPermissions($limitedPermissions);
 
         // Asignar roles basados en el campo 'rol' de la tabla users
         $this->assignRolesBasedOnRolField();
@@ -57,9 +73,9 @@ class RolesAndPermissionsSeeder extends Seeder
             $user->syncRoles('user');
         });
 
-        // Asignar rol limited_user
-        User::where('rol', 'limited_user')->each(function ($user) {
-            $user->syncRoles('limited_user');
+        // Asignar rol limited
+        User::where('rol', 'limited')->each(function ($user) {
+            $user->syncRoles('limited');
         });
 
         // Asignar rol admin al usuario por defecto si existe
