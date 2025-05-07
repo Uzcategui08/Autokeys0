@@ -144,7 +144,7 @@
                             <td><strong>Dirección:</strong> {{ $orden->direccion ?? 'N/A' }}</td>
                         </tr>
                         <tr>
-                            <td><strong>Técnico:</strong> {{ $orden->tecnico->nombre ?? $orden->id_tecnico ?? 'N/A' }}</td>
+                            <td><strong>Técnico:</strong> {{ $orden->empleado->nombre ?? $orden->id_tecnico ?? 'N/A' }}</td>
                         </tr>
                         <tr>
                             <td><strong>Estado:</strong> 

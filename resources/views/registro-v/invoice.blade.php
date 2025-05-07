@@ -173,7 +173,7 @@
                     <table width="100%">
                         <tr>
                             <td class="info-label">Technician:</td>
-                            <td class="info-value">{{ $registroV->empleado->nombre }}</td>
+                            <td class="info-value">{{ $registroV->tecnico }}</td>
                         </tr>
                         <tr>
                             <td class="info-label">Status:</td>
@@ -243,7 +243,12 @@
                     @foreach($registroV->pagos as $pago)
                         <tr>
                             <td>{{ \Carbon\Carbon::parse($pago['fecha'])->format('m/d/Y') }}</td>
-                            <td>{{ ucfirst($pago['metodo_pago']) }}</td>
+                            <td>
+                                @php
+                                    $metodoPago = collect($tiposDePago)->firstWhere('id', $pago['metodo_pago'] ?? null);
+                                @endphp
+                                {{ $metodoPago->name ?? ($pago['metodo_pago'] ?? 'N/A') }}
+                            </td>
                             <td style="text-align: right;">${{ number_format($pago['monto'], 2) }}</td>
                         </tr>
                     @endforeach

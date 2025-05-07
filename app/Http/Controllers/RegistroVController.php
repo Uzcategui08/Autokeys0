@@ -914,6 +914,7 @@ public function cxc(Request $request): View
     public function generarPdf($id)
     {
         $registroV = RegistroV::findOrFail($id);
+        $tiposDePago = TiposDePago::all();
 
         $items = $registroV->items;
         if (is_string($items)) {
@@ -963,7 +964,7 @@ public function cxc(Request $request): View
         $registroV->total_pagado = $totalPagado;
         $registroV->saldo_pendiente = $saldoPendiente;
     
-        $pdf = Pdf::loadView('registro-v.pdf', compact('registroV'));
+        $pdf = Pdf::loadView('registro-v.pdf', compact('registroV', 'tiposDePago'));
     
         return $pdf->stream('registro_v_' . $registroV->id . '.pdf');
     }
@@ -971,6 +972,7 @@ public function cxc(Request $request): View
     public function generatePdf($id)
     {
         $registroV = RegistroV::findOrFail($id);
+        $tiposDePago = TiposDePago::all();
 
         $items = $registroV->items;
         if (is_string($items)) {
@@ -1020,7 +1022,7 @@ public function cxc(Request $request): View
         $registroV->total_pagado = $totalPagado;
         $registroV->saldo_pendiente = $saldoPendiente;
     
-        $pdf = Pdf::loadView('registro-v.invoice', compact('registroV'));
+        $pdf = Pdf::loadView('registro-v.invoice', compact('registroV', 'tiposDePago'));
     
         return $pdf->stream('invoice' . $registroV->id . '.pdf');
     }
