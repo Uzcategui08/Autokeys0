@@ -100,21 +100,42 @@ public function cxc(Request $request): View
      */
     public function store(RegistroVRequest $request): RedirectResponse
     {
-        
+        Log::info('Iniciando proceso de creación de registro V', ['request' => $request->all()]);
         DB::beginTransaction();
-    
+        
         try {
             $validatedData = $request->validated();
+            Log::debug('Datos validados', ['validatedData' => $validatedData]);
     
+            // Procesamiento de trabajos y productos
             $trabajos = [];
             if ($request->has('items')) {
-                foreach ($request->input('items') as $item) {
+                Log::info('Procesando items de trabajo', ['count' => count($request->input('items'))]);
+                foreach ($request->input('items') as $index => $item) {
                     if (!empty($item['trabajo'])) {
+                        Log::debug("Procesando item $index", ['trabajo' => $item['trabajo']]);
+                        
                         $productos = [];
                         if (isset($item['productos'])) {
-                            foreach ($item['productos'] as $producto) {
+                            Log::debug("Productos encontrados para item $index", ['count' => count($item['productos'])]);
+                            foreach ($item['productos'] as $prodIndex => $producto) {
                                 if (!empty($producto['producto'])) {
-                                    $this->restarInventario($producto['producto'], $producto['cantidad']);
+                                    Log::debug("Procesando producto $prodIndex", [
+                                        'producto' => $producto['producto'],
+                                        'cantidad' => $producto['cantidad']
+                                    ]);
+                                    
+                                    try {
+                                        $this->restarInventario($producto['producto'], $producto['cantidad']);
+                                        Log::info("Inventario actualizado para producto {$producto['producto']}", [
+                                            'cantidad_restada' => $producto['cantidad']
+                                        ]);
+                                    } catch (\Exception $e) {
+                                        Log::error("Error al actualizar inventario para producto {$producto['producto']}", [
+                                            'error' => $e->getMessage()
+                                        ]);
+                                        throw $e;
+                                    }
                                     
                                     $productos[] = [
                                         'producto' => $producto['producto'],
@@ -133,9 +154,12 @@ public function cxc(Request $request): View
                 }
             }
             $validatedData['items'] = json_encode($trabajos);
+            Log::debug('Items procesados', ['items_count' => count($trabajos)]);
     
+            // Procesamiento de costos extras
             $costosIds = [];
             if ($request->has('costos_extras')) {
+                Log::info('Procesando costos extras', ['count' => count($request->input('costos_extras'))]);
                 foreach ($request->input('costos_extras') as $costoData) {
                     if (!empty($costoData['descripcion'])) {
                         $pagoCosto = [
@@ -157,13 +181,17 @@ public function cxc(Request $request): View
                         ]);
                         
                         $costosIds[] = $costo->id_costos;
+                        Log::debug('Costo extra creado', ['id' => $costo->id_costos, 'descripcion' => $costoData['descripcion']]);
                     }
                 }
             }
             $validatedData['costos'] = $costosIds;
+            Log::info('Costos extras procesados', ['count' => count($costosIds)]);
     
+            // Procesamiento de gastos
             $gastosIds = [];
             if ($request->has('gastos')) {
+                Log::info('Procesando gastos', ['count' => count($request->input('gastos'))]);
                 foreach ($request->input('gastos') as $gastoData) {
                     if (!empty($gastoData['descripcion'])) {
                         $pagoGasto = [
@@ -185,11 +213,14 @@ public function cxc(Request $request): View
                         ]);
                         
                         $gastosIds[] = $gasto->id_gastos;
+                        Log::debug('Gasto creado', ['id' => $gasto->id_gastos, 'descripcion' => $gastoData['descripcion']]);
                     }
                 }
             }
             $validatedData['gastos'] = $gastosIds;
+            Log::info('Gastos procesados', ['count' => count($gastosIds)]);
     
+            // Procesamiento de pagos
             $pagosValidados = [];
             $totalPagado = 0;
             
@@ -197,9 +228,11 @@ public function cxc(Request $request): View
                 try {
                     $pagosInput = $request->input('pagos');
                     $pagos = is_string($pagosInput) ? json_decode($pagosInput, true) : $pagosInput;
+                    Log::info('Procesando pagos', ['count' => count($pagos)]);
                     
-                    foreach ($pagos as $pago) {
+                    foreach ($pagos as $index => $pago) {
                         if (!isset($pago['monto']) || !is_numeric($pago['monto']) || $pago['monto'] <= 0) {
+                            Log::warning("Pago $index omitido - monto inválido", ['pago' => $pago]);
                             continue;
                         }
                         
@@ -210,29 +243,43 @@ public function cxc(Request $request): View
                         ];
                         
                         $totalPagado += (float) $pago['monto'];
+                        Log::debug("Pago $index procesado", [
+                            'monto' => $pago['monto'],
+                            'metodo' => $pago['metodo_pago'] ?? 'efectivo',
+                            'total_acumulado' => $totalPagado
+                        ]);
                     }
                     
                     $validatedData['pagos'] = json_encode($pagosValidados);
     
                     $valorTotal = (float) ($validatedData['valor_v'] ?? 0);
+                    Log::debug('Total vs Pagado', ['total' => $valorTotal, 'pagado' => $totalPagado]);
                     
                     if ($totalPagado >= $valorTotal) {
                         $validatedData['estatus'] = 'pagado';
+                        Log::info('Estatus: Pagado completamente');
                     } elseif ($totalPagado > 0) {
                         $validatedData['estatus'] = 'parcialemente pagado';
+                        Log::info('Estatus: Pagado parcialmente');
                     } else {
                         $validatedData['estatus'] = 'pendiente';
+                        Log::info('Estatus: Pendiente de pago');
                     }
                     
                 } catch (\Exception $e) {
+                    Log::error('Error al procesar pagos', ['error' => $e->getMessage()]);
                     $validatedData['pagos'] = json_encode([]);
                 }
             } else {
+                Log::info('No se recibieron pagos en la solicitud');
                 $validatedData['pagos'] = json_encode([]);
             }
     
+            // Creación del registro principal
             $registroV = RegistroV::create($validatedData);
+            Log::info('Registro V creado', ['id' => $registroV->id]);
     
+            // Creación del abono asociado
             $abono = Abono::create([
                 'a_fecha' => $registroV->fecha_h,
                 'id_empleado' => $request->input('id_empleado'),
@@ -242,14 +289,20 @@ public function cxc(Request $request): View
             
             $registroV->id_abono = $abono->id_abonos;
             $registroV->save();
+            Log::info('Abono creado y asociado', ['id_abono' => $abono->id_abonos]);
     
             DB::commit();
+            Log::info('Transacción completada exitosamente');
     
             return Redirect::route('registro-vs.index')
                 ->with('success', 'Registro creado satisfactoriamente.');
     
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Error en el proceso de creación', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return back()->withInput()->with('error', 'Error al crear el registro: ' . $e->getMessage());
         }
     }

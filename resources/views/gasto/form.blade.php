@@ -59,7 +59,7 @@
                                 <option value="gasolina" {{ old('subcategoria', $gasto?->subcategoria) == 'gasolina' ? 'selected' : '' }}>Gasolina</option>
                                 <option value="mantenimiento_vanes" {{ old('subcategoria', $gasto?->subcategoria) == 'mantenimiento_vanes' ? 'selected' : '' }}>Mantenimiento a Vanes</option>
                                 <option value="salario_cerrajero" {{ old('subcategoria', $gasto?->subcategoria) == 'salario_cerrajero' ? 'selected' : '' }}>Salario Cerrajero</option>
-                                <option value="depreciacion_maquinas" {{ old('subcategoria', $gasto?->subcategoria) == 'depreciacion_maquinas' ? 'selected' : '' }}>Depreciación de Máquinas</option>
+                                <option value="financieros_impuestos" {{ old('subcategoria', $gasto?->subcategoria) == 'financieros_impuestos' ? 'selected' : '' }}>Financieros e impuestos</option>
                                 <option value="seguros_vehiculos" {{ old('subcategoria', $gasto?->subcategoria) == 'seguros_vehiculos' ? 'selected' : '' }}>Seguros de Vehículos</option>
                                 <option value="alquiler_pulga" {{ old('subcategoria', $gasto?->subcategoria) == 'alquiler_pulga' ? 'selected' : '' }}>Alquiler Pulga</option>
                                 <option value="codigos" {{ old('subcategoria', $gasto?->subcategoria) == 'codigos' ? 'selected' : '' }}>Códigos</option>
