@@ -338,106 +338,126 @@ class CierreVentasSemanalController extends Controller
             ->sortByDesc('total_ventas');
     }
 
-    private function getVentasPorTrabajo($startDate, $endDate, $metodosPago)
+    private function getVentasPorTrabajo($month, $year, $metodosPago)
     {
-        $ventas = RegistroV::whereBetween('fecha_h', [$startDate, $endDate])
-            ->get(['id', 'trabajo', 'tipo_venta', 'valor_v', 'pagos']);
+        $ventas = RegistroV::whereMonth('fecha_h', $month)
+            ->whereYear('fecha_h', $year)
+            ->get(['id', 'tipo_venta', 'valor_v', 'pagos', 'items']);
         
-        $procesarVentas = function ($ventasGrupo) use ($metodosPago) {
-            $pagos = collect();
+        $contado = collect();
+        $credito = collect();
+        
+        foreach ($ventas as $venta) {
+            $items = json_decode($venta->items, true) ?? [];
+            $pagosVenta = $this->parsePagos($venta->pagos);
+
+            $totalItems = count($items);
+            $valorPorItem = $totalItems > 0 ? $venta->valor_v / $totalItems : $venta->valor_v;
             
-            foreach ($ventasGrupo as $venta) {
-                $pagosVenta = $this->parsePagos($venta->pagos);
+            foreach ($items as $item) {
+                $trabajoKey = $item['trabajo'] ?? 'Sin especificar';
+                $trabajoNombre = $this->formatosTrabajo[$trabajoKey] ?? $trabajoKey;
                 
-                foreach ($pagosVenta as $pago) {
-                    if (!isset($pago['metodo_pago'], $pago['monto'])) {
-                        continue;
+                if ($venta->tipo_venta === 'contado') {
+                    if (!$contado->has($trabajoNombre)) {
+                        $contado->put($trabajoNombre, [
+                            'metodos' => collect(),
+                            'total' => 0
+                        ]);
                     }
                     
-                    $metodoNombre = $metodosPago[$pago['metodo_pago']] ?? 'Método '.$pago['metodo_pago'];
-                    $monto = (float)$pago['monto'];
+                    $trabajoData = $contado->get($trabajoNombre);
+                    $trabajoData['total'] += $valorPorItem;
+
+                    foreach ($pagosVenta as $pago) {
+                        $metodoNombre = $metodosPago[$pago['metodo_pago']] ?? 'Método '.$pago['metodo_pago'];
+                        $montoProporcional = $pago['monto'] / $totalItems;
+                        
+                        if (!$trabajoData['metodos']->has($metodoNombre)) {
+                            $trabajoData['metodos']->put($metodoNombre, [
+                                'total' => 0,
+                                'count' => 0,
+                                'metodo_id' => $pago['metodo_pago'] ?? null
+                            ]);
+                        }
+                        
+                        $metodoData = $trabajoData['metodos']->get($metodoNombre);
+                        $metodoData['total'] += $montoProporcional;
+                        $metodoData['count'] += 1;
+                        $trabajoData['metodos']->put($metodoNombre, $metodoData);
+                    }
                     
-                    $pagos->push([
-                        'metodo' => $metodoNombre,
-                        'monto' => $monto,
-                        'metodo_id' => $pago['metodo_pago']
-                    ]);
+                    $contado->put($trabajoNombre, $trabajoData);
+                } else {
+                    if (!$credito->has($trabajoNombre)) {
+                        $credito->put($trabajoNombre, [
+                            'metodos' => collect(),
+                            'total' => 0
+                        ]);
+                    }
+                    
+                    $trabajoData = $credito->get($trabajoNombre);
+                    $trabajoData['total'] += $valorPorItem;
+
+                    foreach ($pagosVenta as $pago) {
+                        $metodoNombre = $metodosPago[$pago['metodo_pago']] ?? 'Método '.$pago['metodo_pago'];
+                        $montoProporcional = $pago['monto'] / $totalItems;
+                        
+                        if (!$trabajoData['metodos']->has($metodoNombre)) {
+                            $trabajoData['metodos']->put($metodoNombre, [
+                                'total' => 0,
+                                'count' => 0,
+                                'metodo_id' => $pago['metodo_pago'] ?? null
+                            ]);
+                        }
+                        
+                        $metodoData = $trabajoData['metodos']->get($metodoNombre);
+                        $metodoData['total'] += $montoProporcional;
+                        $metodoData['count'] += 1;
+                        $trabajoData['metodos']->put($metodoNombre, $metodoData);
+                    }
+                    
+                    $credito->put($trabajoNombre, $trabajoData);
                 }
             }
-            
-            return $pagos->groupBy('metodo')
-                ->map(function ($grupo) {
-                    return [
-                        'total' => $grupo->sum('monto'),
-                        'count' => $grupo->count(),
-                        'metodo_id' => $grupo->first()['metodo_id'] ?? null
-                    ];
-                })
-                ->sortByDesc('total');
-        };
-        
-        $contado = $ventas->where('tipo_venta', 'contado')
-            ->groupBy('trabajo')
-            ->map(function ($ventasGrupo, $trabajoKey) use ($procesarVentas) {
-                $metodos = $procesarVentas($ventasGrupo);
-                
-                return [
-                    'metodos' => $metodos,
-                    'total' => $metodos->sum('total'),
-                    'trabajo_key' => $trabajoKey
-                ];
-            })
-            ->sortByDesc('total')
-            ->mapWithKeys(function ($item, $trabajoKey) {
-                $nombreFormateado = $this->formatosTrabajo[$trabajoKey] ?? $trabajoKey;
-                return [$nombreFormateado => [
-                    'metodos' => $item['metodos'],
-                    'total' => $item['total']
-                ]];
-            });
-    
-        $credito = $ventas->where('tipo_venta', 'credito')
-            ->groupBy('trabajo')
-            ->map(function ($ventasGrupo, $trabajoKey) use ($procesarVentas) {
-                $metodos = $procesarVentas($ventasGrupo);
-                
-                return [
-                    'metodos' => $metodos,
-                    'total' => $metodos->sum('total'),
-                    'trabajo_key' => $trabajoKey 
-                ];
-            })
-            ->sortByDesc('total')
-            ->mapWithKeys(function ($item, $trabajoKey) {
-                $nombreFormateado = $this->formatosTrabajo[$trabajoKey] ?? $trabajoKey;
-                return [$nombreFormateado => [
-                    'metodos' => $item['metodos'],
-                    'total' => $item['total']
-                ]];
-            });
+        }
         
         return [
-            'contado' => $contado,
-            'credito' => $credito,
+            'contado' => $contado->sortByDesc('total'),
+            'credito' => $credito->sortByDesc('total'),
             'total_contado' => $contado->sum('total'),
             'total_credito' => $credito->sum('total')
         ];
     }
 
-    private function getResumenTrabajos($startDate, $endDate)
+    private function getResumenTrabajos($month, $year)
     {
-        $ventas = RegistroV::whereBetween('fecha_h', [$startDate, $endDate])
-            ->select('trabajo')
-            ->get();
-
-        return $ventas->groupBy('trabajo')
-            ->map(function ($grupo) {
-                return [
-                    'cantidad' => $grupo->count(),
-                    'nombre' => $this->formatosTrabajo[$grupo->first()->trabajo] ?? $grupo->first()->trabajo
-                ];
-            })
-            ->sortByDesc('cantidad');
+        $ventas = RegistroV::whereMonth('fecha_h', $month)
+            ->whereYear('fecha_h', $year)
+            ->get(['items']);
+    
+        $trabajos = collect();
+    
+        foreach ($ventas as $venta) {
+            $items = json_decode($venta->items, true) ?? [];
+            
+            foreach ($items as $item) {
+                $trabajoKey = $item['trabajo'] ?? 'Sin especificar';
+                
+                if (!$trabajos->has($trabajoKey)) {
+                    $trabajos->put($trabajoKey, 0);
+                }
+                
+                $trabajos->put($trabajoKey, $trabajos->get($trabajoKey) + 1);
+            }
+        }
+    
+        return $trabajos->map(function ($cantidad, $trabajoKey) {
+            return [
+                'cantidad' => $cantidad,
+                'nombre' => $this->formatosTrabajo[$trabajoKey] ?? $trabajoKey
+            ];
+        })->sortByDesc('cantidad')->values();
     }
 
     private function getVentasPorLugarVenta($startDate, $endDate)
@@ -478,6 +498,7 @@ class CierreVentasSemanalController extends Controller
                 return collect($pagos)->map(function($pago) use ($transaccion, $metodosPago) {
                     return [
                         'subcategoria' => $this->formatearSubcategoria($transaccion->subcategoria),
+                        'descripcion' => $transaccion->descripcion,
                         'metodo_pago' => $metodosPago[$pago['metodo_pago']] ?? 'Desconocido',
                         'total' => $pago['monto'],
                         'fecha_pago' => $pago['fecha'] ?? null
@@ -488,6 +509,7 @@ class CierreVentasSemanalController extends Controller
             ->map(function($group) {
                 return [
                     'subcategoria' => $group->first()->first()['subcategoria'],
+                    'descripcion' => $group->first()->first()['descripcion'],
                     'metodo_pago' => $group->first()->first()['metodo_pago'],
                     'total' => $group->flatten(1)->sum('total'),
                     'fecha_pago' => $group->first()->first()['fecha_pago']

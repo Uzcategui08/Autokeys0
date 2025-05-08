@@ -135,10 +135,10 @@
                         <th colspan="3" class="text-center border-left bg-gastos">Gastos</th>
                     </tr>
                     <tr>
-                        <th class="bg-costos">Subcategoría</th>
+                        <th class="bg-costos">Descripción</th>
                         <th class="bg-costos">Método Pago</th>
                         <th class="text-right bg-costos">Total</th>
-                        <th class="bg-gastos">Subcategoría</th>
+                        <th class="bg-gastos">Descripción</th>
                         <th class="bg-gastos">Método Pago</th>
                         <th class="text-right bg-gastos">Total</th>
                     </tr>
@@ -156,7 +156,7 @@
                             @endif
 
                             @if(isset($item['costos'][$i]))
-                                <td class="bg-costos">{{ $item['costos'][$i]['subcategoria'] }}</td>
+                                <td class="bg-costos">{{ $item['costos'][$i]['descripcion'] }}</td>
                                 <td class="bg-costos">{{ $item['costos'][$i]['metodo_pago'] }}</td>
                                 <td class="text-right bg-costos">${{ number_format($item['costos'][$i]['total'], 2) }}</td>
                             @else
@@ -164,7 +164,7 @@
                             @endif
 
                             @if(isset($item['gastos'][$i]))
-                                <td class="bg-gastos">{{ $item['gastos'][$i]['subcategoria'] }}</td>
+                                <td class="bg-gastos">{{ $item['gastos'][$i]['descripcion'] }}</td>
                                 <td class="bg-gastos">{{ $item['gastos'][$i]['metodo_pago'] }}</td>
                                 <td class="text-right bg-gastos">${{ number_format($item['gastos'][$i]['total'], 2) }}</td>
                             @else

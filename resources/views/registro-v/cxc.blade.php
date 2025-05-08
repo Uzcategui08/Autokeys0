@@ -34,7 +34,6 @@
                                         <th>No</th>
                                         <th>Fecha H</th>
                                         <th>Técnico</th>
-                                        <th>Trabajo</th>
                                         <th>Vehiculo</th>
                                         <th>Cliente</th>
                                         <th>Valor Venta</th>
@@ -50,12 +49,18 @@
                                             <td>{{ $registroV->id }}</td>
                                             <td>{{ $registroV->fecha_h->format('m/d/Y') }}</td>
                                             <td>{{ $registroV->empleado->nombre }}</td>
-                                            <td>{{ $registroV->trabajo }}</td>
                                             <td>{{ $registroV->modelo }}</td>
                                             <td>{{ $registroV->cliente }}</td>
                                             <td>{{ $registroV->valor_v }}</td>
                                             <td>{{ $registroV->porcentaje_c }}</td>
-                                            <td>{{ $registroV->estatus }}</td>
+                                            @php
+                                                $estatusFormateados = [
+                                                    'pagado' => 'Pagado',
+                                                    'pendiente' => 'Pendiente',
+                                                    'parcialemente pagado' => 'Parcialmente Pagado',
+                                                ];
+                                            @endphp
+                                            <td>{{ $estatusFormateados[$registroV->estatus] ?? strtoupper($registroV->estatus) }}</td>
                                             <td>{{ $registroV->lugarventa }}</td>
                                             <td>
                                                 <form onsubmit="return confirmDelete(this)"  action="{{ route('registro-vs.destroy', $registroV->id) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">

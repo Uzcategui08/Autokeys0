@@ -67,32 +67,6 @@
                             {!! $errors->first('lugarventa', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                         </div>
 
-                        <div class="form-group mb-3">
-                            <label for="trabajo" class="form-label">{{ __('Trabajo') }}</label>
-                            <select name="trabajo" class="form-control select2 @error('trabajo') is-invalid @enderror" id="trabajo">
-                                <option value="">{{ __('Seleccione un tipo de trabajo') }}</option>
-                                <option value="duplicado" {{ old('trabajo', $registroV?->trabajo) == 'duplicado' ? 'selected' : '' }}>Duplicado</option>
-                                <option value="perdida" {{ old('trabajo', $registroV?->trabajo) == 'perdida' ? 'selected' : '' }}>Pérdida</option>
-                                <option value="programacion" {{ old('trabajo', $registroV?->trabajo) == 'programacion' ? 'selected' : '' }}>Programación</option>
-                                <option value="alarma" {{ old('trabajo', $registroV?->trabajo) == 'alarma' ? 'selected' : '' }}>Alarma</option>
-                                <option value="airbag" {{ old('trabajo', $registroV?->trabajo) == 'airbag' ? 'selected' : '' }}>Airbag</option>
-                                <option value="rekey" {{ old('trabajo', $registroV?->trabajo) == 'rekey' ? 'selected' : '' }}>Rekey</option>
-                                <option value="lishi" {{ old('trabajo', $registroV?->trabajo) == 'lishi' ? 'selected' : '' }}>Lishi</option>
-                                <option value="remote start" {{ old('trabajo', $registroV?->trabajo) == 'remote_start' ? 'selected' : '' }}>Remote Start</option>
-                                <option value="control" {{ old('trabajo', $registroV?->trabajo) == 'control' ? 'selected' : '' }}>Control</option>
-                                <option value="venta" {{ old('trabajo', $registroV?->trabajo) == 'venta' ? 'selected' : '' }}>Venta</option>
-                                <option value="apertura" {{ old('trabajo', $registroV?->trabajo) == 'apertura' ? 'selected' : '' }}>Apertura</option>
-                                <option value="cambio_chip" {{ old('trabajo', $registroV?->trabajo) == 'cambio_chip' ? 'selected' : '' }}>Cambio de Chip</option>
-                                <option value="revision" {{ old('trabajo', $registroV?->trabajo) == 'revision' ? 'selected' : '' }}>Revisión</option>
-                                <option value="suiche" {{ old('trabajo', $registroV?->trabajo) == 'suiche' ? 'selected' : '' }}>Suiche</option>
-                                <option value="llave puerta" {{ old('trabajo', $registroV?->trabajo) == 'llave_puerta' ? 'selected' : '' }}>Hacer llave de Puerta</option>
-                                <option value="cinturon" {{ old('trabajo', $registroV?->trabajo) == 'cinturon' ? 'selected' : '' }}>Cinturón</option>
-                                <option value="diag" {{ old('trabajo', $registroV?->trabajo) == 'diag' ? 'selected' : '' }}>Diag</option>
-                                <option value="emuladores" {{ old('trabajo', $registroV?->trabajo) == 'emuladores' ? 'selected' : '' }}>Emuladores</option>
-                                <option value="clonacion" {{ old('trabajo', $registroV?->trabajo) == 'clonacion' ? 'selected' : '' }}>Clonación</option>
-                            </select>
-                            {!! $errors->first('trabajo', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
-                        </div>
                     </div>
                 </div>
             </div>
@@ -925,10 +899,48 @@ $(document).ready(function() {
 
     });
     /**************************************
-     * SECCIÓN DE ITEMS DE TRABAJO
+     * SECCIÓN DE ITEMS DE TRABAJO 
      **************************************/
     let itemGroupIndex = 0;
     const itemsExistentes = @json($registroV->items ?? []);
+
+    function cargarTrabajosEnSelect($select, trabajoSeleccionado = null) {
+        $.ajax({
+            url: '/obtener-todos-trabajos',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (!Array.isArray(response)) {
+                    console.error('Respuesta inválida del servidor', response);
+                    mostrarError('Error en el formato de los trabajos recibidos');
+                    return;
+                }
+
+                let options = '<option value="">{{ __("Seleccionar Trabajo") }}</option>';
+
+                response.forEach(trabajo => {
+                    const selected = (trabajoSeleccionado == trabajo.id_trabajo || trabajoSeleccionado == trabajo.nombre) ? 'selected' : '';
+                    options += `<option value="${trabajo.id_trabajo}" ${selected}>${trabajo.nombre}</option>`;
+                });
+                
+                $select.html(options);
+
+                $select.select2({
+                    placeholder: "Seleccione un trabajo",
+                    width: '100%',
+                    dropdownParent: $select.closest('.item-group')
+                });
+                
+                if (trabajoSeleccionado) {
+                    $select.trigger('change');
+                }
+            },
+            error: function(xhr) {
+                console.error('Error al cargar trabajos:', xhr.responseText);
+                mostrarError('No se pudieron cargar los trabajos. Intente recargar la página.');
+            }
+        });
+    }
 
     function verificarStock() {
         let sinStock = false;
@@ -987,9 +999,23 @@ $(document).ready(function() {
             });
             return false;
         }
+
+        prepararDatosParaEnvio();
         
         this.submit();
     });
+
+    function prepararDatosParaEnvio() {
+        $('.item-group').each(function() {
+            const $group = $(this);
+            const $selectTrabajo = $group.find('select[name$="[trabajo]"]');
+            const trabajoId = $selectTrabajo.val();
+            const trabajoNombre = $selectTrabajo.find('option:selected').text();
+
+            $group.find('input[name$="[trabajo_id]"]').val(trabajoId);
+            $group.find('input[name$="[trabajo_nombre]"]').val(trabajoNombre);
+        });
+    }
 
     function cargarProductosEnSelect($select, idAlmacen, productoSeleccionado = null, nombreProducto = null, precio = null) {
         if (idAlmacen) {
@@ -998,7 +1024,7 @@ $(document).ready(function() {
                 type: 'GET',
                 data: { id_almacen: idAlmacen },
                 success: function(response) {
-                    let options = '<option value="">{{ __('Select Producto') }}</option>';
+                    let options = '<option value="">{{ __("Seleccionar Producto") }}</option>';
                     
                     if (productoSeleccionado) {
                         const productoEncontrado = response.find(p => p.id_producto == productoSeleccionado);
@@ -1044,7 +1070,7 @@ $(document).ready(function() {
                     }
                 },
                 error: function(xhr) {
-                    console.error('Error al cargar los productos');
+                    console.error('Error al cargar productos:', xhr.responseText);
                     if (productoSeleccionado && nombreProducto) {
                         $select.html(`
                             <option 
@@ -1054,7 +1080,7 @@ $(document).ready(function() {
                                 selected>
                                 ${productoSeleccionado} - ${nombreProducto}
                             </option>
-                            <option value="">{{ __('Select Producto') }}</option>
+                            <option value="">{{ __("Seleccionar Producto") }}</option>
                         `).prop('disabled', false);
                         $select.select2();
                     }
@@ -1063,38 +1089,6 @@ $(document).ready(function() {
         }
     }
 
-    $(document).on('change', 'input[name$="[cantidad]"]', function() {
-        const $row = $(this).closest('.producto-row');
-        const productoSelect = $row.find('select[name$="[producto]"]');
-        const cantidad = parseInt($(this).val()) || 0;
-        
-        if (productoSelect.val()) {
-            const stockDisponible = parseInt(productoSelect.find('option:selected').data('stock')) || 0;
-            
-            if (cantidad > stockDisponible) {
-                Swal.fire({
-                    title: 'Stock Insuficiente',
-                    text: `Solo hay ${stockDisponible} unidades disponibles de este producto`,
-                    icon: 'warning',
-                    confirmButtonText: 'Entendido'
-                });
-
-                $(this).val(stockDisponible > 0 ? stockDisponible : 0);
-            }
-        }
-    });
-
-    $(document).on('change', 'select[name^="items"][name$="[producto]"]', function() {
-        const $row = $(this).closest('.producto-row');
-        const precioInput = $row.find('input[name$="[precio]"]');
-        const precio = $(this).find('option:selected').data('precio') || '0';
-
-        precioInput.val(precio);
-
-        const nombreProducto = $(this).find('option:selected').text().split('-')[1]?.trim();
-        $row.find('input[name$="[nombre_producto]"]').val(nombreProducto);
-    });
-
     function addNewProductRow(itemGroup, productoData = null) {
         const productoIndex = itemGroup.find('.producto-row').length;
         const itemGroupIndex = itemGroup.data('index');
@@ -1102,10 +1096,10 @@ $(document).ready(function() {
         const newProductoRow = `
             <div class="row mb-2 producto-row">
                 <div class="col-md-4">
-                    <label class="form-label">{{ __('Producto') }}</label>
+                    <label class="form-label">{{ __("Producto") }}</label>
                     <select name="items[${itemGroupIndex}][productos][${productoIndex}][producto]"
                             class="form-control select2-producto" ${productoData ? '' : 'disabled'}>
-                        <option value="">{{ __('Select Producto') }}</option>
+                        <option value="">{{ __("Seleccionar Producto") }}</option>
                         ${productoData ? `
                             <option value="${productoData.producto}" selected>
                                 ${productoData.codigo_producto || productoData.producto} - ${productoData.nombre_producto || 'Producto'}
@@ -1116,22 +1110,22 @@ $(document).ready(function() {
                         value="${productoData ? productoData.nombre_producto : ''}">
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">{{ __('Cantidad') }}</label>
+                    <label class="form-label">{{ __("Cantidad") }}</label>
                     <input type="number" name="items[${itemGroupIndex}][productos][${productoIndex}][cantidad]"
                         class="form-control" placeholder="Cantidad" min="1"
-                        value="${productoData ? productoData.cantidad : '0'}">
+                        value="${productoData ? productoData.cantidad : '1'}">
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">{{ __('Precio') }}</label>
+                    <label class="form-label">{{ __("Precio") }}</label>
                     <input type="number" step="0.01" name="items[${itemGroupIndex}][productos][${productoIndex}][precio]"
-                            class="form-control" placeholder="Precio" min="0" readonly
-                            value="${productoData ? productoData.precio : '0'}">
+                        class="form-control" placeholder="Precio" min="0" readonly
+                        value="${productoData ? productoData.precio : '0'}">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">{{ __('Almacén') }}</label>
+                    <label class="form-label">{{ __("Almacén") }}</label>
                     <select name="items[${itemGroupIndex}][productos][${productoIndex}][almacen]"
                             class="form-control select-almacen">
-                        <option value="">{{ __('Select Almacén') }}</option>
+                        <option value="">{{ __("Seleccionar Almacén") }}</option>
                         @foreach($almacenes as $almacen)
                             <option value="{{ $almacen->id_almacen }}"
                                 ${productoData && productoData.almacen == '{{ $almacen->id_almacen }}' ? 'selected' : ''}>
@@ -1141,7 +1135,9 @@ $(document).ready(function() {
                     </select>
                 </div>
                 <div class="col-md-1">
-                    <button type="button" class="btn btn-danger btn-remove-producto mt-4"><i class="fa fa-minus-circle" aria-hidden="true"></i></button>
+                    <button type="button" class="btn btn-danger btn-remove-producto mt-4">
+                        <i class="fa fa-minus-circle" aria-hidden="true"></i>
+                    </button>
                 </div>
             </div>
         `;
@@ -1157,30 +1153,50 @@ $(document).ready(function() {
                 $selectProducto,
                 productoData.almacen,
                 productoData.producto,
-                productoData.nombre_producto
+                productoData.nombre_producto,
+                productoData.precio
             );
         }
     }
 
     function addNewItemGroup(itemData = null) {
         const currentIndex = itemGroupIndex;
+        const trabajoValue = itemData ? (itemData.trabajo_id || itemData.trabajo || '') : '';
+        const trabajoNombre = itemData ? (itemData.trabajo_nombre || itemData.trabajo || '') : '';
+
         const newItemGroup = $(`
             <div class="item-group mb-4 p-3 border rounded" data-index="${currentIndex}">
                 <div class="row mb-2">
                     <div class="col-md-11">
-                        <label class="form-label">{{ __('Trabajo y Productos') }}</label>
-                        <textarea name="items[${currentIndex}][trabajo]" class="form-control" placeholder="Descripción del trabajo">${itemData ? (itemData.trabajo || '') : ''}</textarea>
+                        <label class="form-label">{{ __("Trabajo") }}</label>
+                        <select name="items[${currentIndex}][trabajo]" class="form-control select2-trabajo">
+                            <option value="">{{ __("Seleccionar Trabajo") }}</option>
+                        </select>
+                        <input type="hidden" name="items[${currentIndex}][trabajo_id]" value="${trabajoValue}">
+                        <input type="hidden" name="items[${currentIndex}][trabajo_nombre]" value="${trabajoNombre}">
                     </div>
                     <div class="col-md-1">
-                        <button type="button" class="btn btn-danger btn-remove-item-group mt-4"><i class="fa fa-times-circle" aria-hidden="true"></i></button>
+                        <button type="button" class="btn btn-danger btn-remove-item-group mt-4">
+                            <i class="fa fa-times-circle" aria-hidden="true"></i>
+                        </button>
                     </div>
                 </div>
                 <div class="productos-container"></div>
-                <button type="button" class="btn btn-success btn-add-producto mt-2">{{ __('Agregar Producto') }}</button>
+                <button type="button" class="btn btn-success btn-add-producto mt-2">
+                    {{ __("Agregar Producto") }}
+                </button>
             </div>
         `);
 
         $('#items-container').append(newItemGroup);
+        
+        const $selectTrabajo = newItemGroup.find('.select2-trabajo');
+        cargarTrabajosEnSelect($selectTrabajo, trabajoValue);
+
+        if (itemData && itemData.trabajo && !itemData.trabajo_id) {
+            $selectTrabajo.append(`<option value="${itemData.trabajo}" selected>${itemData.trabajo}</option>`);
+            newItemGroup.find('input[name$="[trabajo_nombre]"]').val(itemData.trabajo);
+        }
 
         if (itemData && itemData.productos) {
             itemData.productos.forEach(producto => {
@@ -1190,6 +1206,59 @@ $(document).ready(function() {
         
         itemGroupIndex++;
     }
+
+    $(document).on('change', 'select[name^="items"][name$="[trabajo]"]', function() {
+        const $group = $(this).closest('.item-group');
+        const trabajoId = $(this).val();
+        const trabajoNombre = $(this).find('option:selected').text();
+        
+        $group.find('input[name$="[trabajo_id]"]').val(trabajoId);
+        $group.find('input[name$="[trabajo_nombre]"]').val(trabajoNombre);
+    });
+
+    $(document).on('change', 'input[name$="[cantidad]"]', function() {
+        const $row = $(this).closest('.producto-row');
+        const productoSelect = $row.find('select[name$="[producto]"]');
+        const cantidad = parseInt($(this).val()) || 0;
+        
+        if (productoSelect.val()) {
+            const stockDisponible = parseInt(productoSelect.find('option:selected').data('stock')) || 0;
+            
+            if (cantidad > stockDisponible) {
+                Swal.fire({
+                    title: '{{ __("Stock Insuficiente") }}',
+                    text: '{{ __("Solo hay") }} ' + stockDisponible + ' {{ __("unidades disponibles") }}',
+                    icon: 'warning',
+                    confirmButtonText: '{{ __("Entendido") }}'
+                });
+                $(this).val(stockDisponible > 0 ? stockDisponible : 0);
+            }
+        }
+    });
+
+    $(document).on('change', 'select[name^="items"][name$="[producto]"]', function() {
+        const $row = $(this).closest('.producto-row');
+        const precioInput = $row.find('input[name$="[precio]"]');
+        const precio = $(this).find('option:selected').data('precio') || '0';
+        precioInput.val(precio);
+
+        const nombreProducto = $(this).find('option:selected').text().split('-')[1]?.trim();
+        $row.find('input[name$="[nombre_producto]"]').val(nombreProducto);
+    });
+
+    $(document).on('change', 'select[name^="items"][name$="[almacen]"]', function() {
+        const $row = $(this).closest('.producto-row');
+        const $selectProducto = $row.find('select[name$="[producto]"]');
+        const productoSeleccionado = $selectProducto.val();
+        const nombreProducto = $selectProducto.find('option:selected').text().split('-')[1]?.trim();
+        
+        cargarProductosEnSelect(
+            $selectProducto, 
+            $(this).val(), 
+            productoSeleccionado,
+            nombreProducto
+        );
+    });
 
     $(document).on('click', '.btn-add-work', function() {
         addNewItemGroup();
@@ -1208,49 +1277,21 @@ $(document).ready(function() {
         $(this).closest('.item-group').remove();
     });
 
-    $(document).on('change', 'select[name^="items"][name$="[almacen]"]', function() {
-        const $row = $(this).closest('.producto-row');
-        const $selectProducto = $row.find('.select2-producto');
-        const productoSeleccionado = $selectProducto.val();
-        const nombreProducto = $selectProducto.find('option:selected').text().split('-')[1]?.trim();
-        
-        cargarProductosEnSelect(
-            $selectProducto, 
-            $(this).val(), 
-            productoSeleccionado,
-            nombreProducto
-        );
-    });
-
     if (itemsExistentes && itemsExistentes.length > 0) {
         itemsExistentes.forEach(item => {
             addNewItemGroup(item);
         });
-        
-        $('.item-group').each(function() {
-            const itemGroupIndex = $(this).data('index');
-            const itemData = itemsExistentes[itemGroupIndex];
-            
-            if (itemData && itemData.productos) {
-                $(this).find('.producto-row').each(function(index) {
-                    const productoData = itemData.productos[index];
-                    if (productoData) {
-                        const $selectProducto = $(this).find('.select2-producto');
-                        const $selectAlmacen = $(this).find('.select-almacen');
-                        
-                        cargarProductosEnSelect(
-                            $selectProducto,
-                            productoData.almacen,
-                            productoData.producto,
-                            productoData.nombre_producto,
-                            productoData.cantidad
-                        );
-                    }
-                });
-            }
-        });
     } else {
         addNewItemGroup();
+    }
+
+    function mostrarError(mensaje) {
+        Swal.fire({
+            title: '{{ __("Error") }}',
+            text: mensaje,
+            icon: 'error',
+            confirmButtonText: '{{ __("Entendido") }}'
+        });
     }
 });
 </script>

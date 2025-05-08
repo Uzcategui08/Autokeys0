@@ -24,7 +24,6 @@ class RegistroVRequest extends FormRequest
         return [
 			'fecha_h' => 'required',
 			'id_empleado' => 'required|exists:empleados,id_empleado',
-			'trabajo' => 'required|string',
 			'cliente' => 'required|string',
 			'telefono' => 'required|string',
 			'valor_v' => 'required',
@@ -36,8 +35,8 @@ class RegistroVRequest extends FormRequest
 			'porcentaje_c' => 'required|string',
             'lugarventa' => 'required|string',
 			'marca' => 'required|string',
-			'modelo' => 'required|string',
-			'año' => 'required',
+			'modelo' => 'string',
+			'año' => 'integer',
 			'items' => 'required',
             'metodo_pce' => 'nullable|string',
             'tipo_venta' => 'required|string'

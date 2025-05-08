@@ -197,29 +197,30 @@
             </tr>
         </table>
 
-        <table class="productos-table">
-            <thead>
-                <tr>
-                    <th width="15%">Qty.</th>
-                    <th width="45%">Description</th>
-                </tr>
-            </thead>
-            <tbody>
-                @php $subtotal = 0; @endphp
-                @foreach($registroV->items as $itemGroup)
-                    @foreach($itemGroup['productos'] as $producto)
-                        @php
-                            $productoSubtotal = $producto['cantidad'] * $producto['precio_producto'];
-                            $subtotal += $productoSubtotal;
-                        @endphp
+        @foreach($items as $itemGroup)
+            @if(isset($itemGroup['trabajo']) && isset($itemGroup['productos']))
+                <div class="titulo-trabajo" style="margin-top: 15px; margin-bottom: 5px;">
+                    <strong>{{ $itemGroup['trabajo'] }}</strong>
+                </div>
+
+                <table class="productos-table">
+                    <thead>
                         <tr>
-                            <td>{{ $producto['cantidad'] }}</td>
+                            <th width="15%">Qty.</th>
+                            <th width="45%">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($itemGroup['productos'] as $producto)
+                        <tr>
+                            <td>{{ $producto['cantidad'] ?? 0 }}</td>
                             <td>{{ $producto['nombre_producto'] ?? 'N/A' }}</td>
                         </tr>
-                    @endforeach
-                @endforeach
-            </tbody>
-        </table>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+        @endforeach
 
         <div class="totales-section">
             <div class="total-row total-grande">

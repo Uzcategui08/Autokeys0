@@ -14,6 +14,7 @@ use Illuminate\View\View;
 use App\Exports\InventariosExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\AjusteInventario;
+use Illuminate\Support\Facades\Log;
 
 
 class InventarioController extends Controller
@@ -21,16 +22,33 @@ class InventarioController extends Controller
     /**
      * Display a listing of the resource.
      */
+
+    public function getData(Request $request)
+    {
+        $query = Inventario::with(['producto', 'almacene']);
+        
+        if ($request->has('almacen_id') && $request->almacen_id) {
+            $query->where('id_almacen', $request->almacen_id);
+        }
+        
+        $inventarios = $query->get();
+        
+        return response()->json([
+            'data' => $inventarios
+        ]);
+    } 
+
     public function index(Request $request): View
     {
-// En el controlador
-$inventarios1 = Inventario::with(['producto', 'almacene'])
-    ->orderByRaw('CAST(cantidad AS SIGNED) ASC') // Orden numérico explícito
-    ->get();
+    // En el controlador
+    $inventarios1 = Inventario::with(['producto', 'almacene'])
+        ->orderByRaw('CAST(cantidad AS SIGNED) ASC') // Orden numérico explícito
+        ->get();
+
+    $almacenes = Almacene::all();
 
 
-        return view('inventario.index', compact( 'inventarios1'))
-           ;
+    return view('inventario.index', compact( 'inventarios1', 'almacenes'));
     }
 
     /**
@@ -63,10 +81,13 @@ $inventarios1 = Inventario::with(['producto', 'almacene'])
      */
     public function show($id): View
     {
-        $inventario = Inventario::find($id);
-
+        // Carga el inventario con sus relaciones y maneja el caso de no encontrado
+        $inventario = Inventario::with(['producto', 'almacene'])
+                      ->findOrFail($id);
+    
         return view('inventario.show', compact('inventario'));
     }
+    
     public function cargas(Request $request)
     {
         $query = AjusteInventario::with(['producto', 'almacene', 'user'])
@@ -154,5 +175,5 @@ $inventarios1 = Inventario::with(['producto', 'almacene'])
         return Excel::download(new InventariosExport, 'inventario.xlsx');
     }
 
-  }
+}
 

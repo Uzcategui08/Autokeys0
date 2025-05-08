@@ -119,6 +119,7 @@ public function cxc(Request $request): View
      */
     public function store(RegistroVRequest $request): RedirectResponse
     {
+        
         DB::beginTransaction();
     
         try {
@@ -127,15 +128,7 @@ public function cxc(Request $request): View
             $trabajos = [];
             if ($request->has('items')) {
                 foreach ($request->input('items') as $item) {
-                    $trabajoId = $item['trabajo_id'] ?? null;
-                    $descripcionTrabajo = $item['trabajo_nombre'] ?? $item['trabajo'] ?? null;
-
-                    if ($trabajoId && empty($descripcionTrabajo)) {
-                        $trabajo = Trabajo::find($trabajoId);
-                        $descripcionTrabajo = $trabajo ? $trabajo->nombre : 'Trabajo no especificado';
-                    }
-    
-                    if (!empty($descripcionTrabajo)) {
+                    if (!empty($item['trabajo'])) {
                         $productos = [];
                         if (isset($item['productos'])) {
                             foreach ($item['productos'] as $producto) {
@@ -147,22 +140,19 @@ public function cxc(Request $request): View
                                         'cantidad' => $producto['cantidad'],
                                         'almacen' => $producto['almacen'],
                                         'precio' => $producto['precio'] ?? 0,
-                                        'nombre_producto' => $producto['nombre_producto'] ?? null,
                                     ];
                                 }
                             }
                         }
-                        
                         $trabajos[] = [
-                            'trabajo_id' => $trabajoId, 
-                            'trabajo' => $descripcionTrabajo,
+                            'trabajo' => $item['trabajo'],
                             'productos' => $productos,
                         ];
                     }
                 }
             }
             $validatedData['items'] = json_encode($trabajos);
-
+    
             $costosIds = [];
             if ($request->has('costos_extras')) {
                 foreach ($request->input('costos_extras') as $costoData) {
@@ -723,15 +713,7 @@ public function cxc(Request $request): View
             $trabajos = [];
             if ($request->has('items')) {
                 foreach ($request->input('items') as $item) {
-                    $trabajoId = $item['trabajo_id'] ?? null;
-                    $descripcionTrabajo = $item['trabajo_nombre'] ?? $item['trabajo'] ?? null;
-
-                    if ($trabajoId && empty($descripcionTrabajo)) {
-                        $trabajo = Trabajo::find($trabajoId);
-                        $descripcionTrabajo = $trabajo ? $trabajo->nombre : 'Trabajo no especificado';
-                    }
-    
-                    if (!empty($descripcionTrabajo)) {
+                    if (!empty($item['trabajo'])) {
                         $productos = [];
                         if (isset($item['productos'])) {
                             foreach ($item['productos'] as $producto) {
@@ -746,17 +728,15 @@ public function cxc(Request $request): View
                                 }
                             }
                         }
-                        
                         $trabajos[] = [
-                            'trabajo_id' => $trabajoId,
-                            'trabajo' => $descripcionTrabajo,
+                            'trabajo' => $item['trabajo'],
                             'productos' => $productos,
                         ];
                     }
                 }
             }
             $validatedData['items'] = json_encode($trabajos);
-
+    
             $costosIds = [];
             if ($request->has('costos_extras')) {
                 foreach ($request->input('costos_extras') as $costoData) {
@@ -800,7 +780,7 @@ public function cxc(Request $request): View
                 }
             }
             $validatedData['costos'] = json_encode($costosIds);
-
+    
             $gastosIds = [];
             if ($request->has('gastos')) {
                 foreach ($request->input('gastos') as $gastoData) {
@@ -844,7 +824,7 @@ public function cxc(Request $request): View
                 }
             }
             $validatedData['gastos'] = json_encode($gastosIds);
-
+    
             $pagosValidados = [];
             $totalPagado = 0;
             
@@ -887,7 +867,7 @@ public function cxc(Request $request): View
             }
     
             $registroV->update($validatedData);
-
+    
             if ($registroV->id_abono) {
                 Abono::where('id_abonos', $registroV->id_abono)->update([
                     'id_empleado' => $request->input('id_empleado'),

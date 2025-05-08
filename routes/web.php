@@ -23,7 +23,10 @@ use App\Http\Controllers\CierreVentasController;
 use App\Http\Controllers\CierreVentasSemanalController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TransferenciaController;
+use App\Http\Controllers\TrabajoController;
 use App\Models\Inventario;
+use Illuminate\Http\Request;
+use App\Models\Trabajo;
 
 Route::get('/', function () {
     return view('welcome');
@@ -51,6 +54,8 @@ Route::resource('productos', ProductoController::class);
 route::get('admin/dashboard', [DashboardController::class, "index"])->name('admin.dashboard');
 
 Route::resource('transferencias', TransferenciaController::class);
+
+Route::get('/inventarios/data', [InventarioController::class, 'getData'])->name('inventarios.data');
 
 Route::get('/inventarios/export', [InventarioController::class, 'export'])->name('inventarios.export');
 Route::resource('inventarios', InventarioController::class);
@@ -159,3 +164,13 @@ Route::get('/verificar-stock-transferencia', [TransferenciaController::class, 'v
 
 Route::get('/empleados/{id}/datos-pago', [EmpleadoController::class, 'getDatosPago'])->name('empleados.datos-pago');
 Route::get('/empleados/{id}/datos-pago', [EmpleadoController::class, 'getDatosPago']);
+
+Route::get('/productos-por-almacen/{almacenId}', [InventarioController::class, 'productosPorAlmacen']);
+Route::get('/verificar-stock/{productoId}', [InventarioController::class, 'verificarStock']);
+
+Route::resource('trabajos', TrabajoController::class);
+
+Route::get('/obtener-trabajos', [TrabajoController::class, 'obtenerTrabajos'])->name('obtener.trabajos');
+
+Route::get('/obtener-todos-trabajos', [RegistroVController::class, 'obtenerTodosLosTrabajos']);
+

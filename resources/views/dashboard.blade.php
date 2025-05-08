@@ -338,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <script>
-// Gráfico de dona mejorado para ventas por técnico
+
 document.addEventListener('DOMContentLoaded', function() {
     const ctxTecnico = document.getElementById('ventasPorTecnico').getContext('2d');
     const datosTecnico = <?php echo json_encode($ventasPorTecnico); ?>;

@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->date('fecha_h');
             $table->unsignedBigInteger('id_empleado')->constrained('empleados', 'id_empleado')->onDelete('cascade');;
-            $table->string('trabajo');
             $table->string('cliente');
             $table->string('telefono');
             $table->decimal('valor_v');

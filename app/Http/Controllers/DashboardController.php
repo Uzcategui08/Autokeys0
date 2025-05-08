@@ -79,13 +79,22 @@ class DashboardController extends Controller
         }
         
         $ventasPorTecnico = $ventasPorTecnicoQuery
-            ->select(
-                'id_empleado',
-                DB::raw('COUNT(*) as total'),
-                DB::raw('SUM(valor_v) as monto_total'))
-            ->groupBy('id_empleado')
-            ->orderBy('id_empleado')
-            ->get();
+        ->with('empleado') 
+        ->select(
+            'id_empleado',
+            DB::raw('COUNT(*) as total'),
+            DB::raw('SUM(valor_v) as monto_total')
+        )
+        ->groupBy('id_empleado')
+        ->orderBy('id_empleado')
+        ->get()
+        ->map(function ($item) {
+            return (object) [
+                'tecnico' => $item->empleado->nombre,
+                'total' => $item->total,
+                'monto_total' => $item->monto_total
+            ];
+        });
 
         // Estadísticas de inventario para limited_user
         $misAjustesInventario = null;
