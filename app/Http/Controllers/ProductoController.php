@@ -26,8 +26,7 @@ class ProductoController extends Controller implements HasMiddleware
     {
         $productos = Producto::all();
 
-        return view('producto.index', compact('productos'))
-            ->with('i', ($request->input('page', 1) - 1) * $productos->perPage());
+        return view('producto.index', compact('productos'));
     }
 
     /**
