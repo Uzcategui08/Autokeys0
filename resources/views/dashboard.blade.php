@@ -450,4 +450,116 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+<script>
+
+document.addEventListener('DOMContentLoaded', function() {
+    const ctxTecnico = document.getElementById('ventasPorTecnico').getContext('2d');
+    const datosTecnico = <?php echo json_encode($ventasPorTecnico); ?>;
+    
+    // Colores sólidos vibrantes
+    const coloresSolidos = [
+        '#FF6384', // Rojo
+        '#36A2EB', // Azul
+        '#FFCE56', // Amarillo
+        '#4BC0C0', // Turquesa
+        '#9966FF', // Morado
+        '#FF9F40', // Naranja
+        '#8AC24A', // Verde
+        '#EA5F89', // Rosa oscuro
+        '#00BFFF', // Azul cielo
+        '#FFD700'  // Oro
+    ];
+
+    const donutChart = new Chart(ctxTecnico, {
+        type: 'doughnut',
+        data: {
+            labels: datosTecnico.map(item => item.tecnico),
+            datasets: [{
+                label: 'Monto Total',
+                data: datosTecnico.map(item => item.monto_total),
+                backgroundColor: coloresSolidos,
+                borderColor: '#ffffff',
+                borderWidth: 2,
+                hoverOffset: 20,
+                cutout: '65%' // Controla el tamaño del agujero central
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    top: 20,
+                    bottom: 20,
+                    left: 20,
+                    right: 20
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        font: {
+                            size: 14,
+                            family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+                            weight: 'bold'
+                        },
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Distribución de Ventas por Técnico',
+                    font: {
+                        size: 18,
+                        weight: 'bold'
+                    },
+                    padding: {
+                        top: 10,
+                        bottom: 30
+                    }
+                },
+                tooltip: {
+                    enabled: true,
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return `${label}: $${value.toLocaleString('es-MX')} (${percentage}%)`;
+                        }
+                    },
+                    bodyFont: {
+                        size: 14
+                    },
+                    titleFont: {
+                        size: 16,
+                        weight: 'bold'
+                    }
+                },
+                datalabels: {
+                    display: false
+                }
+            },
+            animation: {
+                animateScale: true,
+                animateRotate: true
+            },
+            elements: {
+                arc: {
+                    borderWidth: 3
+                }
+            }
+        }
+    });
+
+    // Hacer el gráfico responsive
+    window.addEventListener('resize', function() {
+        donutChart.resize();
+    });
+});
+</script>
 @stop

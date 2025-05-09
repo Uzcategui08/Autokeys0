@@ -94,7 +94,7 @@ public function cxc(Request $request): View
     }
 
     /**
-     * Obtener productos por almacÃ©n (AJAX)
+     * Obtener productos por almacén (AJAX)
      */
     public function obtenerProductosV(Request $request)
     {
@@ -119,71 +119,42 @@ public function cxc(Request $request): View
      */
     public function store(RegistroVRequest $request): RedirectResponse
     {
-        DB::beginTransaction();
         
+        DB::beginTransaction();
+    
         try {
             $validatedData = $request->validated();
-            Log::debug('Datos validados', ['validatedData' => $validatedData]);
     
-            // Procesamiento de trabajos y productos
             $trabajos = [];
             if ($request->has('items')) {
                 foreach ($request->input('items') as $item) {
-                    $trabajoId = $item['trabajo_id'] ?? null;
-                    $descripcionTrabajo = $item['trabajo_nombre'] ?? $item['trabajo'] ?? null;
-
-                    if ($trabajoId && empty($descripcionTrabajo)) {
-                        $trabajo = Trabajo::find($trabajoId);
-                        $descripcionTrabajo = $trabajo ? $trabajo->nombre : 'Trabajo no especificado';
-                    }
-    
-                    if (!empty($descripcionTrabajo)) {
+                    if (!empty($item['trabajo'])) {
                         $productos = [];
                         if (isset($item['productos'])) {
-                            Log::debug("Productos encontrados para item $index", ['count' => count($item['productos'])]);
-                            foreach ($item['productos'] as $prodIndex => $producto) {
+                            foreach ($item['productos'] as $producto) {
                                 if (!empty($producto['producto'])) {
-                                    Log::debug("Procesando producto $prodIndex", [
-                                        'producto' => $producto['producto'],
-                                        'cantidad' => $producto['cantidad']
-                                    ]);
-                                    
-                                    try {
-                                        $this->restarInventario($producto['producto'], $producto['cantidad']);
-                                        Log::info("Inventario actualizado para producto {$producto['producto']}", [
-                                            'cantidad_restada' => $producto['cantidad']
-                                        ]);
-                                    } catch (\Exception $e) {
-                                        Log::error("Error al actualizar inventario para producto {$producto['producto']}", [
-                                            'error' => $e->getMessage()
-                                        ]);
-                                        throw $e;
-                                    }
+                                    $this->restarInventario($producto['producto'], $producto['cantidad']);
                                     
                                     $productos[] = [
                                         'producto' => $producto['producto'],
                                         'cantidad' => $producto['cantidad'],
                                         'almacen' => $producto['almacen'],
                                         'precio' => $producto['precio'] ?? 0,
-                                        'nombre_producto' => $producto['nombre_producto'] ?? null,
                                     ];
                                 }
                             }
                         }
-                        
                         $trabajos[] = [
-                            'trabajo_id' => $trabajoId, 
-                            'trabajo' => $descripcionTrabajo,
+                            'trabajo' => $item['trabajo'],
                             'productos' => $productos,
                         ];
                     }
                 }
             }
             $validatedData['items'] = json_encode($trabajos);
-
+    
             $costosIds = [];
             if ($request->has('costos_extras')) {
-                Log::info('Procesando costos extras', ['count' => count($request->input('costos_extras'))]);
                 foreach ($request->input('costos_extras') as $costoData) {
                     if (!empty($costoData['descripcion'])) {
                         $pagoCosto = [
@@ -205,17 +176,13 @@ public function cxc(Request $request): View
                         ]);
                         
                         $costosIds[] = $costo->id_costos;
-                        Log::debug('Costo extra creado', ['id' => $costo->id_costos, 'descripcion' => $costoData['descripcion']]);
                     }
                 }
             }
             $validatedData['costos'] = $costosIds;
-            Log::info('Costos extras procesados', ['count' => count($costosIds)]);
     
-            // Procesamiento de gastos
             $gastosIds = [];
             if ($request->has('gastos')) {
-                Log::info('Procesando gastos', ['count' => count($request->input('gastos'))]);
                 foreach ($request->input('gastos') as $gastoData) {
                     if (!empty($gastoData['descripcion'])) {
                         $pagoGasto = [
@@ -237,14 +204,11 @@ public function cxc(Request $request): View
                         ]);
                         
                         $gastosIds[] = $gasto->id_gastos;
-                        Log::debug('Gasto creado', ['id' => $gasto->id_gastos, 'descripcion' => $gastoData['descripcion']]);
                     }
                 }
             }
             $validatedData['gastos'] = $gastosIds;
-            Log::info('Gastos procesados', ['count' => count($gastosIds)]);
     
-            // Procesamiento de pagos
             $pagosValidados = [];
             $totalPagado = 0;
             
@@ -252,11 +216,9 @@ public function cxc(Request $request): View
                 try {
                     $pagosInput = $request->input('pagos');
                     $pagos = is_string($pagosInput) ? json_decode($pagosInput, true) : $pagosInput;
-                    Log::info('Procesando pagos', ['count' => count($pagos)]);
                     
-                    foreach ($pagos as $index => $pago) {
+                    foreach ($pagos as $pago) {
                         if (!isset($pago['monto']) || !is_numeric($pago['monto']) || $pago['monto'] <= 0) {
-                            Log::warning("Pago $index omitido - monto inválido", ['pago' => $pago]);
                             continue;
                         }
                         
@@ -267,43 +229,29 @@ public function cxc(Request $request): View
                         ];
                         
                         $totalPagado += (float) $pago['monto'];
-                        Log::debug("Pago $index procesado", [
-                            'monto' => $pago['monto'],
-                            'metodo' => $pago['metodo_pago'] ?? 'efectivo',
-                            'total_acumulado' => $totalPagado
-                        ]);
                     }
                     
                     $validatedData['pagos'] = json_encode($pagosValidados);
     
                     $valorTotal = (float) ($validatedData['valor_v'] ?? 0);
-                    Log::debug('Total vs Pagado', ['total' => $valorTotal, 'pagado' => $totalPagado]);
                     
                     if ($totalPagado >= $valorTotal) {
                         $validatedData['estatus'] = 'pagado';
-                        Log::info('Estatus: Pagado completamente');
                     } elseif ($totalPagado > 0) {
                         $validatedData['estatus'] = 'parcialemente pagado';
-                        Log::info('Estatus: Pagado parcialmente');
                     } else {
                         $validatedData['estatus'] = 'pendiente';
-                        Log::info('Estatus: Pendiente de pago');
                     }
                     
                 } catch (\Exception $e) {
-                    Log::error('Error al procesar pagos', ['error' => $e->getMessage()]);
                     $validatedData['pagos'] = json_encode([]);
                 }
             } else {
-                Log::info('No se recibieron pagos en la solicitud');
                 $validatedData['pagos'] = json_encode([]);
             }
     
-            // Creación del registro principal
             $registroV = RegistroV::create($validatedData);
-            Log::info('Registro V creado', ['id' => $registroV->id]);
     
-            // Creación del abono asociado
             $abono = Abono::create([
                 'a_fecha' => $registroV->fecha_h,
                 'id_empleado' => $request->input('id_empleado'),
@@ -313,20 +261,14 @@ public function cxc(Request $request): View
             
             $registroV->id_abono = $abono->id_abonos;
             $registroV->save();
-            Log::info('Abono creado y asociado', ['id_abono' => $abono->id_abonos]);
     
             DB::commit();
-            Log::info('Transacción completada exitosamente');
     
             return Redirect::route('registro-vs.index')
                 ->with('success', 'Registro creado satisfactoriamente.');
     
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error en el proceso de creación', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
             return back()->withInput()->with('error', 'Error al crear el registro: ' . $e->getMessage());
         }
     }
@@ -595,7 +537,7 @@ public function cxc(Request $request): View
         return view('registro-v.edit', $viewData);
     }
 
-    // MÃ©todo para ajustar el inventario
+    // Método para ajustar el inventario
     private function ajustarInventario($itemsAntiguos, $itemsNuevos)
     {
         // Recorrer los items nuevos
@@ -606,13 +548,13 @@ public function cxc(Request $request): View
                     $productoAntiguo = $this->buscarProductoAntiguo($itemsAntiguos, $trabajoNuevo['trabajo'], $productoNuevo['producto']);
 
                     if ($productoAntiguo) {
-                        // Ajustar el inventario segÃºn la diferencia
+                        // Ajustar el inventario según la diferencia
                         $diferencia = $productoAntiguo['cantidad'] - $productoNuevo['cantidad'];
                         if ($diferencia != 0) {
                             $this->actualizarInventario($productoNuevo['producto'], $diferencia, $productoNuevo['almacen']);
                         }
                     } else {
-                        // Si no se encontrÃ³ el producto antiguo, restar la cantidad nueva del inventario
+                        // Si no se encontró el producto antiguo, restar la cantidad nueva del inventario
                         $this->actualizarInventario($productoNuevo['producto'], -$productoNuevo['cantidad'], $productoNuevo['almacen']);
                     }
                 }
@@ -627,7 +569,7 @@ public function cxc(Request $request): View
                     $productoNuevo = $this->buscarProductoNuevo($itemsNuevos, $trabajoAntiguo['trabajo'], $productoAntiguo['producto']);
 
                     if (!$productoNuevo) {
-                        // Si no se encontrÃ³ el producto nuevo, sumar la cantidad antigua al inventario
+                        // Si no se encontró el producto nuevo, sumar la cantidad antigua al inventario
                         $this->actualizarInventario($productoAntiguo['producto'], $productoAntiguo['cantidad'], $productoAntiguo['almacen']);
                     }
                 }
@@ -635,7 +577,7 @@ public function cxc(Request $request): View
         }
     }
      
-    // MÃ©todo para buscar un producto antiguo
+    // Método para buscar un producto antiguo
     private function buscarProductoAntiguo($itemsAntiguos, $trabajo, $producto)
     {
         foreach ($itemsAntiguos as $trabajoAntiguo) {
@@ -653,7 +595,7 @@ public function cxc(Request $request): View
         return null;
     }
     
-    // MÃ©todo para buscar un producto nuevo
+    // Método para buscar un producto nuevo
     private function buscarProductoNuevo($itemsNuevos, $trabajo, $producto)
     {
         foreach ($itemsNuevos as $trabajoNuevo) {
@@ -673,7 +615,7 @@ public function cxc(Request $request): View
 
     public function verificarStock(Request $request)
     {
-        Log::info('Inicio de verificaciÃ³n de stock', [
+        Log::info('Inicio de verificación de stock', [
             'request_data' => $request->all(),
             'time' => now()
         ]);
@@ -699,7 +641,7 @@ public function cxc(Request $request): View
     
         $stockDisponible = $inventario ? $inventario->cantidad : 0;
         
-        Log::info('Resultado de verificaciÃ³n de stock', [
+        Log::info('Resultado de verificación de stock', [
             'stock_disponible' => $stockDisponible,
             'cantidad_requerida' => $cantidadRequerida,
             'suficiente' => $stockDisponible >= $cantidadRequerida
@@ -713,7 +655,7 @@ public function cxc(Request $request): View
         ]);
     }
      
-    // MÃ©todo para actualizar el inventario
+    // Método para actualizar el inventario
     private function actualizarInventario($productoId, $cantidad, $almacen)
     {
         $inventario = Inventario::where('id_producto', $productoId)
@@ -742,14 +684,14 @@ public function cxc(Request $request): View
             $nuevaCantidad = $inventario->cantidad - $cantidad;
             if ($nuevaCantidad < 0) {
                 // Manejar el caso cuando la cantidad a restar es mayor que la existente
-                // Puedes lanzar una excepciÃ³n o mostrar un mensaje
+                // Puedes lanzar una excepción o mostrar un mensaje
                 throw new \Exception("No hay suficiente stock para el producto $productoId");
             }
 
             $inventario->update(['cantidad' => $nuevaCantidad]);
         } else {
             // Manejar el caso cuando no se encuentra el producto en el inventario
-            // Puedes lanzar una excepciÃ³n o mostrar un mensaje
+            // Puedes lanzar una excepción o mostrar un mensaje
             throw new \Exception("El producto $productoId no existe en el inventario");
         }
     }
@@ -771,15 +713,7 @@ public function cxc(Request $request): View
             $trabajos = [];
             if ($request->has('items')) {
                 foreach ($request->input('items') as $item) {
-                    $trabajoId = $item['trabajo_id'] ?? null;
-                    $descripcionTrabajo = $item['trabajo_nombre'] ?? $item['trabajo'] ?? null;
-
-                    if ($trabajoId && empty($descripcionTrabajo)) {
-                        $trabajo = Trabajo::find($trabajoId);
-                        $descripcionTrabajo = $trabajo ? $trabajo->nombre : 'Trabajo no especificado';
-                    }
-    
-                    if (!empty($descripcionTrabajo)) {
+                    if (!empty($item['trabajo'])) {
                         $productos = [];
                         if (isset($item['productos'])) {
                             foreach ($item['productos'] as $producto) {
@@ -794,17 +728,15 @@ public function cxc(Request $request): View
                                 }
                             }
                         }
-                        
                         $trabajos[] = [
-                            'trabajo_id' => $trabajoId,
-                            'trabajo' => $descripcionTrabajo,
+                            'trabajo' => $item['trabajo'],
                             'productos' => $productos,
                         ];
                     }
                 }
             }
             $validatedData['items'] = json_encode($trabajos);
-
+    
             $costosIds = [];
             if ($request->has('costos_extras')) {
                 foreach ($request->input('costos_extras') as $costoData) {
@@ -848,7 +780,7 @@ public function cxc(Request $request): View
                 }
             }
             $validatedData['costos'] = json_encode($costosIds);
-
+    
             $gastosIds = [];
             if ($request->has('gastos')) {
                 foreach ($request->input('gastos') as $gastoData) {
@@ -892,7 +824,7 @@ public function cxc(Request $request): View
                 }
             }
             $validatedData['gastos'] = json_encode($gastosIds);
-
+    
             $pagosValidados = [];
             $totalPagado = 0;
             
@@ -935,7 +867,7 @@ public function cxc(Request $request): View
             }
     
             $registroV->update($validatedData);
-
+    
             if ($registroV->id_abono) {
                 Abono::where('id_abonos', $registroV->id_abono)->update([
                     'id_empleado' => $request->input('id_empleado'),

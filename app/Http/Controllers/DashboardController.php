@@ -79,7 +79,7 @@ class DashboardController extends Controller
         }
         
         $ventasPorTecnico = $ventasPorTecnicoQuery
-        ->with('empleado')  // Carga la relación
+        ->with('empleado') 
         ->select(
             'id_empleado',
             DB::raw('COUNT(*) as total'),
@@ -88,12 +88,14 @@ class DashboardController extends Controller
         ->groupBy('id_empleado')
         ->orderBy('id_empleado')
         ->get()
-        ->map(function($item) {
-            return [
-                'tecnico' => $item->empleado->nombre,  // Accede al nombre del empleado
+        ->map(function ($item) {
+            return (object) [
+                'tecnico' => $item->empleado->nombre,
+                'total' => $item->total,
                 'monto_total' => $item->monto_total
             ];
         });
+
         // Estadísticas de inventario para limited_user
         $misAjustesInventario = null;
         if (auth()->user()->hasRole('limited_user')) {

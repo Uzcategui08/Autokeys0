@@ -384,6 +384,12 @@ return [
         'can' => ['admin', 'ventas_limited'],
     ],
     [
+        'text' => 'Trabajos',
+        'url' => 'trabajos',
+        'icon' => 'fas fa-fw fa-tasks',
+        'can' => ['admin', 'ventas_limited'],
+    ],
+    [
         'text' => 'Presupuestos',
         'url' => 'presupuestos',
         'icon' => 'fas fa-fw fa-file-invoice',

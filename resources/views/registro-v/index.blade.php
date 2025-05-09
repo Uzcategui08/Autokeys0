@@ -34,7 +34,6 @@
                                         <th>ID Venta</th>
                                         <th>Fecha</th>
                                         <th>Técnico</th>
-                                        <th>Trabajo</th>
                                         <th>Vehículo</th>
                                         <th>Cliente</th>
                                         <th>Valor de Venta</th>
@@ -50,38 +49,18 @@
                                             <td>{{ $registroV->id }}</td>
                                             <td>{{ $registroV->fecha_h->format('m/d/Y') }}</td>
                                             <td>{{ $registroV->empleado->nombre }}</td>
-                                            <td>
-                                                @php
-                                                    $trabajos = [
-                                                        'duplicado' => 'Duplicado',
-                                                        'perdida' => 'Pérdida',
-                                                        'programacion' => 'Programación',
-                                                        'alarma' => 'Alarma',
-                                                        'airbag' => 'Airbag',
-                                                        'rekey' => 'Rekey',
-                                                        'lishi' => 'Lishi',
-                                                        'remote_start' => 'Remote Start',
-                                                        'control' => 'Control',
-                                                        'venta' => 'Venta',
-                                                        'apertura' => 'Apertura',
-                                                        'cambio_chip' => 'Cambio de Chip',
-                                                        'revision' => 'Revisión',
-                                                        'suiche' => 'Suiche',
-                                                        'llave_puerta' => 'Llave de Puerta',
-                                                        'cinturon' => 'Cinturón',
-                                                        'diag' => 'Diagnóstico',
-                                                        'emuladores' => 'Emuladores',
-                                                        'clonacion' => 'Clonación'
-                                                    ];
-                                                    
-                                                    echo $trabajos[$registroV->trabajo] ?? $registroV->trabajo;
-                                                @endphp
-                                            </td>
                                             <td>{{ $registroV->modelo }}</td>
                                             <td>{{ $registroV->cliente }}</td>
                                             <td>{{ $registroV->valor_v }}</td>
                                             <td>{{ $registroV->porcentaje_c }}</td>
-                                            <td>{{ $registroV->estatus }}</td>
+                                            @php
+                                                $estatusFormateados = [
+                                                    'pagado' => 'Pagado',
+                                                    'pendiente' => 'Pendiente',
+                                                    'parcialemente pagado' => 'Parcialmente Pagado',
+                                                ];
+                                            @endphp
+                                            <td>{{ $estatusFormateados[$registroV->estatus] ?? strtoupper($registroV->estatus) }}</td>
                                             <td>{{ $registroV->lugarventa }}</td>
                                             <td>
                                                 <div style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">

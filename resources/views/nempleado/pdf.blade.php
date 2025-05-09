@@ -416,7 +416,7 @@
                             <tbody>
                                 @foreach($metodos_pago as $metodo)
                                 <tr>
-                                    <td>{{ $metodo['nombre'] }}</td>
+                                    <td>{{ ucfirst($metodo['nombre']) }}</td>
                                     <td class="amount">${{ number_format($metodo['monto'], 2) }}</td>
                                 </tr>
                                 @endforeach

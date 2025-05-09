@@ -45,7 +45,7 @@ class NempleadoController extends Controller
             if (!$empleado) {
                 throw new \Exception("Empleado no encontrado");
             }
-    
+
             $reglasValidacion = [
                 'id_empleado' => 'required|exists:empleados,id_empleado',
                 'fecha_desde' => 'required|date',
@@ -59,16 +59,16 @@ class NempleadoController extends Controller
                 'precio_hora_normal' => $empleado->tipo_pago === 'horas' ? 'required|numeric|min:0' : 'nullable',
                 'precio_hora_extra' => $empleado->tipo_pago === 'horas' ? 'required|numeric|min:0' : 'nullable',
             ];
-    
+
             $validator = Validator::make($request->all(), $reglasValidacion, [
                 'id_abonos_json.required' => 'Para pago por comisión debe seleccionar al menos un concepto',
                 'metodo_pago_json.required' => 'Debe seleccionar al menos un método de pago'
             ]);
-    
+
             if ($validator->fails()) {
                 return back()->withErrors($validator)->withInput();
             }
-    
+
             $abonosIds = $this->procesarIds($request->id_abonos_json ?? '[]', 'abono');
             $descuentosIds = $this->procesarIds($request->id_descuentos_json ?? '[]', 'descuento');
             $metodosPago = $this->procesarMetodosPago($request->metodo_pago_json);
@@ -76,15 +76,15 @@ class NempleadoController extends Controller
             if (empty($metodosPago)) {
                 throw new \Exception("Debe seleccionar al menos un método de pago válido");
             }
-    
+
             $this->validarPertenenciaEmpleado($request->id_empleado, $abonosIds, $descuentosIds);
-    
+
             $totalAbonos = $abonosIds ? Abono::whereIn('id_abonos', $abonosIds)->sum('valor') : 0;
             $totalDescuentos = $descuentosIds ? Descuento::whereIn('id_descuentos', $descuentosIds)->sum('valor') : 0;
-    
+
             $sueldoCalculado = 0;
             $detallePago = null;
-    
+
             if ($empleado->tipo_pago === 'horas') {
                 $horasTrabajadas = $request->horas_trabajadas ?? 0;
                 $precioNormal = $request->precio_hora_normal ?? 0;
@@ -96,14 +96,17 @@ class NempleadoController extends Controller
                 $sueldoCalculado = ($horasNormales * $precioNormal) + ($horasExtras * $precioExtra);
                 $detallePago = "Horas normales: $horasNormales × $precioNormal = ".($horasNormales*$precioNormal)." | ".
                               "Horas extras: $horasExtras × $precioExtra = ".($horasExtras*$precioExtra);
+            } elseif ($empleado->tipo_pago === 'sueldo') {
+                $sueldoCalculado = $request->sueldo_base ?? 0;
+                $detallePago = "Sueldo base: $sueldoCalculado";
             }
-    
+
             $totalCalculado = $sueldoCalculado + $totalAbonos - $totalDescuentos;
-    
+
             if (abs($totalCalculado - $request->total_pagado) > 0.01) {
                 throw new \Exception("El total a pagar no coincide con los cálculos. Calculado: $totalCalculado, Recibido: {$request->total_pagado}");
             }
-    
+
             $nempleadoData = [
                 'id_empleado' => $request->id_empleado,
                 'id_abonos' => $abonosIds,
@@ -119,16 +122,16 @@ class NempleadoController extends Controller
                 'detalle_pago' => $detallePago,
                 'tipo_pago_empleado' => $empleado->tipo_pago
             ];
-    
+
             $nempleado = Nempleado::create($nempleadoData);
-    
+
             $this->marcarComoProcesados($abonosIds, $descuentosIds);
-    
+
             DB::commit();
             
             return redirect()->route('nempleados.index')
                 ->with('success', 'Registro creado satisfactoriamente.');
-    
+
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withInput()

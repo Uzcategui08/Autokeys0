@@ -5,27 +5,20 @@
 @section('content_header')
 <div class="d-flex justify-content-between align-items-center">
     <h1 class="text-gray-800">Cierre Semanal - Del {{ $startOfWeek->format('d M Y') }} al {{ $endOfWeek->format('d M Y') }}</h1>
-    
     <form method="GET" action="{{ route('cierre.semanal') }}" class="form-inline">
         <div class="form-group mr-2">
-            <select name="year" class="form-control form-control-sm">
-                @foreach($availableYears as $year)
-                    <option value="{{ $year }}" {{ $year == $yearSelected ? 'selected' : '' }}>
-                        {{ $year }}
-                    </option>
-                @endforeach
-            </select>
+            <div class="input-group">
+                <input type="date" class="form-control form-control-sm" name="start_date" 
+                       value="{{ $startOfWeek->format('Y-m-d') }}" />
+                <div class="input-group-append">
+                </div>
+                <input type="date" class="form-control form-control-sm" name="end_date" 
+                       value="{{ $endOfWeek->format('Y-m-d') }}" />
+            </div>
         </div>
-        
-        <div class="form-group mr-2">
-            <select name="week" class="form-control form-control-sm">
-                @foreach($weeks as $week)
-                    <option value="{{ $week['number'] }}" {{ $week['number'] == $weekSelected ? 'selected' : '' }}>
-                        Semana {{ $week['number'] }} ({{ $week['start'] }} - {{ $week['end'] }})
-                    </option>
-                @endforeach
-            </select>
-        </div>
+
+        <input type="hidden" name="year" value="{{ $yearSelected }}" />
+        <input type="hidden" name="week" value="{{ $weekSelected }}" />
         
         <button type="submit" class="btn btn-sm btn-outline-primary">
             <i class="fas fa-filter"></i> Filtrar
@@ -135,10 +128,10 @@
                         <th colspan="3" class="text-center border-left bg-gastos">Gastos</th>
                     </tr>
                     <tr>
-                        <th class="bg-costos">Subcategoría</th>
+                        <th class="bg-costos">Descripción</th>
                         <th class="bg-costos">Método Pago</th>
                         <th class="text-right bg-costos">Total</th>
-                        <th class="bg-gastos">Subcategoría</th>
+                        <th class="bg-gastos">Descripción</th>
                         <th class="bg-gastos">Método Pago</th>
                         <th class="text-right bg-gastos">Total</th>
                     </tr>
@@ -156,7 +149,7 @@
                             @endif
                             
                             @if(isset($item['costos'][$i]))
-                                <td class="bg-costos">{{ $item['costos'][$i]['subcategoria'] }}</td>
+                                <td class="bg-costos">{{ $item['costos'][$i]['descripcion'] }}</td>
                                 <td class="bg-costos">{{ $item['costos'][$i]['metodo_pago'] }}</td>
                                 <td class="text-right bg-costos">${{ number_format($item['costos'][$i]['total'], 2) }}</td>
                             @else
@@ -164,7 +157,7 @@
                             @endif
 
                             @if(isset($item['gastos'][$i]))
-                                <td class="bg-gastos">{{ $item['gastos'][$i]['subcategoria'] }}</td>
+                                <td class="bg-gastos">{{ $item['gastos'][$i]['descripcion'] }}</td>
                                 <td class="bg-gastos">{{ $item['gastos'][$i]['metodo_pago'] }}</td>
                                 <td class="text-right bg-gastos">${{ number_format($item['gastos'][$i]['total'], 2) }}</td>
                             @else
@@ -328,6 +321,7 @@
                             <tr>
                                 <th>Trabajo</th>
                                 <th class="text-right bg-ventas">Monto</th>
+                                <th class="text-center">Métodos de Pago</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -336,6 +330,20 @@
                             <tr>
                                 <td>{{ $trabajo ?: 'Sin especificar' }}</td>
                                 <td class="text-right bg-ventas">${{ number_format($data['total'], 2) }}</td>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        @foreach($data['metodos'] as $metodo => $detalle)
+                                        <div class="mb-1">
+                                            <span class="badge badge-pill bg-light text-dark d-flex align-items-center justify-content-between">
+                                                <span class="d-flex align-items-center">
+                                                    {{ $metodo }}
+                                                </span>
+                                                <span class="ml-2 font-weight-bold">${{ number_format($detalle['total'], 2) }}</span>
+                                            </span>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                </td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -343,6 +351,7 @@
                             <tr>
                                 <td>TOTAL</td>
                                 <td class="text-right bg-ventas">${{ number_format($totalContado, 2) }}</td>
+                                <td></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -363,6 +372,7 @@
                             <tr>
                                 <th>Trabajo</th>
                                 <th class="text-right bg-ventas">Monto</th>
+                                <th class="text-center">Métodos de Pago</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -371,6 +381,20 @@
                             <tr>
                                 <td>{{ $trabajo ?: 'Sin especificar' }}</td>
                                 <td class="text-right bg-ventas">${{ number_format($data['total'], 2) }}</td>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        @foreach($data['metodos'] as $metodo => $detalle)
+                                        <div class="mb-1">
+                                            <span class="badge badge-pill bg-light text-dark d-flex align-items-center justify-content-between">
+                                                <span class="d-flex align-items-center">
+                                                    {{ $metodo }}
+                                                </span>
+                                                <span class="ml-2 font-weight-bold">${{ number_format($detalle['total'], 2) }}</span>
+                                            </span>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                </td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -378,6 +402,7 @@
                             <tr>
                                 <td>TOTAL</td>
                                 <td class="text-right bg-ventas">${{ number_format($totalCredito, 2) }}</td>
+                                <td></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -414,6 +439,53 @@
                         <td class="text-right bg-resumen">{{ $totalTrabajos }}</td>
                     </tr>
                 </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4 shadow-soft">
+    <div class="card-header bg-light">
+        <h3 class="card-title text-gray-800">Ventas por Cliente</h3>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th>Cliente</th>
+                        <th class="text-right bg-ventas">Ventas al Contado</th>
+                        <th class="text-right bg-ventas">Ventas a Crédito</th>
+                        <th class="text-right bg-gray-200">Total General</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @php
+                        $totalContadoClientes = 0;
+                        $totalCreditoClientes = 0;
+                    @endphp
+                    
+                    @foreach($ventasPorCliente as $cliente)
+                    <tr>
+                        <td class="font-weight-bold">{{ $cliente['cliente'] }}</td>
+                        <td class="text-right bg-ventas">${{ number_format($cliente['ventas_contado'], 2) }}</td>
+                        <td class="text-right bg-ventas">${{ number_format($cliente['ventas_credito'], 2) }}</td>
+                        <td class="text-right font-weight-bold bg-gray-100">${{ number_format($cliente['total_ventas'], 2) }}</td>
+                        
+                        @php
+                            $totalContadoClientes += $cliente['ventas_contado'];
+                            $totalCreditoClientes += $cliente['ventas_credito'];
+                        @endphp
+                    </tr>
+                    @endforeach
+
+                    <tr class="font-weight-bold bg-gray-100">
+                        <td>TOTAL</td>
+                        <td class="text-right bg-ventas">${{ number_format($totalContadoClientes, 2) }}</td>
+                        <td class="text-right bg-ventas">${{ number_format($totalCreditoClientes, 2) }}</td>
+                        <td class="text-right bg-gray-200">${{ number_format($totalContadoClientes + $totalCreditoClientes, 2) }}</td>
+                    </tr>
+                </tbody>
             </table>
         </div>
     </div>
@@ -720,6 +792,7 @@
             }
         });
     });
+
 </script>
 @stop
 
