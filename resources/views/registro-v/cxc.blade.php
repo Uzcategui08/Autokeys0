@@ -16,12 +16,6 @@
                             <span id="card_title">
                                 {{ __('Ventas') }}
                             </span>
-
-                            <div class="float-right">
-                                <a href="{{ route('registro-vs.create') }}" class="btn btn-secondary btn-m float-right" data-placement="left">
-                                    {{ __('Crear Nuevo') }}
-                                </a>
-                            </div>
                         </div>
                     </div>
 

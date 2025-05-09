@@ -495,7 +495,7 @@ return [
         'can' => 'admin',
     ],
     [
-        'text' => 'Movimientos',
+        'text' => 'Reportes',
         'icon' => 'fas fa-fw fa-chart-area',
         'can' => 'admin',
         'submenu' => [
@@ -533,7 +533,7 @@ return [
         'can' => 'admin',
     ],
     [
-        'text' => 'Usuarios',
+        'text' => 'Perfil',
         'url' => 'profile',
         'icon' => 'fas fa-fw fa-users-cog',
         'can' => 'admin',
