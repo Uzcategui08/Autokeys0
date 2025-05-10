@@ -51,20 +51,20 @@
 
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group mb-2 mb20">
-                            <label for="subcategoria" class="form-label">{{ __('Subcategoría') }}</label>
-                            <select name="subcategoria" id="subcategoria" class="form-control @error('subcategoria') is-invalid @enderror">
-                                <option value="">-- Seleccione --</option>
-                                <option value="mantenimiento" {{ old('subcategoria', $prestamo?->subcategoria) == 'mantenimiento' ? 'selected' : '' }}>Mantenimiento de equipos</option>
-                                <option value="repuestos" {{ old('subcategoria', $prestamo?->subcategoria) == 'repuestos' ? 'selected' : '' }}>Repuestos y componentes</option>
-                                <option value="herramientas" {{ old('subcategoria', $prestamo?->subcategoria) == 'herramientas' ? 'selected' : '' }}>Herramientas</option>
-                                <option value="software" {{ old('subcategoria', $prestamo?->subcategoria) == 'software' ? 'selected' : '' }}>Licencias de software</option>
-                                <option value="consumibles" {{ old('subcategoria', $prestamo?->subcategoria) == 'consumibles' ? 'selected' : '' }}>Materiales consumibles</option>
-                                <option value="combustible" {{ old('subcategoria', $prestamo?->subcategoria) == 'combustible' ? 'selected' : '' }}>Combustible y viáticos</option>
-                                <option value="capacitacion" {{ old('subcategoria', $prestamo?->subcategoria) == 'capacitacion' ? 'selected' : '' }}>Capacitación</option>
-                                <option value="otros" {{ old('subcategoria', $prestamo?->subcategoria) == 'otros' ? 'selected' : '' }}>Otros prestamos</option>
+                        <div class="form-group mb-3">
+                            <label for="subcategoria" class="form-label fw-bold">{{ __('Subcategoría') }}</label>
+                            <select name="subcategoria" class="form-control select2" id="subcategoria" required>
+                                <option value="" disabled>{{ __('Seleccionar Subcategoría') }}</option>
+                                @foreach($categorias as $categoria)
+                                    <option value="{{ $categoria->id_categoria }}"
+                                        {{ (old('subcategoria', $prestamo?->subcategoria ?? null)) == $categoria->id_categoria ? 'selected' : '' }}>
+                                        {{ $categoria->nombre }}
+                                    </option>
+                                @endforeach
                             </select>
-                            {!! $errors->first('subcategoria', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
+                            @error('subcategoria')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -369,6 +369,7 @@
     actualizarListaPagos();
     actualizarMaximoPago();
 });
+
 </script>
 
 <style>

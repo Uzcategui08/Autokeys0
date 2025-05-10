@@ -51,22 +51,20 @@
 
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group mb-2 mb20">
-                            <label for="subcategoria" class="form-label">{{ __('Subcategoría') }}</label>
-                            <select name="subcategoria" id="subcategoria" class="form-control @error('subcategoria') is-invalid @enderror">
-                                <option value="">-- Seleccione --</option>
-                                <option value="compras_insumos" {{ old('subcategoria', $gasto?->subcategoria) == 'compras_insumos' ? 'selected' : '' }}>Compras de insumos</option>
-                                <option value="gasolina" {{ old('subcategoria', $gasto?->subcategoria) == 'gasolina' ? 'selected' : '' }}>Gasolina</option>
-                                <option value="mantenimiento_vanes" {{ old('subcategoria', $gasto?->subcategoria) == 'mantenimiento_vanes' ? 'selected' : '' }}>Mantenimiento a Vanes</option>
-                                <option value="salario_cerrajero" {{ old('subcategoria', $gasto?->subcategoria) == 'salario_cerrajero' ? 'selected' : '' }}>Salario Cerrajero</option>
-                                <option value="depreciacion_maquinas" {{ old('subcategoria', $gasto?->subcategoria) == 'depreciacion_maquinas' ? 'selected' : '' }}>Depreciación de Máquinas</option>
-                                <option value="seguros_vehiculos" {{ old('subcategoria', $gasto?->subcategoria) == 'seguros_vehiculos' ? 'selected' : '' }}>Seguros de Vehículos</option>
-                                <option value="alquiler_pulga" {{ old('subcategoria', $gasto?->subcategoria) == 'alquiler_pulga' ? 'selected' : '' }}>Alquiler Pulga</option>
-                                <option value="codigos" {{ old('subcategoria', $gasto?->subcategoria) == 'codigos' ? 'selected' : '' }}>Códigos</option>
-                                <option value="servicios_subcontratados" {{ old('subcategoria', $gasto?->subcategoria) == 'servicios_subcontratados' ? 'selected' : '' }}>Servicios Subcontratados</option>
-                                <option value="gasto_extra" {{ old('subcategoria', $gasto?->subcategoria) == 'gasto_extra' ? 'selected' : '' }}>Gasto Extra</option>
+                        <div class="form-group mb-3">
+                            <label for="subcategoria" class="form-label fw-bold">{{ __('Subcategoría') }}</label>
+                            <select name="subcategoria" class="form-control select2" id="subcategoria" required>
+                                <option value="" disabled>{{ __('Seleccionar Subcategoría') }}</option>
+                                @foreach($categorias as $categoria)
+                                    <option value="{{ $categoria->id_categoria }}"
+                                        {{ (old('subcategoria', $prestamo?->subcategoria ?? null)) == $categoria->id_categoria ? 'selected' : '' }}>
+                                        {{ $categoria->nombre }}
+                                    </option>
+                                @endforeach
                             </select>
-                            {!! $errors->first('subcategoria', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
+                            @error('subcategoria')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
                     <div class="col-md-6">

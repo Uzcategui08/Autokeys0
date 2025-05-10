@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use App\Models\Categoria;
 
 class GastoController extends Controller
 {
@@ -26,7 +27,8 @@ class GastoController extends Controller
         $gasto->f_gastos = now()->format('Y-m-d');
         $gasto->estatus = 'pendiente';
         $metodos = TiposDePago::all();
-        return view('gasto.create', compact('gasto', 'empleado' , 'metodos'));
+        $categorias = Categoria::all();
+        return view('gasto.create', compact('gasto', 'empleado' , 'metodos', 'categorias'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -36,7 +38,7 @@ class GastoController extends Controller
                 'f_gastos' => 'required|date',
                 'id_tecnico' => 'required|integer|min:1',
                 'descripcion' => 'required|string|max:500',
-                'subcategoria' => 'required|string',
+                'subcategoria' => 'required',
                 'valor' => 'required|numeric|min:0',
                 'estatus' => 'required|in:pendiente,parcialmente_pagado,pagado',
             ]);
@@ -102,7 +104,7 @@ class GastoController extends Controller
                 'f_gastos' => 'required|date',
                 'id_tecnico' => 'required|integer|min:1',
                 'descripcion' => 'required|string|max:500',
-                'subcategoria' => 'required|string',
+                'subcategoria' => 'required',
                 'valor' => 'required|numeric|min:0',
                 'pagos' => 'required|json'
             ]);

@@ -46,23 +46,17 @@
                                             <td>{{ \Carbon\Carbon::parse($gasto->f_gastos)->format('m/d/Y') }}</td>
                                             <td>{{ $gasto->empleado->nombre }}</td>
                                             <td>{{ $gasto->descripcion }}</td>
-                                            <?php
-                                            $subcategorias = [
-                                                'compras_insumos' => 'Compras de insumos',
-                                                'gasolina' => 'Gasolina',
-                                                'mantenimiento_vanes' => 'Mantenimiento a Vanes',
-                                                'salario_cerrajero' => 'Salario Cerrajero',
-                                                'depreciacion_maquinas' => 'Depreciación de máquinas',
-                                                'seguros_vehiculos' => 'Seguros de vehículos',
-                                                'alquiler_pulga' => 'Alquiler Pulga',
-                                                'codigos' => 'Códigos',
-                                                'servicios_subcontratados' => 'Servicios subcontratados',
-                                                'gasto_extra' => 'Gasto Extra',
-                                            ];
-                                            ?>
-                                            <td>{{ $subcategorias[$gasto->subcategoria] ?? $gasto->subcategoria }}</td>
+                                            <td>{{ $gasto->categoria->nombre }}</td>
                                             <td>{{ $gasto->valor }}</td>
-                                            <td>{{ $gasto->estatus }}</td>
+                                            <?php 
+                                                $estatus = $gasto->estatus;
+                                                $estatuses = [
+                                                    'pendiente' => 'Pendiente',
+                                                    'parcialmente_pagado' => 'Parcial',
+                                                    'pagado' => 'Pagado'
+                                                ];
+                                            ?>
+                                            <td>{{ $estatuses[$estatus] ?? 'N/A' }}</td>
                                             <td>
                                                 <form onsubmit="return confirmDelete(this)" action="{{ route('gastos.destroy', $gasto->id_gastos) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
                                                     <a class="btn btn-sm btn-primary" href="{{ route('gastos.show', $gasto->id_gastos) }}">

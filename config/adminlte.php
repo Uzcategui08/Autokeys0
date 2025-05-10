@@ -483,6 +483,12 @@ return [
         'can' => 'admin',
     ],
     [
+        'text' => 'Subcategorías',
+        'url' => 'categorias',
+        'icon' => 'fas fa-fw fa-tags',
+        'can' => 'admin',
+    ],
+    [
         'text' => 'Estado de Resultados',
         'url' => 'estadisticas-ventas',
         'icon' => 'fas fa-fw fa-chart-line',

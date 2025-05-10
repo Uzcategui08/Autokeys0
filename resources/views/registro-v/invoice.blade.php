@@ -203,6 +203,18 @@
                     <strong>{{ $itemGroup['trabajo'] }}</strong>
                 </div>
 
+                @if(isset($itemGroup['descripcion']) && $itemGroup['descripcion'])
+                <div class="trabajo-descripcion">
+                    <strong>Description:</strong> {{ $itemGroup['descripcion'] }}
+                </div>
+                @endif
+
+                @if(isset($itemGroup['precio_trabajo']) && $itemGroup['precio_trabajo'])
+                <div class="trabajo-precio">
+                    <strong>Price:</strong> ${{ number_format($itemGroup['precio_trabajo'], 2) }}
+                </div>
+                @endif
+
                 <table class="productos-table">
                     <thead>
                         <tr>
@@ -259,11 +271,11 @@
             <div class="resumen-pagos">
                 <div class="resumen-row">
                     <span>Total Paid:</span>
-                    <span>${{ number_format($registroV->total_pagado, 2) }}</span>
+                    <span>${{ number_format($total_pagado, 2) }}</span>
                 </div>
                 <div class="resumen-row resumen-total">
                     <span>Balance Due:</span>
-                    <span>${{ number_format($registroV->saldo_pendiente, 2) }}</span>
+                    <span>${{ number_format($saldo_pendiente, 2) }}</span>
                 </div>
             </div>
         @else

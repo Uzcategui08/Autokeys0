@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Requests\PrestamoRequest;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use App\Models\Categoria;
 
 class PrestamoController extends Controller
 {
@@ -17,9 +18,10 @@ class PrestamoController extends Controller
      */
     public function index(Request $request): View
     {
-        $prestamos = Prestamo::paginate();
+        $prestamos = Prestamo::with('empleado', 'subcategoria')->paginate(10);
+        $categorias = Categoria::all();
 
-        return view('prestamo.index', compact('prestamos'))
+        return view('prestamo.index', compact('prestamos', 'categorias'))
             ->with('i', ($request->input('page', 1) - 1) * $prestamos->perPage());
     }
 
@@ -31,8 +33,9 @@ class PrestamoController extends Controller
         $prestamo = new Prestamo();
         $empleado = \App\Models\Empleado::all();
         $metodos = \App\Models\TiposDePago::all();
+        $categorias = \App\Models\Categoria::all();
 
-        return view('prestamo.create', compact('prestamo', 'empleado', 'metodos'));
+        return view('prestamo.create', compact('prestamo', 'empleado', 'metodos', 'categorias'));
     }
 
     /**
@@ -45,7 +48,7 @@ class PrestamoController extends Controller
                 'f_prestamo' => 'required|date',
                 'id_empleado' => 'required|integer|min:1',
                 'descripcion' => 'required|string|max:500',
-                'subcategoria' => 'required|string',
+                'subcategoria' => 'required',
                 'valor' => 'required|numeric|min:0',
                 'estatus' => 'required|in:pendiente,parcialmente pagado,pagado',
             ]);
@@ -90,6 +93,7 @@ class PrestamoController extends Controller
     public function show($id): View
     {
         $prestamo = Prestamo::with('empleado')->findOrFail($id);
+        $categorias = \App\Models\Categoria::all();
         
         $pagos = is_string($prestamo->pagos) ? json_decode($prestamo->pagos, true) : ($prestamo->pagos ?? []);
 
@@ -99,7 +103,8 @@ class PrestamoController extends Controller
             'prestamo' => $prestamo,
             'metodos' => $metodos,
             'total_pagado' => $this->calcularTotalPagado($pagos),
-            'saldo_pendiente' => $prestamo->valor - $this->calcularTotalPagado($pagos)
+            'saldo_pendiente' => $prestamo->valor - $this->calcularTotalPagado($pagos),
+            'categorias' => $categorias
         ]);
     }
 
@@ -111,7 +116,8 @@ class PrestamoController extends Controller
         $prestamo = Prestamo::find($id);
         $empleado = \App\Models\Empleado::all();
         $metodos = \App\Models\TiposDePago::all();
-        return view('prestamo.edit', compact('prestamo', 'empleado', 'metodos'));
+        $categorias = \App\Models\Categoria::all();
+        return view('prestamo.edit', compact('prestamo', 'empleado', 'metodos', 'categorias'));
     }
 
     /**

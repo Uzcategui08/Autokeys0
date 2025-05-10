@@ -54,6 +54,12 @@ class Prestamo extends Model
         return $this->belongsTo(\App\Models\Empleado::class, 'id_empleado', 'id_empleado');
     }
 
+    
+    public function subcategoria()
+    {
+        return $this->belongsTo(Categoria::class, 'subcategoria', 'id_categoria');
+    }
+
     public function generarCuotas()
     {
         $valorPorCuota = $this->valor / $this->cuotas;

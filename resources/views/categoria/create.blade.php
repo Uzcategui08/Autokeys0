@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Préstamos')
+@section('title', 'Subcategorías')
 
 @section('content_header')
 <h1>Crear</h1>
@@ -10,21 +10,20 @@
     <section class="content container-fluid">
         <div class="row">
             <div class="col-md-12">
-
                 <div class="card card-default">
                     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="float-left">
-                            <span class="card-title">{{ __('Préstamo') }}</span>
+                            <span class="card-title">{{ __('Subcategoría') }}</span>
                         </div>
                         <div class="ml-auto">
-                            <a class="btn btn-secondary btn-m" href="{{ route('prestamos.index') }}"> {{ __('Volver') }}</a>
+                            <a class="btn btn-secondary btn-m" href="{{ route('categorias.index') }}"> {{ __('Volver') }}</a>
                         </div>
                     </div>
                     <div class="card-body bg-white">
-                        <form method="POST" action="{{ route('prestamos.store') }}"  role="form" enctype="multipart/form-data">
+                        <form method="POST" action="{{ route('categorias.store') }}"  role="form" enctype="multipart/form-data">
                             @csrf
 
-                            @include('prestamo.form')
+                            @include('categoria.form')
 
                         </form>
                     </div>

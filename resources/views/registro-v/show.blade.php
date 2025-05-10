@@ -30,8 +30,7 @@
                     <div class="col-sm-4 invoice-col">
                         <strong>Técnico</strong>
                         <address>
-                            <i class="fas fa-user mr-1"></i> {{ $registroV->tecnico }}<br>
-                            <i class="fas fa-tools mr-1"></i> {{ ucfirst($registroV->trabajo) }}<br>
+                            <i class="fas fa-user mr-1"></i> {{ $registroV->empleado->nombre }}<br>
                             <i class="fas fa-info-circle mr-1"></i> Estado: 
                             <span class="badge 
                                 @if($registroV->estatus == 'pagado') badge-success 
@@ -92,24 +91,31 @@
                         <div class="card card-outline card-info">
                             <div class="card-header">
                                 <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Items de Trabajo</h3>
-                                <div class="card-tools">
-                                    <span class="badge badge-info p-2">
-                                        Total: ${{ number_format(array_reduce($items, function($carry, $itemGroup) {
-                                            return $carry + array_reduce($itemGroup['productos'] ?? [], function($total, $producto) {
-                                                return $total + (($producto['precio'] ?? 0) * ($producto['cantidad'] ?? 1));
-                                            }, 0);
-                                        }, 0), 2) }}
-                                    </span>
-                                </div>
                             </div>
                             <div class="card-body">
                                 @if(!empty($items) && count($items) > 0)
                                     @foreach($items as $itemIndex => $itemGroup)
                                         <div class="mb-4 p-3 border rounded bg-light">
                                             <h5 class="mb-3"><i class="fas fa-wrench mr-2"></i>Trabajo #{{ $itemIndex + 1 }}</h5>
-                                            <div class="form-group mb-3">
-                                                <label class="font-weight-bold">Descripción:</label>
-                                                <p class="form-control bg-white">{{ $itemGroup['trabajo'] ?? 'N/A' }}</p>
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <div class="form-group mb-4">
+                                                        <label class="font-weight-bold">Trabajo:</label>
+                                                        <p class="form-control bg-white">{{ $itemGroup['trabajo'] ?? 'N/A' }}</p>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group mb-4">
+                                                        <label class="font-weight-bold">Precio Trabajo:</label>
+                                                        <p class="form-control bg-white text-right">${{ number_format($itemGroup['precio_trabajo'] ?? 0, 2) }}</p>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group mb-4">
+                                                        <label class="font-weight-bold">Descripción Detallada:</label>
+                                                        <p class="form-control bg-white">{{ $itemGroup['descripcion'] ?? 'No hay descripción adicional' }}</p>
+                                                    </div>
+                                                </div>
                                             </div>
                                             
                                             @if(!empty($itemGroup['productos']))
@@ -185,6 +191,7 @@
                                                 <tr>
                                                     <th>Descripción</th>
                                                     <th class="text-right">Monto</th>
+                                                    <th class="text-center">Subcategoría</th>
                                                     <th>Método de Pago</th>
                                                     <th>Estado</th>
                                                 </tr>
@@ -194,6 +201,13 @@
                                                 <tr>
                                                     <td>{{ $costo['descripcion'] ?? 'N/A' }}</td>
                                                     <td class="text-right">${{ number_format($costo['monto'] ?? 0, 2) }}</td>
+                                                    <td class="text-center">
+                                                        @foreach($categorias as $categoria)
+                                                            @if($categoria->id_categoria == ($costo['subcategoria'] ?? null))
+                                                                {{ $categoria->nombre }}
+                                                            @endif
+                                                        @endforeach
+                                                    </td>
                                                     <td>
                                                         @foreach($tiposDePago as $tipo)
                                                             @if($tipo->id == ($costo['metodo_pago'] ?? null))
@@ -214,7 +228,7 @@
                                             </tbody>
                                             <tfoot class="bg-gray">
                                                 <tr>
-                                                    <th colspan="3" class="text-right">% Cerrajero (36%):</th>
+                                                    <th colspan="4" class="text-right">% Cerrajero (36%):</th>
                                                     <th class="text-right">${{ number_format($registroV->porcentaje_c, 2) }}</th>
                                                 </tr>
                                             </tfoot>
@@ -247,6 +261,7 @@
                                                 <tr>
                                                     <th>Descripción</th>
                                                     <th class="text-right">Monto</th>
+                                                    <th class="text-center">Subcategoría</th>
                                                     <th>Método de Pago</th>
                                                     <th>Estado</th>
                                                 </tr>
@@ -256,6 +271,13 @@
                                                 <tr>
                                                     <td>{{ $gasto['descripcion'] ?? 'N/A' }}</td>
                                                     <td class="text-right">${{ number_format($gasto['monto'] ?? 0, 2) }}</td>
+                                                    <td class="text-center">
+                                                        @foreach($categorias as $categoria)
+                                                            @if($categoria->id_categoria == ($gasto['subcategoria'] ?? null))
+                                                                {{ $categoria->nombre }}
+                                                            @endif
+                                                        @endforeach
+                                                    </td>
                                                     <td>
                                                         @foreach($tiposDePago as $tipo)
                                                             @if($tipo->id == ($gasto['metodo_pago'] ?? null))

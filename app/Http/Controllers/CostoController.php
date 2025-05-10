@@ -9,15 +9,18 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use App\Models\Categoria;
 
 
 class CostoController extends Controller
 {
     public function index(Request $request): View
     {
-        $costos = Costo::paginate(10);
-        return view('costo.index', compact('costos'))
-            ->with('i', ($request->input('page', 1) - 1) * $costos->perPage());
+        $costos = Costo::with(['empleado', 'categoria'])
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+        
+        return view('costo.index', compact('costos'));
     }
 
     public function create(): View
@@ -27,7 +30,8 @@ class CostoController extends Controller
         $costo->f_costos = now()->format('Y-m-d');
         $costo->estatus = 'pendiente';
         $metodos = TiposDePago::all();
-        return view('costo.create', compact('costo','empleado', 'metodos'));
+        $categorias = Categoria::all();
+        return view('costo.create', compact('costo','empleado', 'metodos', 'categorias'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -37,7 +41,7 @@ class CostoController extends Controller
                 'f_costos' => 'required|date',
                 'id_tecnico' => 'required|integer|min:1',
                 'descripcion' => 'required|string|max:500',
-                'subcategoria' => 'required|string',
+                'subcategoria' => 'required',
                 'valor' => 'required|numeric|min:0',
                 'estatus' => 'required|in:pendiente,parcialmente_pagado,pagado',
             ]);
@@ -80,12 +84,14 @@ class CostoController extends Controller
     {
         $costo = Costo::with('empleado')->findOrFail($id);
         $metodos = TiposDePago::all()->pluck('name', 'id');
+        $categorias = Categoria::all();
         
         return view('costo.show', [
             'costo' => $costo,
             'metodos' => $metodos,
             'total_pagado' => $this->calcularTotalPagado($costo->pagos),
-            'saldo_pendiente' => $costo->valor - $this->calcularTotalPagado($costo->pagos)
+            'saldo_pendiente' => $costo->valor - $this->calcularTotalPagado($costo->pagos),
+            'categorias' => $categorias
         ]);
     }
 
@@ -94,7 +100,8 @@ class CostoController extends Controller
         $costo = Costo::findOrFail($id);
         $empleado = Empleado::where('cargo', '1')->get();
         $metodos = TiposDePago::all();
-        return view('costo.edit', compact('costo', 'empleado', 'metodos'));
+        $categorias = Categoria::all();
+        return view('costo.edit', compact('costo', 'empleado', 'metodos', 'categorias'));
     }
 
     public function update(Request $request, $id): RedirectResponse
@@ -104,7 +111,7 @@ class CostoController extends Controller
                 'f_costos' => 'required|date',
                 'id_tecnico' => 'required|integer|min:1',
                 'descripcion' => 'required|string|max:500',
-                'subcategoria' => 'required|string',
+                'subcategoria' => 'required',
                 'valor' => 'required|numeric|min:0',
                 'pagos' => 'required|json'
             ]);
