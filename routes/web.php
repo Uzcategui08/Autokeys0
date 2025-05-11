@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TransferenciaController;
 use App\Http\Controllers\TrabajoController;
 use App\Models\Inventario;
+use App\Http\Controllers\CategoriaController;
 use Illuminate\Http\Request;
 use App\Models\Trabajo;
 
@@ -181,4 +182,6 @@ Route::resource('trabajos', TrabajoController::class);
 Route::get('/obtener-trabajos', [TrabajoController::class, 'obtenerTrabajos'])->name('obtener.trabajos');
 
 Route::get('/obtener-todos-trabajos', [RegistroVController::class, 'obtenerTodosLosTrabajos']);
+
+Route::resource('categorias', CategoriaController::class);
 

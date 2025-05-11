@@ -44,9 +44,24 @@
                                             <td>{{ \Carbon\Carbon::parse($prestamo->f_prestamos)->format('m/d/Y') }}</td>
                                             <td>{{ $prestamo->empleado->nombre }}</td>
                                             <td>{{ $prestamo->descripcion }}</td>
-                                            <td>{{ $prestamo->subcategoria }}</td>
+                                            <td>
+                                                @php
+                                                    $categoriaSeleccionada = $categorias->firstWhere('id_categoria', $prestamo->subcategoria);
+                                                @endphp
+                                                {{ $categoriaSeleccionada->nombre ?? 'N/A' }}
+                                            </td>
                                             <td>{{ $prestamo->valor }}</td>
-                                            <td>{{ $prestamo->estatus }}</td>
+
+                                            <td>
+                                                @php
+                                                    $estatuses = [
+                                                        'pendiente' => 'Pendiente',
+                                                        'parcialmente pagado' => 'Parcial',
+                                                        'pagado' => 'Pagado'
+                                                    ];
+                                                @endphp
+                                                {{ $estatuses[$prestamo->estatus] ?? 'N/A' }}
+                                            </td>
                                             <td>
                                                 <form onsubmit="return confirmDelete(this)" action="{{ route('prestamos.destroy', $prestamo->id_prestamo) }}" method="POST" class="delete-form" style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
                                                     <a class="btn btn-sm btn-primary" href="{{ route('prestamos.show', $prestamo->id_prestamo) }}">

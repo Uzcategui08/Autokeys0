@@ -25,7 +25,7 @@ class CostoRequest extends FormRequest
 			'f_costos' => 'required',
 			'id_tecnico' => 'required',
 			'descripcion' => 'required|string',
-			'subcategoria' => 'required|string',
+			'subcategoria' => 'required',
 			'valor' => 'required',
 			'estatus' => 'required',
         ];

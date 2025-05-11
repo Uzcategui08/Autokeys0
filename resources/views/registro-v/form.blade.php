@@ -115,11 +115,17 @@
                             </button>
                         </div>
                     </div>
-                    
-                                                       
                     <div class="card-body">
                         <div class="form-group" id="items-container">
-                            <!-- Los items dinámicos se insertarán aquí -->
+
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-4 offset-md-8">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light fw-bold">Total Trabajos:</span>
+                                    <input type="text" class="form-control text-end fw-bold" id="total-trabajos" value="$0.00" readonly>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -438,6 +444,7 @@ $(document).ready(function() {
         actualizarResumen();
         actualizarMaximoPago();
         calcularPorcentajesCostos();
+        calcularPorcentajeCerrajero();
     });
 
     $('#estatus').on('change', function() {
@@ -665,6 +672,11 @@ $(document).ready(function() {
             metodoPagoOptions += `<option value="{{ $tipo->id }}" ${isExisting && costoData.metodo_pago == '{{ $tipo->id }}' ? 'selected' : ''}>{{ $tipo->name }}</option>`;
         @endforeach
 
+        let subcategoriaOptions = '<option value="">Seleccione subcategoría</option>';
+        @foreach($categorias as $categoria)
+            subcategoriaOptions += `<option value="{{ $categoria->id_categoria }}" ${isExisting && costoData.subcategoria == '{{ $categoria->id_categoria }}' ? 'selected' : ''}>{{ $categoria->nombre }}</option>`;
+        @endforeach
+
         const newCostoGroup = $(`
             <div class="costo-group mb-4 p-3 border rounded" data-index="${currentIndex}">
                 <input type="hidden" name="costos_extras[${currentIndex}][id_costos]" value="${isExisting ? (costoData.id_costos || '') : ''}">
@@ -674,8 +686,7 @@ $(document).ready(function() {
                             <label class="form-label">Descripción</label>
                             <input type="text" name="costos_extras[${currentIndex}][descripcion]" 
                                 class="form-control descripcion-ce" 
-                                value="${isExisting ? (costoData.descripcion || '') : ''}" 
-                                >
+                                value="${isExisting ? (costoData.descripcion || '') : ''}">
                         </div>
                     </div>
                     
@@ -684,16 +695,25 @@ $(document).ready(function() {
                             <label class="form-label">Monto</label>
                             <input type="number" step="0.01" name="costos_extras[${currentIndex}][monto]" 
                                 class="form-control monto-ce" 
-                                value="${isExisting ? (costoData.monto || '0.00') : '0.00'}" 
-                                >
+                                value="${isExisting ? (costoData.monto || '0.00') : '0.00'}">
                         </div>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Subcategoría</label>
+                            <select name="costos_extras[${currentIndex}][subcategoria]" 
+                                    class="form-control select2-subcategoria">
+                                ${subcategoriaOptions}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="col-md-2">
                         <div class="form-group mb-3">
                             <label class="form-label">Método de Pago</label>
                             <select name="costos_extras[${currentIndex}][metodo_pago]" 
-                                    class="form-control metodo-pago select2" >
+                                    class="form-control metodo-pago select2">
                                 ${metodoPagoOptions}
                             </select>
                         </div>
@@ -725,6 +745,11 @@ $(document).ready(function() {
             width: '100%',
             dropdownAutoWidth: true
         });
+
+        newCostoGroup.find('.select2-subcategoria').select2({
+            width: '100%',
+            dropdownAutoWidth: true
+        });
         
         costoIndex++;
     }
@@ -735,6 +760,22 @@ $(document).ready(function() {
             total += parseFloat($(this).val()) || 0;
         });
         return total;
+    }
+
+    function calcularPorcentajeCerrajero() {
+        const valorVenta = parseFloat($('#valor_v').val()) || 0;
+        const totalCostos = calcularTotalCostos(); 
+        const totalGastos = calcularTotalGastos(); 
+
+        console.log("Debug:", {
+            valorVenta,
+            totalCostos,
+            totalGastos,
+            formula: (valorVenta - totalCostos - totalGastos) * 0.36
+        });
+
+        const porcentaje = (valorVenta - totalCostos - totalGastos) * 0.36;
+        $('#porcentaje_c').val(Math.max(0, porcentaje).toFixed(2));
     }
 
     $(document).on('click', '.btn-add-costo', function() {
@@ -753,7 +794,16 @@ $(document).ready(function() {
     $(document).ready(function() {
         if (costosExistentes && costosExistentes.length > 0) {
             costosExistentes.forEach(costo => {
-                addNewCostoGroup(costo);
+                const formattedCosto = {
+                    id_costos: costo.id_costos,
+                    descripcion: costo.descripcion,
+                    monto: costo.monto,
+                    metodo_pago: costo.metodo_pago,
+                    cobro: costo.cobro,
+                    fecha: costo.fecha,
+                    subcategoria: costo.subcategoria || costo.id_categoria
+                };
+                addNewCostoGroup(formattedCosto);
             });
         } else {
             addNewCostoGroup(); 
@@ -761,7 +811,6 @@ $(document).ready(function() {
 
         calcularPorcentajeCerrajero();
     });
-
 
     /**************************************
      * SECCIÓN DE GASTOS 
@@ -778,6 +827,11 @@ $(document).ready(function() {
             metodoPagoOptions += `<option value="{{ $tipo->id }}" ${isExisting && gastoData.metodo_pago == '{{ $tipo->id }}' ? 'selected' : ''}>{{ $tipo->name }}</option>`;
         @endforeach
 
+        let subcategoriaOptions = '<option value="">Seleccione subcategoría</option>';
+        @foreach($categorias as $categoria)
+            subcategoriaOptions += `<option value="{{ $categoria->id_categoria }}" ${isExisting && gastoData.subcategoria == '{{ $categoria->id_categoria }}' ? 'selected' : ''}>{{ $categoria->nombre }}</option>`;
+        @endforeach
+
         const newGastoGroup = $(`
             <div class="gasto-group mb-4 p-3 border rounded" data-index="${currentIndex}">
                 <input type="hidden" name="gastos[${currentIndex}][id_gastos]" value="${isExisting ? (gastoData.id_gastos || '') : ''}">
@@ -787,8 +841,7 @@ $(document).ready(function() {
                             <label class="form-label">Descripción</label>
                             <input type="text" name="gastos[${currentIndex}][descripcion]" 
                                 class="form-control descripcion-gasto" 
-                                value="${isExisting ? (gastoData.descripcion || '') : ''}" 
-                                >
+                                value="${isExisting ? (gastoData.descripcion || '') : ''}">
                         </div>
                     </div>
                     
@@ -797,16 +850,25 @@ $(document).ready(function() {
                             <label class="form-label">Monto</label>
                             <input type="number" step="0.01" name="gastos[${currentIndex}][monto]" 
                                 class="form-control monto-gasto" 
-                                value="${isExisting ? (gastoData.valor || '0.00') : '0.00'}" 
-                                >
+                                value="${isExisting ? (gastoData.valor || '0.00') : '0.00'}">
                         </div>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Subcategoría</label>
+                            <select name="gastos[${currentIndex}][subcategoria]" 
+                                    class="form-control select2-subcategoria">
+                                ${subcategoriaOptions}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="col-md-2">
                         <div class="form-group mb-3">
                             <label class="form-label">Método de Pago</label>
                             <select name="gastos[${currentIndex}][metodo_pago]" 
-                                    class="form-control metodo-pago-gasto select2" >
+                                    class="form-control metodo-pago-gasto select2">
                                 ${metodoPagoOptions}
                             </select>
                         </div>
@@ -839,6 +901,11 @@ $(document).ready(function() {
             dropdownAutoWidth: true
         });
 
+        newGastoGroup.find('.select2-subcategoria').select2({
+            width: '100%',
+            dropdownAutoWidth: true
+        });
+
         newGastoGroup.find('.monto-gasto').trigger('input');
         
         gastoIndex++;
@@ -850,16 +917,7 @@ $(document).ready(function() {
             const val = parseFloat($(this).val());
             if (!isNaN(val)) total += val;
         });
-        console.log("Total gastos calculado:", total); 
         return total;
-    }
-
-    function calcularPorcentajeCerrajero() {
-        const totalCostos = calcularTotalCostos();
-        const totalGastos = calcularTotalGastos();
-        const valorVenta = parseFloat($('#valor_v').val()) || 0;
-        const porcentaje = (valorVenta - totalCostos - totalGastos) * 0.36;
-        $('#porcentaje_c').val(porcentaje.toFixed(2));
     }
 
     $(document).on('click', '.btn-add-gasto', function() {
@@ -885,7 +943,8 @@ $(document).ready(function() {
                     monto: gasto.monto || gasto.valor,
                     metodo_pago: gasto.metodo_pago,
                     estatus: gasto.estatus,
-                    fecha: gasto.fecha
+                    fecha: gasto.fecha,
+                    subcategoria: gasto.subcategoria || gasto.id_categoria 
                 };
                 addNewGastoGroup(formattedGasto);
             });
@@ -894,53 +953,19 @@ $(document).ready(function() {
         }
 
         setTimeout(() => {
-            calcularPorcentajeCerrajero();
-        }, 300);
-
+        calcularTotalTrabajos();
+        actualizarValorVenta();
+        calcularPorcentajeCerrajero();
+        }, 500);
     });
+
+
     /**************************************
      * SECCIÓN DE ITEMS DE TRABAJO 
      **************************************/
     let itemGroupIndex = 0;
     const itemsExistentes = @json($registroV->items ?? []);
-
-    function cargarTrabajosEnSelect($select, trabajoSeleccionado = null) {
-        $.ajax({
-            url: '/obtener-todos-trabajos',
-            type: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                if (!Array.isArray(response)) {
-                    console.error('Respuesta inválida del servidor', response);
-                    mostrarError('Error en el formato de los trabajos recibidos');
-                    return;
-                }
-
-                let options = '<option value="">{{ __("Seleccionar Trabajo") }}</option>';
-
-                response.forEach(trabajo => {
-                    const selected = (trabajoSeleccionado == trabajo.id_trabajo || trabajoSeleccionado == trabajo.nombre) ? 'selected' : '';
-                    options += `<option value="${trabajo.id_trabajo}" ${selected}>${trabajo.nombre}</option>`;
-                });
-                
-                $select.html(options);
-
-                $select.select2({
-                    placeholder: "Seleccione un trabajo",
-                    width: '100%',
-                    dropdownParent: $select.closest('.item-group')
-                });
-                
-                if (trabajoSeleccionado) {
-                    $select.trigger('change');
-                }
-            },
-            error: function(xhr) {
-                console.error('Error al cargar trabajos:', xhr.responseText);
-                mostrarError('No se pudieron cargar los trabajos. Intente recargar la página.');
-            }
-        });
-    }
+    let totalTrabajos = 0;
 
     function verificarStock() {
         let sinStock = false;
@@ -969,11 +994,20 @@ $(document).ready(function() {
                     success: function(response) {
                         if (!response.suficiente) {
                             sinStock = true;
-                            mensajesError.push(`No hay suficiente stock para el producto ${productoSelect.find('option:selected').text()}. Stock disponible: ${response.stock}`);
+                            const productoNombre = productoSelect.find('option:selected').text().split('-')[1]?.trim();
+                            mensajesError.push(`
+                                <div class="mb-2">
+                                    <strong>${productoNombre}</strong>: 
+                                    Stock insuficiente en ${almacenSelect.find('option:selected').text()}.<br>
+                                    Disponible: ${response.stock || 0} - Requerido: ${cantidad}
+                                </div>
+                            `);
                         }
                     },
                     error: function() {
                         console.error('Error al verificar el stock');
+                        sinStock = true;
+                        mensajesError.push('Error al verificar disponibilidad de productos');
                     }
                 });
             }
@@ -993,28 +1027,100 @@ $(document).ready(function() {
         if (!verificacionStock.valido) {
             Swal.fire({
                 title: 'Error de Stock',
-                html: verificacionStock.mensajes.join('<br>'),
-                icon: 'warning',
-                confirmButtonText: 'Entendido'
+                html: `
+                    <div class="text-start">
+                        <h5 class="text-danger">Productos con stock insuficiente:</h5>
+                        ${verificacionStock.mensajes.join('')}
+                    </div>
+                `,
+                icon: 'error',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#d33',
+                scrollbarPadding: false
             });
             return false;
         }
 
         prepararDatosParaEnvio();
-        
         this.submit();
     });
 
-    function prepararDatosParaEnvio() {
-        $('.item-group').each(function() {
-            const $group = $(this);
-            const $selectTrabajo = $group.find('select[name$="[trabajo]"]');
-            const trabajoId = $selectTrabajo.val();
-            const trabajoNombre = $selectTrabajo.find('option:selected').text();
+    $(document).on('change', 'input[name$="[cantidad]"]', function() {
+        const $row = $(this).closest('.producto-row');
+        const productoSelect = $row.find('select[name$="[producto]"]');
+        const cantidad = parseInt($(this).val()) || 0;
+        const almacenSelect = $row.find('select[name$="[almacen]"]');
+        
+        if (productoSelect.val() && almacenSelect.val() && cantidad > 0) {
+            $.ajax({
+                url: '/verificar-stock',
+                type: 'GET',
+                data: {
+                    producto_id: productoSelect.val(),
+                    almacen_id: almacenSelect.val(),
+                    cantidad: cantidad
+                },
+                success: function(response) {
+                    if (!response.suficiente) {
+                        Swal.fire({
+                            title: 'Stock Insuficiente',
+                            html: `Solo hay ${response.stock} unidades disponibles`,
+                            icon: 'warning',
+                            confirmButtonText: 'Entendido'
+                        });
+                        $(this).val(response.stock > 0 ? response.stock : 0);
+                    }
+                }.bind(this)
+            });
+        }
+    });
 
-            $group.find('input[name$="[trabajo_id]"]').val(trabajoId);
-            $group.find('input[name$="[trabajo_nombre]"]').val(trabajoNombre);
+    function cargarTrabajosEnSelect($select, trabajoSeleccionado = null) {
+        return $.ajax({
+            url: '/obtener-todos-trabajos',
+            type: 'GET',
+            dataType: 'json'
+        }).then(function(response) {
+            let options = '<option value="">{{ __("Seleccionar Trabajo") }}</option>';
+
+            response.forEach(trabajo => {
+                const selected = trabajoSeleccionado == trabajo.id_trabajo ? 'selected' : '';
+                options += `<option value="${trabajo.id_trabajo}" ${selected} data-precio="${trabajo.precio || 0}">${trabajo.nombre}</option>`;
+            });
+            
+            $select.html(options);
+
+            $select.select2({
+                placeholder: "Seleccione un trabajo",
+                width: '100%',
+                dropdownParent: $select.closest('.item-group')
+            });
+
+            return $select; 
         });
+    }
+
+    function calcularTotalTrabajos() {
+        totalTrabajos = 0;
+        
+        $('.precio-trabajo').each(function() {
+            const precio = parseFloat($(this).val()) || 0;
+            totalTrabajos += precio;
+        });
+        
+        $('#total-trabajos').val('$' + totalTrabajos.toFixed(2));
+        actualizarValorVenta();
+        calcularPorcentajeCerrajero(); 
+    }
+
+    function actualizarValorVenta() {
+        const totalCostos = calcularTotalCostos();
+        const totalGastos = calcularTotalGastos();
+        const valorVenta = totalTrabajos;
+
+        $('#valor_v').val(valorVenta.toFixed(2)).trigger('input');
+
+        calcularPorcentajeCerrajero();
     }
 
     function cargarProductosEnSelect($select, idAlmacen, productoSeleccionado = null, nombreProducto = null, precio = null) {
@@ -1063,7 +1169,10 @@ $(document).ready(function() {
                     });
                     
                     $select.html(options).prop('disabled', false);
-                    $select.select2();
+                    $select.select2({
+                        width: '100%',
+                        dropdownParent: $select.closest('.item-group')
+                    });
                     
                     if (productoSeleccionado) {
                         $select.val(productoSeleccionado).trigger('change');
@@ -1082,7 +1191,10 @@ $(document).ready(function() {
                             </option>
                             <option value="">{{ __("Seleccionar Producto") }}</option>
                         `).prop('disabled', false);
-                        $select.select2();
+                        $select.select2({
+                            width: '100%',
+                            dropdownParent: $select.closest('.item-group')
+                        });
                     }
                 }
             });
@@ -1101,7 +1213,9 @@ $(document).ready(function() {
                             class="form-control select2-producto" ${productoData ? '' : 'disabled'}>
                         <option value="">{{ __("Seleccionar Producto") }}</option>
                         ${productoData ? `
-                            <option value="${productoData.producto}" selected>
+                            <option value="${productoData.producto}" selected
+                                    data-precio="${productoData.precio || 0}"
+                                    data-stock="${productoData.stock || 0}">
                                 ${productoData.codigo_producto || productoData.producto} - ${productoData.nombre_producto || 'Producto'}
                             </option>
                         ` : ''}
@@ -1112,13 +1226,13 @@ $(document).ready(function() {
                 <div class="col-md-2">
                     <label class="form-label">{{ __("Cantidad") }}</label>
                     <input type="number" name="items[${itemGroupIndex}][productos][${productoIndex}][cantidad]"
-                        class="form-control" placeholder="Cantidad" min="1"
-                        value="${productoData ? productoData.cantidad : '1'}">
+                        class="form-control cantidad-producto" placeholder="Cantidad" min="1"
+                        value="${productoData ? productoData.cantidad : '0'}">
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">{{ __("Precio") }}</label>
                     <input type="number" step="0.01" name="items[${itemGroupIndex}][productos][${productoIndex}][precio]"
-                        class="form-control" placeholder="Precio" min="0" readonly
+                        class="form-control precio-producto" placeholder="Precio" min="0"
                         value="${productoData ? productoData.precio : '0'}">
                 </div>
                 <div class="col-md-3">
@@ -1157,23 +1271,45 @@ $(document).ready(function() {
                 productoData.precio
             );
         }
+        
+        $newRow.find('.select2-producto').select2({
+            placeholder: "Seleccione un producto",
+            width: '100%',
+            dropdownParent: $newRow.closest('.item-group')
+        });
     }
 
     function addNewItemGroup(itemData = null) {
         const currentIndex = itemGroupIndex;
         const trabajoValue = itemData ? (itemData.trabajo_id || itemData.trabajo || '') : '';
         const trabajoNombre = itemData ? (itemData.trabajo_nombre || itemData.trabajo || '') : '';
+        const precioTrabajo = itemData ? (itemData.precio_trabajo || '0') : '0';
+        const descripcion = itemData ? (itemData.descripcion || '') : '';
 
         const newItemGroup = $(`
             <div class="item-group mb-4 p-3 border rounded" data-index="${currentIndex}">
                 <div class="row mb-2">
-                    <div class="col-md-11">
+                    <div class="col-md-5">
                         <label class="form-label">{{ __("Trabajo") }}</label>
                         <select name="items[${currentIndex}][trabajo]" class="form-control select2-trabajo">
                             <option value="">{{ __("Seleccionar Trabajo") }}</option>
+                            ${itemData && itemData.trabajo && !itemData.trabajo_id ? 
+                            `<option value="${itemData.trabajo}" selected>${itemData.trabajo}</option>` : ''}
                         </select>
                         <input type="hidden" name="items[${currentIndex}][trabajo_id]" value="${trabajoValue}">
                         <input type="hidden" name="items[${currentIndex}][trabajo_nombre]" value="${trabajoNombre}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">{{ __("Precio Trabajo") }}</label>
+                        <input type="number" step="0.01" name="items[${currentIndex}][precio_trabajo]" 
+                            class="form-control precio-trabajo" placeholder="0.00" min="0"
+                            value="${precioTrabajo}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ __("Descripción") }}</label>
+                        <input type="text" name="items[${currentIndex}][descripcion]" 
+                            class="form-control" placeholder="Descripción adicional"
+                            value="${descripcion}">
                     </div>
                     <div class="col-md-1">
                         <button type="button" class="btn btn-danger btn-remove-item-group mt-4">
@@ -1191,12 +1327,21 @@ $(document).ready(function() {
         $('#items-container').append(newItemGroup);
         
         const $selectTrabajo = newItemGroup.find('.select2-trabajo');
-        cargarTrabajosEnSelect($selectTrabajo, trabajoValue);
+
+        if (!itemData || itemData.trabajo_id) {
+            cargarTrabajosEnSelect($selectTrabajo, trabajoValue);
+        }
 
         if (itemData && itemData.trabajo && !itemData.trabajo_id) {
             $selectTrabajo.append(`<option value="${itemData.trabajo}" selected>${itemData.trabajo}</option>`);
             newItemGroup.find('input[name$="[trabajo_nombre]"]').val(itemData.trabajo);
         }
+
+        $selectTrabajo.select2({
+            placeholder: "Seleccione un trabajo",
+            width: '100%',
+            dropdownParent: $selectTrabajo.closest('.item-group')
+        });
 
         if (itemData && itemData.productos) {
             itemData.productos.forEach(producto => {
@@ -1205,40 +1350,62 @@ $(document).ready(function() {
         }
         
         itemGroupIndex++;
+        calcularTotalTrabajos();
+        calcularPorcentajeCerrajero();
     }
 
-    $(document).on('change', 'select[name^="items"][name$="[trabajo]"]', function() {
+    function prepararDatosParaEnvio() {
+        $('.item-group').each(function() {
+            const $group = $(this);
+            const $selectTrabajo = $group.find('select[name$="[trabajo]"]');
+            const trabajoId = $selectTrabajo.val();
+            const trabajoNombre = $selectTrabajo.find('option:selected').text();
+
+            $group.find('input[name$="[trabajo_id]"]').val(trabajoId);
+            $group.find('input[name$="[trabajo_nombre]"]').val(trabajoNombre);
+        });
+    }
+
+    function mostrarError(mensaje) {
+        Swal.fire({
+            title: '{{ __("Error") }}',
+            text: mensaje,
+            icon: 'error',
+            confirmButtonText: '{{ __("Entendido") }}'
+        });
+    }
+
+    $(document).on('change', '.select2-trabajo', function() {
         const $group = $(this).closest('.item-group');
+        const precioTrabajo = $(this).find('option:selected').data('precio') || 0;
+        $group.find('.precio-trabajo').val(precioTrabajo);
+        
         const trabajoId = $(this).val();
         const trabajoNombre = $(this).find('option:selected').text();
         
         $group.find('input[name$="[trabajo_id]"]').val(trabajoId);
         $group.find('input[name$="[trabajo_nombre]"]').val(trabajoNombre);
-    });
-
-    $(document).on('change', 'input[name$="[cantidad]"]', function() {
-        const $row = $(this).closest('.producto-row');
-        const productoSelect = $row.find('select[name$="[producto]"]');
-        const cantidad = parseInt($(this).val()) || 0;
         
-        if (productoSelect.val()) {
-            const stockDisponible = parseInt(productoSelect.find('option:selected').data('stock')) || 0;
-            
-            if (cantidad > stockDisponible) {
-                Swal.fire({
-                    title: '{{ __("Stock Insuficiente") }}',
-                    text: '{{ __("Solo hay") }} ' + stockDisponible + ' {{ __("unidades disponibles") }}',
-                    icon: 'warning',
-                    confirmButtonText: '{{ __("Entendido") }}'
-                });
-                $(this).val(stockDisponible > 0 ? stockDisponible : 0);
-            }
-        }
+        calcularTotalTrabajos();
     });
 
-    $(document).on('change', 'select[name^="items"][name$="[producto]"]', function() {
+    $(document).on('input change', '.precio-trabajo, .monto-ce, .monto-gasto, #valor_v', function() {
+        calcularPorcentajeCerrajero();
+    });
+
+    $(document).on('change', '.select2-trabajo', function() {
+        calcularTotalTrabajos();
+        calcularPorcentajeCerrajero();
+    });
+
+    $(document).on('input', '.precio-trabajo, .costo-input, .gasto-input', function() {
+        calcularTotalTrabajos();
+        calcularPorcentajeCerrajero(); 
+    });
+
+    $(document).on('change', '.select2-producto', function() {
         const $row = $(this).closest('.producto-row');
-        const precioInput = $row.find('input[name$="[precio]"]');
+        const precioInput = $row.find('.precio-producto');
         const precio = $(this).find('option:selected').data('precio') || '0';
         precioInput.val(precio);
 
@@ -1246,17 +1413,19 @@ $(document).ready(function() {
         $row.find('input[name$="[nombre_producto]"]').val(nombreProducto);
     });
 
-    $(document).on('change', 'select[name^="items"][name$="[almacen]"]', function() {
+    $(document).on('change', '.select-almacen', function() {
         const $row = $(this).closest('.producto-row');
-        const $selectProducto = $row.find('select[name$="[producto]"]');
+        const $selectProducto = $row.find('.select2-producto');
         const productoSeleccionado = $selectProducto.val();
         const nombreProducto = $selectProducto.find('option:selected').text().split('-')[1]?.trim();
+        const precioActual = $row.find('.precio-producto').val();
         
         cargarProductosEnSelect(
             $selectProducto, 
             $(this).val(), 
             productoSeleccionado,
-            nombreProducto
+            nombreProducto,
+            precioActual
         );
     });
 
@@ -1275,15 +1444,19 @@ $(document).ready(function() {
 
     $(document).on('click', '.btn-remove-item-group', function() {
         $(this).closest('.item-group').remove();
+        calcularTotalTrabajos(); 
     });
 
-    if (itemsExistentes && itemsExistentes.length > 0) {
-        itemsExistentes.forEach(item => {
-            addNewItemGroup(item);
-        });
-    } else {
-        addNewItemGroup();
-    }
+    $(document).ready(function() {
+        if (itemsExistentes && itemsExistentes.length > 0) {
+            itemsExistentes.forEach(item => {
+                addNewItemGroup(item);
+            });
+        } else {
+            addNewItemGroup();
+        }
+        calcularPorcentajeCerrajero();
+    });
 
     function mostrarError(mensaje) {
         Swal.fire({

@@ -24,7 +24,6 @@ class PrestamoRequest extends FormRequest
         return [
 			'id_empleado' => 'required',
             'valor' => 'required|numeric|min:0',
-            'cuotas' => 'required|integer|min:1',
         ];
     }
 }

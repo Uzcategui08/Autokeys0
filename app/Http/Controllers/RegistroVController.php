@@ -14,6 +14,7 @@ use App\Models\Empleado;
 use App\Models\Abono;
 use App\Models\Costo;
 use App\Models\Gasto;
+use App\Models\Categoria;
 use App\Models\TiposDePago;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -72,8 +73,9 @@ public function cxc(Request $request): View
         $registroV = new RegistroV();
         $empleados = Empleado::where('cargo', '1')->get();
         $trabajos = Trabajo::all();
+        $categorias = Categoria::all();
 
-        return view('registro-v.create', compact('registroV', 'clientes', 'inventario', 'almacenes', 'empleados','tiposDePago', 'trabajos'));
+        return view('registro-v.create', compact('registroV', 'clientes', 'inventario', 'almacenes', 'empleados','tiposDePago', 'trabajos', 'categorias'));
     }
 
 
@@ -123,18 +125,18 @@ public function cxc(Request $request): View
         
         try {
             $validatedData = $request->validated();
-            Log::debug('Datos validados', ['validatedData' => $validatedData]);
-    
-            // Procesamiento de trabajos y productos
+
             $trabajos = [];
             if ($request->has('items')) {
                 foreach ($request->input('items') as $item) {
                     $trabajoId = $item['trabajo_id'] ?? null;
                     $descripcionTrabajo = $item['trabajo_nombre'] ?? $item['trabajo'] ?? null;
-
+                    $precioTrabajo = $item['precio_trabajo'] ?? 0; 
+    
                     if ($trabajoId && empty($descripcionTrabajo)) {
                         $trabajo = Trabajo::find($trabajoId);
                         $descripcionTrabajo = $trabajo ? $trabajo->nombre : 'Trabajo no especificado';
+                        $precioTrabajo = $precioTrabajo ?: ($trabajo ? $trabajo->precio : 0);
                     }
     
                     if (!empty($descripcionTrabajo)) {
@@ -174,6 +176,8 @@ public function cxc(Request $request): View
                         $trabajos[] = [
                             'trabajo_id' => $trabajoId, 
                             'trabajo' => $descripcionTrabajo,
+                            'precio_trabajo' => (float)$precioTrabajo, 
+                            'descripcion' => $item['descripcion'] ?? null, 
                             'productos' => $productos,
                         ];
                     }
@@ -198,7 +202,7 @@ public function cxc(Request $request): View
                             'f_costos' => $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
                             'id_tecnico' => $request->input('id_empleado'),
                             'descripcion' => $costoData['descripcion'],
-                            'subcategoria' => 'costo_extra',
+                            'subcategoria' => $costoData['subcategoria'], 
                             'valor' => (float)($costoData['monto'] ?? 0),
                             'estatus' => 'pagado',
                             'pagos' => $pagoCosto
@@ -230,7 +234,7 @@ public function cxc(Request $request): View
                             'f_gastos' => $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
                             'id_tecnico' => $request->input('id_empleado'),
                             'descripcion' => $gastoData['descripcion'],
-                            'subcategoria' => 'gasto_extra',
+                            'subcategoria' => $gastoData['subcategoria'],
                             'valor' => (float)($gastoData['monto'] ?? 0),
                             'estatus' => 'pagado',
                             'pagos' => $pagoGasto,
@@ -307,7 +311,7 @@ public function cxc(Request $request): View
             $abono = Abono::create([
                 'a_fecha' => $registroV->fecha_h,
                 'id_empleado' => $request->input('id_empleado'),
-                'concepto' => $registroV->trabajo,
+                'concepto' => 'Abono por venta #' . $registroV->id,
                 'valor' => $registroV->porcentaje_c,
             ]);
             
@@ -340,10 +344,23 @@ public function cxc(Request $request): View
         $almacenes = Almacene::all();
         $tiposDePago = TiposDePago::all();
         $trabajos = Trabajo::all();
-
+        $categorias = Categoria::all();
+    
         $items = json_decode($registroV->items, true) ?? [];
         
         foreach ($items as &$itemGroup) {
+            if (isset($itemGroup['trabajo_id']) && $itemGroup['trabajo_id']) {
+                $trabajo = Trabajo::find($itemGroup['trabajo_id']);
+                if ($trabajo) {
+                    if (!isset($itemGroup['precio_trabajo'])) {
+                        $itemGroup['precio_trabajo'] = $trabajo->precio;
+                    }
+                    if (!isset($itemGroup['descripcion'])) {
+                        $itemGroup['descripcion'] = $trabajo->descripcion;
+                    }
+                }
+            }
+
             if (isset($itemGroup['productos']) && is_array($itemGroup['productos'])) {
                 foreach ($itemGroup['productos'] as &$producto) {
                     if (isset($producto['producto'])) {
@@ -378,6 +395,7 @@ public function cxc(Request $request): View
                     'id_costos' => $costo->id_costos,
                     'descripcion' => $costo->descripcion,
                     'monto' => $costo->valor,
+                    'subcategoria' => $costo->subcategoria,
                     'metodo_pago' => $pagosData[0]['metodo_pago'] ?? null,
                     'cobro' => $costo->estatus,
                     'fecha' => $costo->f_costos
@@ -405,6 +423,7 @@ public function cxc(Request $request): View
                     'id_gastos' => $gasto->id_gastos,
                     'descripcion' => $gasto->descripcion,
                     'monto' => $gasto->valor,
+                    'subcategoria' => $gasto->subcategoria,
                     'metodo_pago' => $pagosData[0]['metodo_pago'] ?? null,
                     'estatus' => $gasto->estatus,
                     'fecha' => $gasto->fecha
@@ -440,7 +459,8 @@ public function cxc(Request $request): View
             'costosExtras' => $costosExtras,
             'gastos' => $gastos,
             'pagos' => $pagos,
-            'trabajos' => $trabajos
+            'trabajos' => $trabajos,
+            'categorias' => $categorias
         ]);
     }
 
@@ -456,6 +476,7 @@ public function cxc(Request $request): View
             $almacenes = Almacene::all();
             $clientes = Cliente::all();
             $trabajos = Trabajo::all();
+            $categorias = Categoria::all();
         } catch (\Exception $e) {
             throw $e;
         }
@@ -474,8 +495,22 @@ public function cxc(Request $request): View
     
         try {
             $items = json_decode($registroV->items, true) ?? [];
+
             
             foreach ($items as &$trabajo) {
+                $trabajo['trabajo_id'] = $trabajo['trabajo_id'] ?? null;
+                $trabajo['trabajo'] = $trabajo['trabajo'] ?? ($trabajo['trabajo_nombre'] ?? 'Trabajo no especificado');
+                $trabajo['trabajo_nombre'] = $trabajo['trabajo_nombre'] ?? $trabajo['trabajo'];
+                $trabajo['precio_trabajo'] = $trabajo['precio_trabajo'] ?? 0;
+                $trabajo['descripcion'] = $trabajo['descripcion'] ?? '';
+
+                if ($trabajo['trabajo_id'] && $trabajo['precio_trabajo'] == 0) {
+                    $trabajoModel = Trabajo::find($trabajo['trabajo_id']);
+                    if ($trabajoModel) {
+                        $trabajo['precio_trabajo'] = $trabajoModel->precio;
+                    }
+                }
+
                 if (isset($trabajo['productos'])) {
                     foreach ($trabajo['productos'] as &$producto) {
                         $producto['producto'] = $producto['producto'] ?? null;
@@ -517,6 +552,7 @@ public function cxc(Request $request): View
                         'id_costos' => $costo->id_costos,
                         'descripcion' => $costo->descripcion,
                         'monto' => $costo->valor,
+                        'subcategoria' => $costo->subcategoria,
                         'metodo_pago' => $pagosData[0]['metodo_pago'] ?? null,
                         'cobro' => $costo->estatus,
                         'fecha' => $costo->f_costos
@@ -547,6 +583,7 @@ public function cxc(Request $request): View
                         'id_gastos' => $gasto->id_gastos,
                         'descripcion' => $gasto->descripcion,
                         'monto' => $gasto->valor,
+                        'subcategoria' => $gasto->subcategoria,
                         'metodo_pago' => $pagosData[0]['metodo_pago'] ?? null,
                         'estatus' => $gasto->estatus,
                         'fecha' => $gasto->fecha
@@ -589,7 +626,8 @@ public function cxc(Request $request): View
             'costosExtras' => $costosExtras,
             'gastosData' => $gastosData,
             'pagosRegistro' => $pagosRegistro,
-            'trabajos' => $trabajos
+            'trabajos' => $trabajos,
+            'categorias' => $categorias
         ];
         
         return view('registro-v.edit', $viewData);
@@ -763,7 +801,7 @@ public function cxc(Request $request): View
     
         try {
             $validatedData = $request->validated();
-    
+
             $items = $request->input('items');
             $itemsAntiguos = json_decode($registroV->items, true) ?? [];
             $this->ajustarInventario($itemsAntiguos, $items);
@@ -773,10 +811,13 @@ public function cxc(Request $request): View
                 foreach ($request->input('items') as $item) {
                     $trabajoId = $item['trabajo_id'] ?? null;
                     $descripcionTrabajo = $item['trabajo_nombre'] ?? $item['trabajo'] ?? null;
-
+                    $precioTrabajo = $item['precio_trabajo'] ?? 0;
+                    $descripcion = $item['descripcion'] ?? '';
+    
                     if ($trabajoId && empty($descripcionTrabajo)) {
                         $trabajo = Trabajo::find($trabajoId);
                         $descripcionTrabajo = $trabajo ? $trabajo->nombre : 'Trabajo no especificado';
+                        $precioTrabajo = $precioTrabajo ?: ($trabajo ? $trabajo->precio : 0);
                     }
     
                     if (!empty($descripcionTrabajo)) {
@@ -798,6 +839,9 @@ public function cxc(Request $request): View
                         $trabajos[] = [
                             'trabajo_id' => $trabajoId,
                             'trabajo' => $descripcionTrabajo,
+                            'trabajo_nombre' => $descripcionTrabajo,
+                            'precio_trabajo' => (float)$precioTrabajo,
+                            'descripcion' => $descripcion,
                             'productos' => $productos,
                         ];
                     }
@@ -824,6 +868,7 @@ public function cxc(Request $request): View
                                 $costo->update([
                                     'descripcion' => $costoData['descripcion'],
                                     'valor' => (float)($costoData['monto'] ?? 0),
+                                    'subcategoria' => $costoData['subcategoria'],
                                     'estatus' => 'pagado',
                                     'pagos' => $pagoCosto,
                                     'id_tecnico' => $request->input('id_empleado')
@@ -837,7 +882,7 @@ public function cxc(Request $request): View
                             'f_costos' => $costoData['fecha'] ?? now()->format('Y-m-d'),
                             'id_tecnico' => $request->input('id_empleado'),
                             'descripcion' => $costoData['descripcion'],
-                            'subcategoria' => 'costo_extra',
+                            'subcategoria' => $costoData['subcategoria'],
                             'valor' => (float)($costoData['monto'] ?? 0),
                             'estatus' => 'pagado',
                             'pagos' => $pagoCosto,
@@ -868,7 +913,8 @@ public function cxc(Request $request): View
                                 $gasto->update([
                                     'descripcion' => $gastoData['descripcion'],
                                     'valor' => (float)($gastoData['monto'] ?? 0),
-                                    'estatus' => $gastoData['estatus'] ?? 'pendiente',
+                                    'estatus' => 'pagado',
+                                    'subcategoria' => $gastoData['subcategoria'],
                                     'pagos' => $pagoGasto,
                                     'id_empleado' => $request->input('id_empleado'),
                                     'id_registro_v' => $registroV->id
@@ -879,11 +925,12 @@ public function cxc(Request $request): View
                         }
     
                         $nuevoGasto = Gasto::create([
-                            'fecha' => $gastoData['fecha'] ?? now()->format('Y-m-d'),
-                            'id_empleado' => $request->input('id_empleado'),
+                            'f_gastos' => $gastoData['fecha'] ?? now()->format('Y-m-d'),
+                            'id_tecnico' => $request->input('id_empleado'),
                             'descripcion' => $gastoData['descripcion'],
+                            'subcategoria' => $gastoData['subcategoria'],
                             'valor' => (float)($gastoData['monto'] ?? 0),
-                            'estatus' => $gastoData['estatus'] ?? 'pendiente',
+                            'estatus' => 'pagado',
                             'pagos' => $pagoGasto,
                             'id_registro_v' => $registroV->id
                         ]);
@@ -933,21 +980,21 @@ public function cxc(Request $request): View
             } else {
                 $validatedData['pagos'] = json_encode([]);
             }
-    
+
             $registroV->update($validatedData);
 
             if ($registroV->id_abono) {
                 Abono::where('id_abonos', $registroV->id_abono)->update([
                     'id_empleado' => $request->input('id_empleado'),
                     'valor' => $registroV->porcentaje_c,
-                    'concepto' => $registroV->trabajo,
+                    'concepto' => 'Abono por venta #' . $registroV->id,
                     'a_fecha' => $registroV->fecha_h
                 ]);
             } else {
                 $abono = Abono::create([
                     'id_empleado' => $request->input('id_empleado'),
                     'valor' => $registroV->porcentaje_c,
-                    'concepto' => $registroV->trabajo,
+                    'concepto' => 'Abono por venta #' . $registroV->id,
                     'a_fecha' => $registroV->fecha_h
                 ]);
                 $registroV->update(['id_abono' => $abono->id_abonos]);
@@ -1111,7 +1158,7 @@ public function cxc(Request $request): View
             'tiposDePago' => $tiposDePago
         ];
     
-        $pdf = Pdf::loadView('registro-v.invoice', compact('registroV', 'tiposDePago'));
+        $pdf = Pdf::loadView('registro-v.invoice', $data);
 
         $pdf->setPaper('letter', 'portrait');
         $pdf->setOption('margin-top', 10);

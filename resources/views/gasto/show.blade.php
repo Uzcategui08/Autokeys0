@@ -60,7 +60,15 @@
                                     <div class="col-md-6">
                                         <div class="form-group mb-3">
                                             <label for="subcategoria" class="form-label">{{ __('Subcategoría') }}</label>
-                                            <input type="text" class="form-control" value="{{ $gasto->subcategoria }}" readonly>
+                                            <input 
+                                                type="text" 
+                                                class="form-control" 
+                                                value="@php
+                                                    $categoriaEncontrada = collect($categorias)->firstWhere('id_categoria', $costo->subcategoria);
+                                                    echo $categoriaEncontrada->nombre ?? 'N/A';
+                                                @endphp" 
+                                                readonly
+                                            >
                                         </div>
                                     </div>
                                     <div class="col-md-6">
