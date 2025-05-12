@@ -1118,7 +1118,7 @@ $(document).ready(function() {
         const totalGastos = calcularTotalGastos();
         const valorVenta = totalTrabajos;
 
-        $('#valor_v').val(valorVenta.toFixed(2)).trigger('input');
+        $('#valor_v').val(valorVenta.toFixed(2)).trigger('change');
 
         calcularPorcentajeCerrajero();
     }
