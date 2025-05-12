@@ -185,29 +185,26 @@ protected function totalCostoVenta()
         $facturacion = $this->facturacionDelMes();
         $utilidadBruta = $this->calcularUtilidadBruta();
         $utilidadNeta = $this->calcularUtilidadNeta();
-
-$gastosPorSubcategoria = [];
-
-// Primero obtenemos los IDs de categorías únicas
-$categoriasIds = Gasto::whereYear('f_gastos', $this->year)
-    ->whereMonth('f_gastos', $this->month)
-    ->pluck('subcategoria')
-    ->unique();
-
-// Pre-cargamos todas las categorías necesarias
-$categorias = Categoria::whereIn('id_categoria', $categoriasIds)->get()->keyBy('id_categoria');
-
-foreach ($categoriasIds as $categoriaId) {
-    $total = Gasto::whereYear('f_gastos', $this->year)
+    // Obtener subcategorías únicas (son strings, no IDs)
+    $subcategorias = Gasto::whereYear('f_gastos', $this->year)
         ->whereMonth('f_gastos', $this->month)
-        ->where('subcategoria', $categoriaId)
-        ->sum('valor');
+        ->pluck('subcategoria')
+        ->unique()
+        ->filter(); // Elimina valores nulos
 
-    $gastosPorSubcategoria[] = [
-        'nombre' => $categorias[$categoriaId]->nombre,
-        'total' => $total,
-        'porcentaje' => $this->calcularPorcentaje($total, $facturacion)
-    ];
+    $gastosPorSubcategoria = [];
+
+    foreach ($subcategorias as $subcategoria) {
+        $total = Gasto::whereYear('f_gastos', $this->year)
+            ->whereMonth('f_gastos', $this->month)
+            ->where('subcategoria', $subcategoria)
+            ->sum('valor');
+
+        $gastosPorSubcategoria[] = [
+            'nombre' => $subcategoria, // Usamos directamente el nombre de la subcategoría
+            'total' => $total,
+            'porcentaje' => $this->calcularPorcentaje($total, $facturacion)
+        ];
 }
         return [
             // Datos básicos
