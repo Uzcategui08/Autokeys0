@@ -64,11 +64,11 @@ return [
     */
 
     'logo' => '<b>Auto</b>keys',
-    'logo_img' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
+    'logo_img' => '/images/AutoFondo.jpeg',
     'logo_img_class' => 'brand-image img-circle elevation-3',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
-    'logo_img_alt' => 'Admin Logo',
+    'logo_img_alt' => '',
 
     /*
     |--------------------------------------------------------------------------
@@ -111,9 +111,9 @@ return [
 
     'preloader' => [
         'enabled' => true,
-        'mode' => 'fullscreen',
+        'mode' => 'cwrapper',
         'img' => [
-            'path' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
+            'path' => '/images/AutoFondo.jpeg',
             'alt' => 'AdminLTE Preloader Image',
             'effect' => 'animation__shake',
             'width' => 60,
@@ -336,12 +336,6 @@ return [
         'can' => 'admin', // Solo admin
     ],
     [
-        'text' => 'Transferencias',
-        'url' => 'transferencias',
-        'icon' => 'fas fa-fw fa-exchange-alt',
-        'can' => 'admin',
-    ],
-    [
         'text' => 'Productos',
         'url' => 'productos',
         'icon' => 'fas fa-fw fa-box-open',
@@ -349,16 +343,32 @@ return [
     ],
     [
         'text' => 'Inventario',
-        'url' => 'inventarios',
-        'icon' => 'fas fa-fw fa-clipboard-check',
+        'icon' => 'fas fa-fw fa-boxes',
         'can' => ['admin', 'inventario_limited'],
-    ],
+        'submenu' => [
+            [
+                'text' => 'Inventario',
+                'url' => 'inventarios',
+                'icon' => 'fas fa-fw fa-clipboard-check',
+                'can' => ['admin', 'inventario_limited'],
+            ],
+            [
+                'text' => 'Transferencias',
+                'url' => 'transferencias',
+                'icon' => 'fas fa-fw fa-exchange-alt',
+                'can' => ['admin', 'inventario_limited'],
+            ],
+            
     [
         'text' => 'Carga/Descarga',
         'url' => 'cargas',
-        'icon' => 'fas fa-fw fa-exchange-alt',
+        'icon' => 'fas fa-fw fa-angle-double-down',
         'can' => ['admin', 'inventario_limited'],
     ],
+
+        ],
+    ],
+
 
     // ========================================
     // SECCIÓN VENTAS (para usuarios limitados)
@@ -488,25 +498,41 @@ return [
         'icon' => 'fas fa-fw fa-tags',
         'can' => 'admin',
     ],
-    [
-        'text' => 'Estado de Resultados',
-        'url' => 'estadisticas-ventas',
-        'icon' => 'fas fa-fw fa-chart-line',
+    [  
+        'header' => 'REPORTES',
         'can' => 'admin',
     ],
     [
-        'text' => 'Cierre Mensual',
-        'url' => 'cierre-ventas',
-        'icon' => 'fas fa-fw fa-chart-line',
+        'text' => 'Reportes',
+        'icon' => 'fas fa-fw fa-chart-area',
         'can' => 'admin',
+        'submenu' => [
+            [
+                'text' => 'Estado de Resultados',
+                'url' => 'estadisticas-ventas',
+                'icon' => 'fas fa-fw fa-chart-line',
+                'can' => 'admin',
+            ],
+            [
+                'text' => 'Reporte de Ventas Vanes',
+                'url' => 'estadisticas-vanes',
+                'icon' => 'fas fa-fw fa-chart-bar',
+                'can' => 'admin',
+            ],
+            [
+                'text' => 'Cierre Semanal',
+                'url' => 'cierre-ventas-semanal',
+                'icon' => 'fas fa-fw fa-chart-line',
+                'can' => 'admin',
+            ],
+            [
+                'text' => 'Reporte de CXC',
+                'url' => 'reportes/cxc',
+                'icon' => 'fas fa-fw fa-chart-line',
+                'can' => 'admin',
+            ],
+        ],
     ],
-    [
-        'text' => 'Cierre Semanal',
-        'url' => 'cierre-ventas-semanal',
-        'icon' => 'fas fa-fw fa-chart-line',
-        'can' => 'admin',
-    ],
-
     // ========================================
     // SECCIÓN ADMINISTRACIÓN (solo admin)
     // ========================================
@@ -515,31 +541,12 @@ return [
         'can' => 'admin',
     ],
     [
-        'text' => 'Usuarios',
+        'text' => 'Perfil',
         'url' => 'profile',
         'icon' => 'fas fa-fw fa-users-cog',
         'can' => 'admin',
     ],
 
-    // ========================================
-    // SECCIÓN REPORTES
-    // ========================================
-    [
-        'header' => 'REPORTES',
-        'can' => 'admin',
-    ],
-    [
-        'text' => 'Reporte de Ventas',
-        'url' => 'reportes/ventas',
-        'icon' => 'fas fa-fw fa-chart-bar',
-        'can' => 'admin',
-    ],
-    [
-        'text' => 'Reporte de Inventario',
-        'url' => 'reportes/inventario',
-        'icon' => 'fas fa-fw fa-boxes',
-        'can' => 'admin',
-    ],
 ],
 
     /*
