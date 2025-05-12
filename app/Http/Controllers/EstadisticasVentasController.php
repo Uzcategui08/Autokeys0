@@ -257,42 +257,44 @@ protected function totalCostoVenta()
             ]);
         }
     
-        public function generatePdfTotal(Request $request)
-        {
-            // Validar fechas o usar el mes actual por defecto
-            $fechaInicio = $request->fecha_inicio ?: Carbon::now()->firstOfMonth()->format('Y-m-d');
-            $fechaFin = $request->fecha_fin ?: Carbon::now()->lastOfMonth()->format('Y-m-d');
-    
-            // Validar que fechaFin sea mayor o igual a fechaInicio
-            if ($fechaFin < $fechaInicio) {
-                return back()->with('error', 'La fecha final debe ser mayor o igual a la fecha inicial');
-            }
-    
-            $registros = RegistroV::whereBetween('fecha_h', [$fechaInicio, $fechaFin])
-                ->orderBy('fecha_h', 'desc')
-                ->get();
-    
-            // Cálculos de totales
-            $totalVentas = $registros->sum('valor_v');
-            $totalGastos = $registros->sum('monto_ce');
-            $utilidad = $totalVentas - $totalGastos;
-    
-            // Preparar datos para la vista
-            $data = [
-                'title' => 'Reporte de Ventas',
-                'date' => now()->format('d/m/Y H:i'),
-                'registros' => $registros,
-                'totalVentas' => $totalVentas,
-                'totalGastos' => $totalGastos,
-                'utilidad' => $utilidad,
-                'fecha_inicio' => $fechaInicio,
-                'fecha_fin' => $fechaFin,
-                'mes_actual' => Carbon::parse($fechaInicio)->translatedFormat('F Y')
-            ];
-    
-            $pdf = PDF::loadView('estadisticas/RegistroVpdf', $data)
-                      ->setPaper('a4', 'landscape'); // Horizontal para más espacio
-    
-            return $pdf->stream('reporte_ventas_'.now()->format('Ymd').'.pdf');
-        }
+      public function generatePdfTotal(Request $request)
+{
+    $request->validate([
+        'fecha_inicio' => 'required|date',
+        'fecha_fin' => 'required|date|after_or_equal:fecha_inicio'
+    ]);
+
+    $fechaInicio = $request->fecha_inicio;
+    $fechaFin = $request->fecha_fin;
+
+    $registros = RegistroV::with('empleado')
+        ->whereBetween('fecha_h', [$fechaInicio, $fechaFin])
+        ->orderBy('fecha_h', 'desc')
+        ->get();
+
+    // Cálculos más completos
+    $totalVentas = $registros->sum('valor_v');
+    $totalGastos = $registros->sum('monto_ce');
+    $totalTrabajos = $registros->sum(fn($r) => count($this->safeJsonDecode($r->items)));
+    $totalPagos = $registros->sum(fn($r) => $r->pagos ? array_sum(array_column($r->pagos, 'monto')) : 0);
+
+    $data = [
+        'title' => 'Reporte de Ventas',
+        'date' => now()->format('d/m/Y H:i'),
+        'registros' => $registros,
+        'totalVentas' => $totalVentas,
+        'totalGastos' => $totalGastos,
+        'totalTrabajos' => $totalTrabajos,
+        'totalPagos' => $totalPagos,
+        'utilidad' => $totalVentas - $totalGastos,
+        'fecha_inicio' => $fechaInicio,
+        'fecha_fin' => $fechaFin,
+        'mes_actual' => Carbon::parse($fechaInicio)->translatedFormat('F Y')
+    ];
+
+    $pdf = PDF::loadView('estadisticas.RegistroVpdf', $data)
+              ->setPaper('a4', 'landscape');
+
+    return $pdf->stream('reporte_ventas_'.now()->format('Ymd').'.pdf');
+}
 }
