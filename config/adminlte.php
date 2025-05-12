@@ -498,25 +498,35 @@ return [
         'icon' => 'fas fa-fw fa-tags',
         'can' => 'admin',
     ],
-    [
-        'text' => 'Estado de Resultados',
-        'url' => 'estadisticas-ventas',
-        'icon' => 'fas fa-fw fa-chart-line',
+    [  
+        'header' => 'REPORTES',
         'can' => 'admin',
     ],
     [
-        'text' => 'Cierre Mensual',
-        'url' => 'cierre-ventas',
-        'icon' => 'fas fa-fw fa-chart-line',
+        'text' => 'Reportes',
+        'icon' => 'fas fa-fw fa-chart-area',
         'can' => 'admin',
+        'submenu' => [
+            [
+                'text' => 'Estado de Resultados',
+                'url' => 'estadisticas-ventas',
+                'icon' => 'fas fa-fw fa-chart-line',
+                'can' => 'admin',
+            ],
+            [
+                'text' => 'Reporte de Ventas Vanes',
+                'url' => 'estadisticas-vanes',
+                'icon' => 'fas fa-fw fa-chart-bar',
+                'can' => 'admin',
+            ],
+            [
+                'text' => 'Cierre Semanal',
+                'url' => 'cierre-ventas-semanal',
+                'icon' => 'fas fa-fw fa-chart-line',
+                'can' => 'admin',
+            ],
+        ],
     ],
-    [
-        'text' => 'Cierre Semanal',
-        'url' => 'cierre-ventas-semanal',
-        'icon' => 'fas fa-fw fa-chart-line',
-        'can' => 'admin',
-    ],
-
     // ========================================
     // SECCIÓN ADMINISTRACIÓN (solo admin)
     // ========================================

@@ -171,66 +171,56 @@
     </div>
 
     <!-- Detalle de Costos y Gastos -->
-    <div class="card mb-4">
-        <div class="card-header bg-dark text-white">
-            <h3 class="card-title">Detalle de Costos y Gastos</h3>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped">
-                    <thead class="thead-dark">
-                        <tr>
-                            <th>Concepto</th>
-                            <th>Valor</th>
-                            <th>% Facturación</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Costo de Venta</strong></td>
-                            <td>${{ number_format($stats['costos']['total_costo_venta'], 2) }}</td>
-                            <td>{{ number_format($stats['costos']['porcentaje_costo_venta'], 2) }}%</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Utilidad Bruta</strong></td>
-                            <td>${{ number_format($stats['costos']['utilidad_bruta'], 2) }}</td>
-                            <td>{{ number_format($stats['costos']['porcentaje_utilidad_bruta'], 2) }}%</td>
-                        </tr>
-                        <tr>
-                            <td>&nbsp;&nbsp;Gasto Personal</td>
-                            <td>${{ number_format($stats['gastos']['personal']['total'], 2) }}</td>
-                            <td>{{ number_format($stats['gastos']['personal']['porcentaje'], 2) }}%</td>
-                        </tr>
-                        <tr>
-                            <td>&nbsp;&nbsp;Gastos Operativos</td>
-                            <td>${{ number_format($stats['gastos']['operativos']['total'], 2) }}</td>
-                            <td>{{ number_format($stats['gastos']['operativos']['porcentaje'], 2) }}%</td>
-                        </tr>
-                        <tr>
-                            <td>&nbsp;&nbsp;Otros Gastos</td>
-                            <td>${{ number_format($stats['gastos']['otros']['total'], 2) }}</td>
-                            <td>{{ number_format($stats['gastos']['otros']['porcentaje'], 2) }}%</td>
-                        </tr>
-                        <tr>
-                            <td>&nbsp;&nbsp;Financieros e Impuestos</td>
-                            <td>${{ number_format($stats['gastos']['financieros_impuestos']['total'], 2) }}</td>
-                            <td>{{ number_format($stats['gastos']['financieros_impuestos']['porcentaje'], 2) }}%</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Total Gastos</strong></td>
-                            <td>${{ number_format($stats['gastos']['total_gastos'], 2) }}</td>
-                            <td>{{ number_format($stats['gastos']['porcentaje_gastos'], 2) }}%</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Utilidad Neta</strong></td>
-                            <td>${{ number_format($stats['resultados']['utilidad_neta'], 2) }}</td>
-                            <td>{{ number_format($stats['resultados']['porcentaje_utilidad_neta'], 2) }}%</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+<!-- Detalle de Costos y Gastos -->
+<div class="card mb-4">
+    <div class="card-header bg-dark text-white">
+        <h3 class="card-title">Detalle de Costos y Gastos</h3>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Concepto</th>
+                        <th>Valor</th>
+                        <th>% Facturación</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Costo de Venta</strong></td>
+                        <td>${{ number_format($stats['costos']['total_costos_mes'], 2) }}</td>
+                        <td>{{ number_format($stats['costos']['porcentaje_total_costos'], 2) }}%</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Utilidad Bruta</strong></td>
+                        <td>${{ number_format($stats['costos']['utilidad_bruta'], 2) }}</td>
+                        <td>{{ number_format($stats['costos']['porcentaje_utilidad_bruta'], 2) }}%</td>
+                    </tr>
+                                        
+                    @foreach($stats['gastos']['por_subcategoria'] as $item)
+                    <tr>
+                        <td>&nbsp;&nbsp;{{ $item['nombre'] }}</td>
+                        <td>${{ number_format($item['total'], 2) }}</td>
+                        <td>{{ number_format($item['porcentaje'], 2) }}%</td>
+                    </tr>
+                    @endforeach
+                    
+                    <tr>
+                        <td><strong>Total Gastos</strong></td>
+                        <td>${{ number_format($stats['gastos']['total_gastos'], 2) }}</td>
+                        <td>{{ number_format($stats['gastos']['porcentaje_gastos'], 2) }}%</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Utilidad Neta</strong></td>
+                        <td>${{ number_format($stats['resultados']['utilidad_neta'], 2) }}</td>
+                        <td>{{ number_format($stats['resultados']['porcentaje_utilidad_neta'], 2) }}%</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
+</div>
 </div>
 </div>
 

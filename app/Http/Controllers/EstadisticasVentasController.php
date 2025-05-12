@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\RegistroV;
 use App\Models\Gasto;
 use App\Models\Costo;
+use App\Models\Categoria;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -110,12 +111,18 @@ class EstadisticasVentasController extends Controller
     }
 
     // Métodos para costos y gastos
-    protected function totalCostoVenta()
-    {
-        return RegistroV::whereYear('fecha_h', $this->year)
-            ->whereMonth('fecha_h', $this->month)
-            ->sum('monto_ce');
-    }
+protected function totalCostosDelMes()
+{
+    return Costo::whereYear('f_costos', $this->year)
+        ->whereMonth('f_costos', $this->month)
+        ->sum('valor');
+}
+protected function totalCostoVenta()
+{
+    return Costo::whereYear('f_costos', $this->year)
+        ->whereMonth('f_costos', $this->month)
+        ->sum('valor');
+}
 
     protected function totalGastoPersonal()
     {
@@ -179,6 +186,29 @@ class EstadisticasVentasController extends Controller
         $utilidadBruta = $this->calcularUtilidadBruta();
         $utilidadNeta = $this->calcularUtilidadNeta();
 
+$gastosPorSubcategoria = [];
+
+// Primero obtenemos los IDs de categorías únicas
+$categoriasIds = Gasto::whereYear('f_gastos', $this->year)
+    ->whereMonth('f_gastos', $this->month)
+    ->pluck('subcategoria')
+    ->unique();
+
+// Pre-cargamos todas las categorías necesarias
+$categorias = Categoria::whereIn('id_categoria', $categoriasIds)->get()->keyBy('id_categoria');
+
+foreach ($categoriasIds as $categoriaId) {
+    $total = Gasto::whereYear('f_gastos', $this->year)
+        ->whereMonth('f_gastos', $this->month)
+        ->where('subcategoria', $categoriaId)
+        ->sum('valor');
+
+    $gastosPorSubcategoria[] = [
+        'nombre' => $categorias[$categoriaId]->nombre,
+        'total' => $total,
+        'porcentaje' => $this->calcularPorcentaje($total, $facturacion)
+    ];
+}
         return [
             // Datos básicos
             'month' => $this->month,
@@ -199,29 +229,16 @@ class EstadisticasVentasController extends Controller
                 'porcentaje_costo_venta' => $this->calcularPorcentaje($this->totalCostoVenta(), $facturacion),
                 'utilidad_bruta' => $utilidadBruta,
                 'porcentaje_utilidad_bruta' => $this->calcularPorcentaje($utilidadBruta, $facturacion),
+                'total_costos_mes' => $this->totalCostosDelMes(), 
+                'porcentaje_total_costos' => $this->calcularPorcentaje($this->totalCostosDelMes(), $facturacion)
             ],
+      'gastos' => [
+            'por_subcategoria' => $gastosPorSubcategoria,
+            'total_gastos' => $this->totalGastos(),
+            'porcentaje_gastos' => $this->calcularPorcentaje($this->totalGastos(), $facturacion)
+        ],
             
-            // Gastos detallados
-            'gastos' => [
-                'personal' => [
-                    'total' => $this->totalGastoPersonal(),
-                    'porcentaje' => $this->calcularPorcentaje($this->totalGastoPersonal(), $facturacion)
-                ],
-                'operativos' => [
-                    'total' => $this->totalGastosOperativos(),
-                    'porcentaje' => $this->calcularPorcentaje($this->totalGastosOperativos(), $facturacion)
-                ],
-                'otros' => [
-                    'total' => $this->totalOtrosGastos(),
-                    'porcentaje' => $this->calcularPorcentaje($this->totalOtrosGastos(), $facturacion)
-                ],
-                'financieros_impuestos' => [
-                    'total' => $this->totalFinancierosImpuestos(),
-                    'porcentaje' => $this->calcularPorcentaje($this->totalFinancierosImpuestos(), $facturacion)
-                ],
-                'total_gastos' => $this->totalGastos(),
-                'porcentaje_gastos' => $this->calcularPorcentaje($this->totalGastos(), $facturacion)
-            ],
+           
             
             // Resultados finales
             'resultados' => [

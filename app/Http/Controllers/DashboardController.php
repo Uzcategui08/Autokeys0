@@ -39,10 +39,15 @@ class DashboardController extends Controller
             ->whereYear('fecha_h', now()->year)
             ->sum('valor_v');
 
-        $registros_mes_actual = $queryRegistros->clone()
-            ->whereMonth('fecha_h', now()->month)
-            ->whereYear('fecha_h', now()->year)
-            ->count();
+    $registros_mes_actual = $queryRegistros->clone()
+        ->whereMonth('fecha_h', now()->month)
+        ->whereYear('fecha_h', now()->year)
+        ->get()
+        ->sum(function($registro) {
+            $items = json_decode($registro->items, true);
+            // Verificamos si items es un array y luego contamos sus elementos
+            return is_array($items) ? count($items) : 0;
+        });
         
         $registros_mes_anterior = $queryRegistros->clone()
             ->whereMonth('fecha_h', now()->subMonth()->month)

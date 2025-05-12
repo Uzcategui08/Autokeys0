@@ -46,7 +46,7 @@
                                             <td>{{ \Carbon\Carbon::parse($gasto->f_gastos)->format('m/d/Y') }}</td>
                                             <td>{{ $gasto->empleado->nombre }}</td>
                                             <td>{{ $gasto->descripcion }}</td>
-                                            <td>{{ $gasto->categoria->nombre }}</td>
+                                            <td>{{ $gasto->categoria ? $gasto->categoria->nombre : 'Sin categoría' }}</td>
                                             <td>{{ $gasto->valor }}</td>
                                             <?php 
                                                 $estatus = $gasto->estatus;
