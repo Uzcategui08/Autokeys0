@@ -74,7 +74,7 @@
                                     <div class="col-md-6">
                                         <div class="form-group mb-3">
                                             <label for="estatus" class="form-label">{{ __('Estatus') }}</label>
-                                            <input type="text" class="form-control" value="{{ $costo->estatus }}" readonly>
+                                            <input type="text" class="form-control" value="{{ ['pendiente' => 'Pendiente', 'parcialmente_pagado' => 'Parcial', 'pagado' => 'Pagado'][$costo->estatus] ?? 'N/A' }}" readonly>
                                         </div>
                                     </div>
                                 </div>
