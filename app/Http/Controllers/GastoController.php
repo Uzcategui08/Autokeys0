@@ -82,11 +82,13 @@ class GastoController extends Controller
     {
         $gasto = Gasto::findOrFail($id);
         $metodos = TiposDePago::all()->pluck('name', 'id');
+        $categorias = Categoria::all();
         return view('gasto.show', [
             'gasto' => $gasto,
             'metodos' => $metodos,
             'total_pagado' => $this->calcularTotalPagado($gasto->pagos),
-            'saldo_pendiente' => $gasto->valor - $this->calcularTotalPagado($gasto->pagos)
+            'saldo_pendiente' => $gasto->valor - $this->calcularTotalPagado($gasto->pagos),
+            'categorias' => $categorias
         ]);
     }
 
@@ -95,7 +97,8 @@ class GastoController extends Controller
         $gasto = Gasto::findOrFail($id);
         $empleado = Empleado::where('cargo', '1')->get();
         $metodos = TiposDePago::all();
-        return view('gasto.edit', compact('gasto', 'empleado', 'metodos'));
+        $categorias = Categoria::all();
+        return view('gasto.edit', compact('gasto', 'empleado', 'metodos', 'categorias'));
     }
 
     public function update(Request $request, $id): RedirectResponse

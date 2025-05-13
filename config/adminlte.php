@@ -525,6 +525,12 @@ return [
                 'icon' => 'fas fa-fw fa-chart-line',
                 'can' => 'admin',
             ],
+            [
+                'text' => 'Reporte de CXC',
+                'url' => 'reportes/cxc',
+                'icon' => 'fas fa-fw fa-chart-line',
+                'can' => 'admin',
+            ],
         ],
     ],
     // ========================================

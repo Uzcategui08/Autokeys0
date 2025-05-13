@@ -68,6 +68,11 @@ Route::resource('almacenes', AlmaceneController::class);
 
 Route::resource('presupuestos', PresupuestoController::class)->middleware('auth');
 
+// Reporte de Cuentas por Cobrar
+Route::get('/reportes/cxc', [RegistroVController::class, 'reporteCxc'])->name('reportes.cxc');
+Route::get('/reportes/cxc/detalle-cliente', [RegistroVController::class, 'detalleCliente'])->name('reportes.cxc.detalle-cliente');
+Route::get('/reportes/cxc/generar-pdf', [RegistroVController::class, 'cxcPdf'])->name('reportes.cxc.generar-pdf');
+
 Route::resource('registro-vs', RegistroVController::class);
 
 Route::get('/estadisticas-ventas/{month?}/{year?}', [EstadisticasVentasController::class, 'index'])
@@ -184,4 +189,6 @@ Route::get('/obtener-trabajos', [TrabajoController::class, 'obtenerTrabajos'])->
 Route::get('/obtener-todos-trabajos', [RegistroVController::class, 'obtenerTodosLosTrabajos']);
 
 Route::resource('categorias', CategoriaController::class);
+
+
 

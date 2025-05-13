@@ -64,7 +64,7 @@
                                                 type="text" 
                                                 class="form-control" 
                                                 value="@php
-                                                    $categoriaEncontrada = collect($categorias)->firstWhere('id_categoria', $costo->subcategoria);
+                                                    $categoriaEncontrada = collect($categorias)->firstWhere('id_categoria', $gasto->subcategoria);
                                                     echo $categoriaEncontrada->nombre ?? 'N/A';
                                                 @endphp" 
                                                 readonly
@@ -74,7 +74,7 @@
                                     <div class="col-md-6">
                                         <div class="form-group mb-3">
                                             <label for="estatus" class="form-label">{{ __('Estatus') }}</label>
-                                            <input type="text" class="form-control" value="{{ $gasto->estatus }}" readonly>
+                                            <input type="text" class="form-control" value="{{ ['pendiente' => 'Pendiente', 'parcialmente_pagado' => 'Parcial', 'pagado' => 'Pagado'][$gasto->estatus] ?? 'N/A' }}" readonly>
                                         </div>
                                     </div>
                                 </div>
