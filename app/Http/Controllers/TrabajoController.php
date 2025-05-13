@@ -16,10 +16,9 @@ class TrabajoController extends Controller
      */
     public function index(Request $request): View
     {
-        $trabajos = Trabajo::paginate();
+        $trabajos = Trabajo::all();
 
-        return view('trabajo.index', compact('trabajos'))
-            ->with('i', ($request->input('page', 1) - 1) * $trabajos->perPage());
+        return view('trabajo.index', compact('trabajos'));
     }
 
     /**
