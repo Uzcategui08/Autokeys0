@@ -28,7 +28,7 @@
 
                     <div class="card-body bg-white">
                         <div class="table-responsive">
-                            <table class="table table-striped table-hover dataTable">
+                             <table class="table table-striped table-bordered dataTable">
                                 <thead class="thead">
                                     <tr>
                                     <th>ID</th>
@@ -42,7 +42,7 @@
 										<td >{{ $trabajo->id_trabajo }}</td>
 										<td >{{ $trabajo->nombre }}</td>
                                         <td>
-                                            <form onsubmit="return confirmDelete(this)" action="{{ route('trabajos.destroy', $trabajo->id_trabajo) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
+                                            <form onsubmit="return confirmDelete(this)" action="{{ route('trabajos.destroy', $trabajo->id_trabajo) }}" method="POST" class="delete-form" style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
                                                 <a class="btn btn-sm btn-primary " href="{{ route('trabajos.show', $trabajo->id_trabajo) }}"><i class="fa fa-fw fa-eye"></i></a>
                                                 <a class="btn btn-sm btn-success" href="{{ route('trabajos.edit', $trabajo->id_trabajo) }}"><i class="fa fa-fw fa-edit"></i></a>
                                                 @csrf
