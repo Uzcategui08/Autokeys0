@@ -94,7 +94,7 @@ public function cargas(Request $request)
                 ->orderBy('created_at', 'desc');
     
     // Si el usuario es limited_user, filtrar solo sus cargas
-    if (auth()->user()->hasRole('limited_user')) {
+    if (auth()->user()->hasRole('limited')) {
         $query->where('user_id', auth()->id());
     }
     

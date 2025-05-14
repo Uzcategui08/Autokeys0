@@ -30,7 +30,7 @@ class OrdenController extends Controller
             $query->where('id_tecnico', auth()->id());
         }
         
-        $ordens = $query->all();
+        $ordens = $query->get();
 
         return view('orden.index', compact('ordens'));
     }
