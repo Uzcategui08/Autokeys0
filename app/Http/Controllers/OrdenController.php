@@ -25,15 +25,14 @@ class OrdenController extends Controller
     {
         $query = Orden::with('cliente', 'empleado');
         
-        // Si el usuario es limited_user, filtrar solo sus órdenes
-        if (auth()->user()->hasRole('limited_user')) {
+        // Si el usuario es limited, filtrar solo sus órdenes
+        if (auth()->user()->hasRole('limited')) {
             $query->where('id_tecnico', auth()->id());
         }
         
-        $ordens = $query->paginate();
+        $ordens = $query->all();
 
-        return view('orden.index', compact('ordens'))
-            ->with('i', ($request->input('page', 1) - 1) * $ordens->perPage());
+        return view('orden.index', compact('ordens'));
     }
     /**
      * Show the form for creating a new resource.

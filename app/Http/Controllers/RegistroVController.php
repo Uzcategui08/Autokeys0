@@ -35,8 +35,8 @@ class RegistroVController extends Controller
         $query = RegistroV::with('cliente')
         ->where('estatus', 'pagado');
     
-    // Si el usuario es limited_user, filtrar solo sus registros
-    if (auth()->user()->hasRole('limited_user')) {
+    // Si el usuario es limited, filtrar solo sus registros
+    if (auth()->user()->hasRole('limited')) {
         $query->where('id_empleado', auth()->id());
     }
     $registroVs = $query->paginate(20);
@@ -50,8 +50,8 @@ public function cxc(Request $request): View
     $query = RegistroV::with('cliente')
         ->where('estatus', '!=', 'pagado');
     
-    // Si el usuario es limited_user, filtrar solo sus registros
-    if (auth()->user()->hasRole('limited_user')) {
+    // Si el usuario es limited, filtrar solo sus registros
+    if (auth()->user()->hasRole('limited')) {
         $query->where('id_empleado', auth()->id());
     }
     

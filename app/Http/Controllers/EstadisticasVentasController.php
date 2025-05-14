@@ -257,44 +257,54 @@ protected function totalCostoVenta()
             ]);
         }
     
-      public function generatePdfTotal(Request $request)
+public function generateStatsPdf(Request $request)
 {
     $request->validate([
-        'fecha_inicio' => 'required|date',
-        'fecha_fin' => 'required|date|after_or_equal:fecha_inicio'
+        'month' => 'required|numeric|between:1,12',
+        'year' => 'required|numeric|min:2020|max:' . (date('Y') + 1)
     ]);
 
-    $fechaInicio = $request->fecha_inicio;
-    $fechaFin = $request->fecha_fin;
+    $this->month = $request->input('month');
+    $this->year = $request->input('year');
 
+    // Obtener todas las estadísticas
+    $stats = $this->getAllStats();
+    
+    // Obtener registros detallados
     $registros = RegistroV::with('empleado')
-        ->whereBetween('fecha_h', [$fechaInicio, $fechaFin])
+        ->whereYear('fecha_h', $this->year)
+        ->whereMonth('fecha_h', $this->month)
         ->orderBy('fecha_h', 'desc')
         ->get();
 
-    // Cálculos más completos
-    $totalVentas = $registros->sum('valor_v');
-    $totalGastos = $registros->sum('monto_ce');
-    $totalTrabajos = $registros->sum(fn($r) => count($this->safeJsonDecode($r->items)));
-    $totalPagos = $registros->sum(fn($r) => $r->pagos ? array_sum(array_column($r->pagos, 'monto')) : 0);
+    // Obtener gastos detallados
+    $gastos = Gasto::whereYear('f_gastos', $this->year)
+        ->whereMonth('f_gastos', $this->month)
+        ->orderBy('f_gastos', 'desc')
+        ->get();
 
+    // Obtener costos detallados
+    $costos = Costo::whereYear('f_costos', $this->year)
+        ->whereMonth('f_costos', $this->month)
+        ->orderBy('f_costos', 'desc')
+        ->get();
+
+    // Preparar datos para el PDF
     $data = [
-        'title' => 'Reporte de Ventas',
+        'title' => 'Reporte Estadístico Mensual',
         'date' => now()->format('d/m/Y H:i'),
+        'mes' => Carbon::create($this->year, $this->month, 1)->translatedFormat('F Y'),
+        'stats' => $stats,
         'registros' => $registros,
-        'totalVentas' => $totalVentas,
-        'totalGastos' => $totalGastos,
-        'totalTrabajos' => $totalTrabajos,
-        'totalPagos' => $totalPagos,
-        'utilidad' => $totalVentas - $totalGastos,
-        'fecha_inicio' => $fechaInicio,
-        'fecha_fin' => $fechaFin,
-        'mes_actual' => Carbon::parse($fechaInicio)->translatedFormat('F Y')
+        'gastos' => $gastos,
+        'costos' => $costos,
+        'totalTrabajos' => $registros->sum(fn($r) => count(json_decode($r->items, true) ?? [])),
+        'totalPagos' => $registros->sum(fn($r) => $r->pagos ? array_sum(array_column($r->pagos, 'monto')) : 0)
     ];
 
-    $pdf = PDF::loadView('estadisticas.RegistroVpdf', $data)
-              ->setPaper('a4', 'landscape');
+    $pdf = PDF::loadView('estadisticas.stats-pdf', $data)
+              ->setPaper('a4', 'portrait');
 
-    return $pdf->stream('reporte_ventas_'.now()->format('Ymd').'.pdf');
+    return $pdf->stream('reporte_estadistico_'.$this->month.'_'.$this->year.'.pdf');
 }
 }

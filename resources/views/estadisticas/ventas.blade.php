@@ -81,6 +81,16 @@
                     {{ \Carbon\Carbon::create($yearSelected, $monthSelected, 1)->format('F Y') }}
                 </span>
             </div>
+            <div> 
+                <form action="{{ route('estadisticas.pdf') }}" method="POST" target="_blank">
+    @csrf
+    <input type="hidden" name="month" value="{{ $monthSelected }}">
+    <input type="hidden" name="year" value="{{ $yearSelected }}">
+    <button type="submit" class="btn btn-danger">
+        <i class="fas fa-file-pdf"></i> Generar PDF Completo
+    </button>
+</form>
+</div>
         </div>
         
         <div class="card-body">
@@ -171,7 +181,6 @@
     </div>
 
     <!-- Detalle de Costos y Gastos -->
-<!-- Detalle de Costos y Gastos -->
 <div class="card mb-4">
     <div class="card-header bg-dark text-white">
         <h3 class="card-title">Detalle de Costos y Gastos</h3>
@@ -205,7 +214,6 @@
                         <td>{{ number_format($item['porcentaje'], 2) }}%</td>
                     </tr>
                     @endforeach
-                    
                     <tr>
                         <td><strong>Total Gastos</strong></td>
                         <td>${{ number_format($stats['gastos']['total_gastos'], 2) }}</td>

@@ -19,11 +19,11 @@ class DashboardController extends Controller
         // Datos generales (accesibles para todos)
         $producto = Producto::count();
         
-        // Consultas que deben filtrarse por usuario si es limited_user
+        // Consultas que deben filtrarse por usuario si es limited
         $queryRegistros = RegistroV::query();
         $queryAjustes = AjusteInventario::query();
         
-        if (auth()->user()->hasRole('limited_user')) {
+        if (auth()->user()->hasRole('limited')) {
             $userId = auth()->id();
             
             // Filtrar registros de ventas
@@ -64,7 +64,7 @@ class DashboardController extends Controller
 
         // Ventas por lugar (solo para admin)
         $ventasPorLugar = collect();
-        if (!auth()->user()->hasRole('limited_user')) {
+        if (!auth()->user()->hasRole('limited')) {
             $ventasPorLugar = RegistroV::select(
                     DB::raw('EXTRACT(MONTH FROM fecha_h) as mes'),
                     'lugarventa',
@@ -76,10 +76,10 @@ class DashboardController extends Controller
                 ->get();
         }
 
-        // Ventas por técnico (modificado para limited_user)
+        // Ventas por técnico (modificado para limited)
         $ventasPorTecnicoQuery = RegistroV::query();
         
-        if (auth()->user()->hasRole('limited_user')) {
+        if (auth()->user()->hasRole('limited')) {
             $ventasPorTecnicoQuery->where('id_empleado', auth()->id());
         }
         
@@ -101,9 +101,9 @@ class DashboardController extends Controller
             ];
         });
 
-        // Estadísticas de inventario para limited_user
+        // Estadísticas de inventario para limited
         $misAjustesInventario = null;
-        if (auth()->user()->hasRole('limited_user')) {
+        if (auth()->user()->hasRole('limited')) {
             $misAjustesInventario = $queryAjustes
                 ->whereYear('created_at', now()->year)
                 ->select(

@@ -174,6 +174,10 @@ Route::get('/inventario/{productoId}/{almacenId}', function ($productoId, $almac
     ]);
 });
 
+Route::post('/estadisticas/pdf', [EstadisticasVentasController::class, 'generateStatsPdf'])
+     ->name('estadisticas.pdf')
+     ->middleware('auth');
+
 Route::get('/verificar-stock-transferencia', [TransferenciaController::class, 'verificarStock'])->name('verificarTransferencia.stock');
 
 Route::get('/empleados/{id}/datos-pago', [EmpleadoController::class, 'getDatosPago'])->name('empleados.datos-pago');
