@@ -214,7 +214,7 @@
                         @foreach($tecnico['llaves'] as $llave)
                         <tr>
                             <td class="font-weight-bold">{{ $tecnico['tecnico'] }}</td>
-                            <td>{{ $llave['nombre'] }}</td>
+                            <td>{{ $llave['nombre'] }} - {{ $llave['id_producto'] }}</td>
                             @foreach($almacenesDisponibles as $almacen)
                                 <td class="text-right bg-llaves">{{ $llave['almacenes'][$almacen->id]['cantidad'] ?? 0 }}</td>
                                 <td class="text-right bg-llaves">${{ number_format($llave['almacenes'][$almacen->id]['total'] ?? 0, 2) }}</td>
