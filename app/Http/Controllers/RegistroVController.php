@@ -782,148 +782,204 @@ public function cxc(Request $request): View
     public function update(RegistroVRequest $request, RegistroV $registroV): RedirectResponse
     {
         DB::beginTransaction();
-    
-        try {
-            $validatedData = $request->validated();
+        
+        Log::info('Iniciando actualización de registro V', ['registro_id' => $registroV->id]);
 
+        try {
+            Log::debug('Validando datos del request');
+            $validatedData = $request->validated();
+            Log::debug('Datos validados', ['data' => $validatedData]);
+
+            // Procesamiento de items
+            Log::debug('Procesando items');
             $items = $request->input('items');
             $itemsAntiguos = json_decode($registroV->items, true) ?? [];
-            $this->ajustarInventario($itemsAntiguos, $items);
-    
+            Log::debug('Items antiguos', ['items' => $itemsAntiguos]);
+            Log::debug('Items nuevos', ['items' => $items]);
+            
+            try {
+                $this->ajustarInventario($itemsAntiguos, $items);
+                Log::info('Inventario ajustado correctamente');
+            } catch (\Exception $e) {
+                Log::error('Error al ajustar inventario', ['error' => $e->getMessage()]);
+                throw $e;
+            }
+
             $trabajos = [];
             if ($request->has('items')) {
-                foreach ($request->input('items') as $item) {
-                    $trabajoId = $item['trabajo_id'] ?? null;
-                    $descripcionTrabajo = $item['trabajo_nombre'] ?? $item['trabajo'] ?? null;
-                    $precioTrabajo = $item['precio_trabajo'] ?? 0;
-                    $descripcion = $item['descripcion'] ?? '';
-    
-                    if ($trabajoId && empty($descripcionTrabajo)) {
-                        $trabajo = Trabajo::find($trabajoId);
-                        $descripcionTrabajo = $trabajo ? $trabajo->nombre : 'Trabajo no especificado';
-                        $precioTrabajo = $precioTrabajo ?: ($trabajo ? $trabajo->precio : 0);
-                    }
-    
-                    if (!empty($descripcionTrabajo)) {
-                        $productos = [];
-                        if (isset($item['productos'])) {
-                            foreach ($item['productos'] as $producto) {
-                                if (!empty($producto['producto'])) {
-                                    $productos[] = [
-                                        'producto' => $producto['producto'],
-                                        'cantidad' => $producto['cantidad'],
-                                        'almacen' => $producto['almacen'],
-                                        'precio' => $producto['precio'] ?? 0,
-                                        'nombre_producto' => $producto['nombre_producto'] ?? null
-                                    ];
+                Log::debug('Procesando items detallados');
+                foreach ($request->input('items') as $index => $item) {
+                    try {
+                        $trabajoId = $item['trabajo_id'] ?? null;
+                        $descripcionTrabajo = $item['trabajo_nombre'] ?? $item['trabajo'] ?? null;
+                        $precioTrabajo = $item['precio_trabajo'] ?? 0;
+                        $descripcion = $item['descripcion'] ?? '';
+                        Log::debug("Procesando item $index", ['item' => $item]);
+
+                        if ($trabajoId && empty($descripcionTrabajo)) {
+                            Log::debug("Buscando trabajo con ID $trabajoId");
+                            $trabajo = Trabajo::find($trabajoId);
+                            $descripcionTrabajo = $trabajo ? $trabajo->nombre : 'Trabajo no especificado';
+                            $precioTrabajo = $precioTrabajo ?: ($trabajo ? $trabajo->precio : 0);
+                            Log::debug("Trabajo encontrado", ['trabajo' => $trabajo]);
+                        }
+
+                        if (!empty($descripcionTrabajo)) {
+                            $productos = [];
+                            if (isset($item['productos'])) {
+                                Log::debug("Procesando productos para item $index");
+                                foreach ($item['productos'] as $pIndex => $producto) {
+                                    if (!empty($producto['producto'])) {
+                                        $productos[] = [
+                                            'producto' => $producto['producto'],
+                                            'cantidad' => $producto['cantidad'],
+                                            'almacen' => $producto['almacen'],
+                                            'precio' => $producto['precio'] ?? 0,
+                                            'nombre_producto' => $producto['nombre_producto'] ?? null
+                                        ];
+                                        Log::debug("Producto $pIndex agregado", ['producto' => $producto]);
+                                    }
                                 }
                             }
+                            
+                            $trabajos[] = [
+                                'trabajo_id' => $trabajoId,
+                                'trabajo' => $descripcionTrabajo,
+                                'trabajo_nombre' => $descripcionTrabajo,
+                                'precio_trabajo' => (float)$precioTrabajo,
+                                'descripcion' => $descripcion,
+                                'productos' => $productos,
+                            ];
+                            Log::debug("Trabajo agregado", ['trabajo' => end($trabajos)]);
                         }
-                        
-                        $trabajos[] = [
-                            'trabajo_id' => $trabajoId,
-                            'trabajo' => $descripcionTrabajo,
-                            'trabajo_nombre' => $descripcionTrabajo,
-                            'precio_trabajo' => (float)$precioTrabajo,
-                            'descripcion' => $descripcion,
-                            'productos' => $productos,
-                        ];
+                    } catch (\Exception $e) {
+                        Log::error("Error procesando item $index", ['error' => $e->getMessage(), 'item' => $item]);
+                        throw $e;
                     }
                 }
             }
             $validatedData['items'] = json_encode($trabajos);
+            Log::debug('Items procesados', ['trabajos' => $trabajos]);
 
+            // Procesamiento de costos extras
+            Log::debug('Procesando costos extras');
             $costosIds = [];
             if ($request->has('costos_extras')) {
-                foreach ($request->input('costos_extras') as $costoData) {
-                    if (!empty($costoData['descripcion'])) {
-                        $pagoCosto = [
-                            [
-                                'monto' => (float)($costoData['monto'] ?? 0),
-                                'metodo_pago' => $costoData['metodo_pago'] ?? 'efectivo',
-                                'fecha' => $costoData['fecha'] ?? now()->format('Y-m-d'),
-                                'comprobante' => $costoData['comprobante'] ?? null
-                            ]
-                        ];
-    
-                        if (!empty($costoData['id_costos'])) {
-                            $costo = Costo::find($costoData['id_costos']);
-                            if ($costo) {
-                                $costo->update([
-                                    'descripcion' => $costoData['descripcion'],
-                                    'valor' => (float)($costoData['monto'] ?? 0),
-                                    'subcategoria' => $costoData['subcategoria'],
-                                    'estatus' => 'pagado',
-                                    'pagos' => $pagoCosto,
-                                    'id_tecnico' => $request->input('id_empleado')
-                                ]);
-                                $costosIds[] = $costo->id_costos;
-                                continue;
+                foreach ($request->input('costos_extras') as $cIndex => $costoData) {
+                    try {
+                        if (!empty($costoData['descripcion'])) {
+                            $pagoCosto = [
+                                [
+                                    'monto' => (float)($costoData['monto'] ?? 0),
+                                    'metodo_pago' => $costoData['metodo_pago'] ?? 'efectivo',
+                                    'fecha' => $costoData['fecha'] ?? now()->format('Y-m-d'),
+                                    'comprobante' => $costoData['comprobante'] ?? null
+                                ]
+                            ];
+                            Log::debug("Procesando costo extra $cIndex", ['costo' => $costoData]);
+
+                            if (!empty($costoData['id_costos'])) {
+                                Log::debug("Actualizando costo existente", ['id_costo' => $costoData['id_costos']]);
+                                $costo = Costo::find($costoData['id_costos']);
+                                if ($costo) {
+                                    $costo->update([
+                                        'descripcion' => $costoData['descripcion'],
+                                        'valor' => (float)($costoData['monto'] ?? 0),
+                                        'subcategoria' => $costoData['subcategoria'],
+                                        'estatus' => 'pagado',
+                                        'pagos' => $pagoCosto,
+                                        'id_tecnico' => $request->input('id_empleado')
+                                    ]);
+                                    $costosIds[] = $costo->id_costos;
+                                    Log::debug("Costo actualizado", ['id_costo' => $costo->id_costos]);
+                                    continue;
+                                }
                             }
+
+                            Log::debug("Creando nuevo costo");
+                            $nuevoCosto = Costo::create([
+                                'f_costos' => $costoData['fecha'] ?? now()->format('Y-m-d'),
+                                'id_tecnico' => $request->input('id_empleado'),
+                                'descripcion' => $costoData['descripcion'],
+                                'subcategoria' => $costoData['subcategoria'],
+                                'valor' => (float)($costoData['monto'] ?? 0),
+                                'estatus' => 'pagado',
+                                'pagos' => $pagoCosto,
+                                'id_registro_v' => $registroV->id
+                            ]);
+                            $costosIds[] = $nuevoCosto->id_costos;
+                            Log::debug("Nuevo costo creado", ['id_costo' => $nuevoCosto->id_costos]);
                         }
-    
-                        $nuevoCosto = Costo::create([
-                            'f_costos' => $costoData['fecha'] ?? now()->format('Y-m-d'),
-                            'id_tecnico' => $request->input('id_empleado'),
-                            'descripcion' => $costoData['descripcion'],
-                            'subcategoria' => $costoData['subcategoria'],
-                            'valor' => (float)($costoData['monto'] ?? 0),
-                            'estatus' => 'pagado',
-                            'pagos' => $pagoCosto,
-                            'id_registro_v' => $registroV->id
-                        ]);
-                        $costosIds[] = $nuevoCosto->id_costos;
+                    } catch (\Exception $e) {
+                        Log::error("Error procesando costo extra $cIndex", ['error' => $e->getMessage(), 'costo' => $costoData]);
+                        throw $e;
                     }
                 }
             }
             $validatedData['costos'] = json_encode($costosIds);
+            Log::debug('Costos procesados', ['costos_ids' => $costosIds]);
 
+            // Procesamiento de gastos
+            Log::debug('Procesando gastos');
             $gastosIds = [];
             if ($request->has('gastos')) {
-                foreach ($request->input('gastos') as $gastoData) {
-                    if (!empty($gastoData['descripcion'])) {
-                        $pagoGasto = [
-                            [
-                                'monto' => (float)($gastoData['monto'] ?? 0),
-                                'metodo_pago' => $gastoData['metodo_pago'] ?? 'efectivo',
-                                'fecha' => $gastoData['fecha'] ?? now()->format('Y-m-d'),
-                                'comprobante' => $gastoData['comprobante'] ?? null
-                            ]
-                        ];
-    
-                        if (!empty($gastoData['id_gastos'])) {
-                            $gasto = Gasto::find($gastoData['id_gastos']);
-                            if ($gasto) {
-                                $gasto->update([
-                                    'descripcion' => $gastoData['descripcion'],
-                                    'valor' => (float)($gastoData['monto'] ?? 0),
-                                    'estatus' => 'pagado',
-                                    'subcategoria' => $gastoData['subcategoria'],
-                                    'pagos' => $pagoGasto,
-                                    'id_empleado' => $request->input('id_empleado'),
-                                    'id_registro_v' => $registroV->id
-                                ]);
-                                $gastosIds[] = $gasto->id_gastos;
-                                continue;
+                foreach ($request->input('gastos') as $gIndex => $gastoData) {
+                    try {
+                        if (!empty($gastoData['descripcion'])) {
+                            $pagoGasto = [
+                                [
+                                    'monto' => (float)($gastoData['monto'] ?? 0),
+                                    'metodo_pago' => $gastoData['metodo_pago'] ?? 'efectivo',
+                                    'fecha' => $gastoData['fecha'] ?? now()->format('Y-m-d'),
+                                    'comprobante' => $gastoData['comprobante'] ?? null
+                                ]
+                            ];
+                            Log::debug("Procesando gasto $gIndex", ['gasto' => $gastoData]);
+
+                            if (!empty($gastoData['id_gastos'])) {
+                                Log::debug("Actualizando gasto existente", ['id_gasto' => $gastoData['id_gastos']]);
+                                $gasto = Gasto::find($gastoData['id_gastos']);
+                                if ($gasto) {
+                                    $gasto->update([
+                                        'descripcion' => $gastoData['descripcion'],
+                                        'valor' => (float)($gastoData['monto'] ?? 0),
+                                        'estatus' => 'pagado',
+                                        'subcategoria' => $gastoData['subcategoria'],
+                                        'pagos' => $pagoGasto,
+                                        'id_empleado' => $request->input('id_empleado'),
+                                        'id_registro_v' => $registroV->id
+                                    ]);
+                                    $gastosIds[] = $gasto->id_gastos;
+                                    Log::debug("Gasto actualizado", ['id_gasto' => $gasto->id_gastos]);
+                                    continue;
+                                }
                             }
+
+                            Log::debug("Creando nuevo gasto");
+                            $nuevoGasto = Gasto::create([
+                                'f_gastos' => $gastoData['fecha'] ?? now()->format('Y-m-d'),
+                                'id_tecnico' => $request->input('id_empleado'),
+                                'descripcion' => $gastoData['descripcion'],
+                                'subcategoria' => $gastoData['subcategoria'],
+                                'valor' => (float)($gastoData['monto'] ?? 0),
+                                'estatus' => 'pagado',
+                                'pagos' => $pagoGasto,
+                                'id_registro_v' => $registroV->id
+                            ]);
+                            $gastosIds[] = $nuevoGasto->id_gastos;
+                            Log::debug("Nuevo gasto creado", ['id_gasto' => $nuevoGasto->id_gastos]);
                         }
-    
-                        $nuevoGasto = Gasto::create([
-                            'f_gastos' => $gastoData['fecha'] ?? now()->format('Y-m-d'),
-                            'id_tecnico' => $request->input('id_empleado'),
-                            'descripcion' => $gastoData['descripcion'],
-                            'subcategoria' => $gastoData['subcategoria'],
-                            'valor' => (float)($gastoData['monto'] ?? 0),
-                            'estatus' => 'pagado',
-                            'pagos' => $pagoGasto,
-                            'id_registro_v' => $registroV->id
-                        ]);
-                        $gastosIds[] = $nuevoGasto->id_gastos;
+                    } catch (\Exception $e) {
+                        Log::error("Error procesando gasto $gIndex", ['error' => $e->getMessage(), 'gasto' => $gastoData]);
+                        throw $e;
                     }
                 }
             }
             $validatedData['gastos'] = json_encode($gastosIds);
+            Log::debug('Gastos procesados', ['gastos_ids' => $gastosIds]);
 
+            // Procesamiento de pagos
+            Log::debug('Procesando pagos');
             $pagosValidados = [];
             $totalPagado = 0;
             
@@ -931,24 +987,34 @@ public function cxc(Request $request): View
                 try {
                     $pagosInput = $request->input('pagos');
                     $pagos = is_string($pagosInput) ? json_decode($pagosInput, true) : $pagosInput;
+                    Log::debug('Datos de pagos recibidos', ['pagos' => $pagos]);
                     
-                    foreach ($pagos as $pago) {
-                        if (!isset($pago['monto']) || !is_numeric($pago['monto']) || $pago['monto'] <= 0) {
-                            continue;
+                    foreach ($pagos as $pIndex => $pago) {
+                        try {
+                            if (!isset($pago['monto']) || !is_numeric($pago['monto']) || $pago['monto'] <= 0) {
+                                Log::warning("Pago $pIndex ignorado por monto inválido", ['pago' => $pago]);
+                                continue;
+                            }
+                            
+                            $pagosValidados[] = [
+                                'monto' => (float) $pago['monto'],
+                                'metodo_pago' => $pago['metodo_pago'] ?? 'efectivo',
+                                'fecha' => $pago['fecha'] ?? now()->format('Y-m-d'),
+                            ];
+                            
+                            $totalPagado += (float) $pago['monto'];
+                            Log::debug("Pago $pIndex procesado", ['pago' => end($pagosValidados), 'total_acumulado' => $totalPagado]);
+                        } catch (\Exception $e) {
+                            Log::error("Error procesando pago $pIndex", ['error' => $e->getMessage(), 'pago' => $pago]);
+                            throw $e;
                         }
-                        
-                        $pagosValidados[] = [
-                            'monto' => (float) $pago['monto'],
-                            'metodo_pago' => $pago['metodo_pago'] ?? 'efectivo',
-                            'fecha' => $pago['fecha'] ?? now()->format('Y-m-d'),
-                        ];
-                        
-                        $totalPagado += (float) $pago['monto'];
                     }
                     
                     $validatedData['pagos'] = json_encode($pagosValidados);
-    
+                    Log::debug('Pagos validados', ['pagos' => $pagosValidados]);
+
                     $valorTotal = (float) ($validatedData['valor_v'] ?? $registroV->valor_v);
+                    Log::debug('Calculando estatus de pago', ['total_pagado' => $totalPagado, 'valor_total' => $valorTotal]);
                     
                     if ($totalPagado >= $valorTotal) {
                         $validatedData['estatus'] = 'pagado';
@@ -957,24 +1023,35 @@ public function cxc(Request $request): View
                     } else {
                         $validatedData['estatus'] = 'pendiente';
                     }
+                    Log::debug('Estatus determinado', ['estatus' => $validatedData['estatus']]);
                     
                 } catch (\Exception $e) {
+                    Log::error('Error al procesar pagos', ['error' => $e->getMessage()]);
                     $validatedData['pagos'] = json_encode([]);
                 }
             } else {
+                Log::debug('No se recibieron datos de pagos');
                 $validatedData['pagos'] = json_encode([]);
             }
 
+            // Actualización del registro principal
+            Log::debug('Actualizando registro principal', ['data' => $validatedData]);
             $registroV->update($validatedData);
+            Log::info('Registro principal actualizado', ['registro_id' => $registroV->id]);
 
+            // Procesamiento de abono
+            Log::debug('Procesando abono');
             if ($registroV->id_abono) {
+                Log::debug('Actualizando abono existente', ['id_abono' => $registroV->id_abono]);
                 Abono::where('id_abonos', $registroV->id_abono)->update([
                     'id_empleado' => $request->input('id_empleado'),
                     'valor' => $registroV->porcentaje_c,
                     'concepto' => 'Abono por venta #' . $registroV->id,
                     'a_fecha' => $registroV->fecha_h
                 ]);
+                Log::info('Abono actualizado', ['id_abono' => $registroV->id_abono]);
             } else {
+                Log::debug('Creando nuevo abono');
                 $abono = Abono::create([
                     'id_empleado' => $request->input('id_empleado'),
                     'valor' => $registroV->porcentaje_c,
@@ -982,15 +1059,22 @@ public function cxc(Request $request): View
                     'a_fecha' => $registroV->fecha_h
                 ]);
                 $registroV->update(['id_abono' => $abono->id_abonos]);
+                Log::info('Nuevo abono creado', ['id_abono' => $abono->id_abonos]);
             }
-    
+
             DB::commit(); 
-    
+            Log::info('Transacción completada con éxito', ['registro_id' => $registroV->id]);
+
             return Redirect::route('registro-vs.index')
                 ->with('success', 'Registro actualizado satisfactoriamente.');
-    
+
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Error en la transacción', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'registro_id' => $registroV->id
+            ]);
             return back()->withInput()->with('error', 'Error al actualizar el registro: ' . $e->getMessage());
         }
     }
