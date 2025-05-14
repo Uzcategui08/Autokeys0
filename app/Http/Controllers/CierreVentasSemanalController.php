@@ -8,6 +8,7 @@ use App\Models\TiposDePago;
 use App\Models\Costo;
 use App\Models\Gasto;
 use App\Models\Almacene;
+use App\Models\Producto;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -91,10 +92,14 @@ class CierreVentasSemanalController extends Controller
                                 $llaveNombre = $producto['nombre_producto'] ?? 'Llave sin nombre';
                                 $cantidad = (int)$producto['cantidad'];
                                 $precio = (float)$producto['precio'];
+
+                                $productoDB = Producto::where('item', $llaveNombre)->first();
+                                $llaveId = $productoDB ? $productoDB->id_producto : null;
                                 
                                 if (!$llavesInfo->has($llaveNombre)) {
                                     $llavesInfo->put($llaveNombre, [
                                         'nombre' => $llaveNombre,
+                                        'id_producto' => $llaveId,
                                         'almacenes' => collect(),
                                         'total_cantidad' => 0,
                                         'total_valor' => 0
@@ -136,18 +141,20 @@ class CierreVentasSemanalController extends Controller
         })
         ->filter();
 
-        $almacenesDisponibles = $llavesPorTecnico->flatMap(function($tecnico) {
+        $idsAlmacenes = $llavesPorTecnico->flatMap(function($tecnico) {
             return $tecnico['llaves']->flatMap(function($llave) {
                 return $llave['almacenes']->keys();
             });
-        })
-        ->unique()
-        ->map(function($id) {
-            return (object)[
-                'id' => $id,
-                'nombre' => 'Almacén '.$id
-            ];
-        });
+        })->unique()->values();
+
+        $almacenesDisponibles = Almacene::whereIn('id_almacen', $idsAlmacenes)
+            ->get()
+            ->map(function($almacen) {
+                return (object)[
+                    'id' => $almacen->id_almacen,
+                    'nombre' => $almacen->nombre
+                ];
+            });
 
         $ventasPorCliente = $this->getVentasPorCliente($startOfWeek, $endOfWeek);
         $ventasPorTrabajo = $this->getVentasPorTrabajo($startOfWeek, $endOfWeek, $metodosPago);
