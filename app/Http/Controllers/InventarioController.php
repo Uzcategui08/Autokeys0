@@ -88,22 +88,24 @@ class InventarioController extends Controller
         return view('inventario.show', compact('inventario'));
     }
     
-    public function cargas(Request $request)
-    {
-        $query = AjusteInventario::with(['producto', 'almacene', 'user'])
-                    ->orderBy('created_at', 'desc');
-        
-        // Si el usuario es limited_user, filtrar solo sus cargas
-        if (auth()->user()->hasRole('limited_user')) {
-            $query->where('user_id', auth()->id());
-        }
-        
-        $cargas = $query->all();
-        
-        return view('inventario.cargas', [
-            'cargas' => $cargas,
-        ]);
+public function cargas(Request $request)
+{
+    $query = AjusteInventario::with(['producto', 'almacene', 'user'])
+                ->orderBy('created_at', 'desc');
+    
+    // Si el usuario es limited_user, filtrar solo sus cargas
+    if (auth()->user()->hasRole('limited_user')) {
+        $query->where('user_id', auth()->id());
     }
+    
+    // Obtener todos los registros sin paginación
+    $cargas = $query->get();
+    
+    return view('inventario.cargas', [
+        'cargas' => $cargas,
+        'i' => 0 // Como no hay paginación, el índice comienza en 0
+    ]);
+}
 
     public function edit($id_inventario): View
     {
