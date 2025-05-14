@@ -98,11 +98,10 @@ class InventarioController extends Controller
             $query->where('user_id', auth()->id());
         }
         
-        $cargas = $query->paginate(10);
+        $cargas = $query->all();
         
         return view('inventario.cargas', [
             'cargas' => $cargas,
-            'i' => ($request->input('page', 1) - 1) * $cargas->perPage()
         ]);
     }
 
