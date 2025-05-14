@@ -478,10 +478,20 @@ public function cxc(Request $request): View
         }
     
         try {
+            $registroV = RegistroV::findOrFail($id);
+
             $items = json_decode($registroV->items, true) ?? [];
 
-            
-            foreach ($items as &$trabajo) {
+            foreach ($items as $index => &$trabajo) {
+                $trabajo['index'] = $index;
+                if (!isset($trabajo['trabajo_id']) && isset($trabajo['trabajo'])) {
+                    $trabajoModel = Trabajo::where('nombre', $trabajo['trabajo'])->first();
+                    if ($trabajoModel) {
+                        $trabajo['trabajo_id'] = $trabajoModel->id_trabajo;
+                        $trabajo['trabajo_nombre'] = $trabajoModel->nombre;
+                    }
+                }
+
                 $trabajo['trabajo_id'] = $trabajo['trabajo_id'] ?? null;
                 $trabajo['trabajo'] = $trabajo['trabajo'] ?? ($trabajo['trabajo_nombre'] ?? 'Trabajo no especificado');
                 $trabajo['trabajo_nombre'] = $trabajo['trabajo_nombre'] ?? $trabajo['trabajo'];
