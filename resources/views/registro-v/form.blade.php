@@ -967,64 +967,70 @@ $(document).ready(function() {
     const itemsExistentes = @json($registroV->items ?? []);
     let totalTrabajos = 0;
 
-    function verificarStock() {
-        let sinStock = false;
-        let mensajesError = [];
+    function verificarStock(ventaId = null) {
+    let sinStock = false;
+    let mensajesError = [];
+    
+    $('.producto-row').each(function() {
+        const $row = $(this);
+        const productoSelect = $row.find('select[name$="[producto]"]');
+        const cantidadInput = $row.find('input[name$="[cantidad]"]');
+        const almacenSelect = $row.find('select[name$="[almacen]"]');
         
-        $('.producto-row').each(function() {
-            const $row = $(this);
-            const productoSelect = $row.find('select[name$="[producto]"]');
-            const cantidadInput = $row.find('input[name$="[cantidad]"]');
-            const almacenSelect = $row.find('select[name$="[almacen]"]');
-            
-            const productoId = productoSelect.val();
-            const cantidad = parseInt(cantidadInput.val()) || 0;
-            const almacenId = almacenSelect.val();
-            
-            if (productoId && almacenId && cantidad > 0) {
-                $.ajax({
-                    url: '/verificar-stock',
-                    type: 'GET',
-                    async: false, 
-                    data: {
-                        producto_id: productoId,
-                        almacen_id: almacenId,
-                        cantidad: cantidad
-                    },
-                    success: function(response) {
-                        if (!response.suficiente) {
-                            sinStock = true;
-                            const productoNombre = productoSelect.find('option:selected').text().split('-')[1]?.trim();
-                            mensajesError.push(`
-                                <div class="mb-2">
-                                    <strong>${productoNombre}</strong>: 
-                                    Stock insuficiente en ${almacenSelect.find('option:selected').text()}.<br>
-                                    Disponible: ${response.stock || 0} - Requerido: ${cantidad}
-                                </div>
-                            `);
-                        }
-                    },
-                    error: function() {
-                        console.error('Error al verificar el stock');
+        const productoId = productoSelect.val();
+        const cantidad = parseInt(cantidadInput.val()) || 0;
+        const almacenId = almacenSelect.val();
+        
+        if (productoId && almacenId && cantidad > 0) {
+            $.ajax({
+                url: '/verificar-stock',
+                type: 'GET',
+                async: false, 
+                data: {
+                    producto_id: productoId,
+                    almacen_id: almacenId,
+                    cantidad: cantidad,
+                    venta_id: ventaId 
+                },
+                success: function(response) {
+                    if (!response.suficiente) {
                         sinStock = true;
-                        mensajesError.push('Error al verificar disponibilidad de productos');
+                        const productoNombre = productoSelect.find('option:selected').text().split('-')[1]?.trim();
+                        const mensaje = response.cantidad_original > 0 ?
+                            `<strong>${productoNombre}</strong>: 
+                            Stock insuficiente para el cambio solicitado.<br>
+                            Disponible: ${response.stock + response.cantidad_original} (${response.stock} en almacén + ${response.cantidad_original} de esta venta)<br>
+                            Requerido: ${cantidad}` :
+                            `<strong>${productoNombre}</strong>: 
+                            Stock insuficiente en ${almacenSelect.find('option:selected').text()}.<br>
+                            Disponible: ${response.stock} - Requerido: ${cantidad}`;
+                        
+                        mensajesError.push(`<div class="mb-2">${mensaje}</div>`);
                     }
-                });
-            }
-        });
-        
-        return {
-            valido: !sinStock,
-            mensajes: mensajesError
-        };
-    }
+                },
+                error: function() {
+                    console.error('Error al verificar el stock');
+                    sinStock = true;
+                    mensajesError.push('Error al verificar disponibilidad de productos');
+                }
+            });
+        }
+    });
+    
+    return {
+        valido: !sinStock,
+        mensajes: mensajesError
+    };
+}
+
+    const ventaId = {{ $registroV->id }};
 
     $('form').on('submit', function(e) {
         e.preventDefault();
         
-        const verificacionStock = verificarStock();
+        const verificacion = verificarStock(ventaId);
         
-        if (!verificacionStock.valido) {
+        if (!verificacion.valido) {
             Swal.fire({
                 title: 'Error de Stock',
                 html: `
