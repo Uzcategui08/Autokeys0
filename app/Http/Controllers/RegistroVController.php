@@ -39,10 +39,9 @@ class RegistroVController extends Controller
     if (auth()->user()->hasRole('limited')) {
         $query->where('id_empleado', auth()->id());
     }
-    $registroVs = $query->paginate(20);
+    $registroVs = $query->get();
 
-        return view('registro-v.index', compact('registroVs'))
-            ->with('i', ($request->input('page', 1) - 1) * $registroVs->perPage());
+        return view('registro-v.index', compact('registroVs'));
     }
 
 public function cxc(Request $request): View
@@ -55,10 +54,9 @@ public function cxc(Request $request): View
         $query->where('id_empleado', auth()->id());
     }
     
-    $registroVs = $query->paginate(20);
+    $registroVs = $query->get();
 
-    return view('registro-v.cxc', compact('registroVs'))
-        ->with('i', ($request->input('page', 1) - 1) * $registroVs->perPage());
+    return view('registro-v.cxc', compact('registroVs'));
 }
     
     /**
