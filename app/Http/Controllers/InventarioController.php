@@ -25,8 +25,7 @@ class InventarioController extends Controller
 
      public function getData(Request $request)
      {
-         $query = Inventario::with(['producto', 'almacene'])
-             ->where('cantidad', '>=', 1);
+         $query = Inventario::with(['producto', 'almacene']);
              
          if ($request->has('almacen_id') && $request->almacen_id) {
              $query->where('id_almacen', $request->almacen_id);
@@ -42,7 +41,6 @@ class InventarioController extends Controller
     public function index(Request $request): View
     {
         $inventarios1 = Inventario::with(['producto', 'almacene'])
-            ->where('cantidad', '>=', 1) 
             ->orderByRaw('CAST(cantidad AS NUMERIC) ASC')
             ->get();
     
