@@ -1280,7 +1280,7 @@ $(document).ready(function() {
     }
 
     function addNewItemGroup(itemData = null) {
-        const currentIndex = itemGroupIndex;
+        const currentIndex = itemData && itemData.index !== undefined ? itemData.index : itemGroupIndex;
         const trabajoValue = itemData ? (itemData.trabajo_id || itemData.trabajo || '') : '';
         const trabajoNombre = itemData ? (itemData.trabajo_nombre || itemData.trabajo || '') : '';
         const precioTrabajo = itemData ? (itemData.precio_trabajo || '0') : '0';
@@ -1329,6 +1329,7 @@ $(document).ready(function() {
         const $selectTrabajo = newItemGroup.find('.select2-trabajo');
 
         if (!itemData || itemData.trabajo_id) {
+            itemGroupIndex++;
             cargarTrabajosEnSelect($selectTrabajo, trabajoValue);
         }
 
@@ -1449,12 +1450,106 @@ $(document).ready(function() {
 
     $(document).ready(function() {
         if (itemsExistentes && itemsExistentes.length > 0) {
-            itemsExistentes.forEach(item => {
-                addNewItemGroup(item);
+            console.log('Items a cargar:', itemsExistentes);
+            
+            $('#items-container').empty();
+            
+            itemsExistentes.forEach((item, index) => {
+                console.log('Cargando item', index, item);
+                
+                const newItemGroup = $(`
+                    <div class="item-group mb-4 p-3 border rounded" data-index="${index}">
+                        <div class="row mb-2">
+                            <div class="col-md-5">
+                                <label class="form-label">{{ __("Trabajo") }}</label>
+                                <select name="items[${index}][trabajo]" class="form-control select2-trabajo">
+                                    <option value="">{{ __("Seleccionar Trabajo") }}</option>
+                                    ${item.trabajo && !item.trabajo_id ? 
+                                    `<option value="${item.trabajo}" selected>${item.trabajo}</option>` : ''}
+                                </select>
+                                <input type="hidden" name="items[${index}][trabajo_id]" value="${item.trabajo_id || ''}">
+                                <input type="hidden" name="items[${index}][trabajo_nombre]" value="${item.trabajo_nombre || item.trabajo || ''}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">{{ __("Precio Trabajo") }}</label>
+                                <input type="number" step="0.01" name="items[${index}][precio_trabajo]" 
+                                    class="form-control precio-trabajo" placeholder="0.00" min="0"
+                                    value="${item.precio_trabajo || '0'}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">{{ __("Descripción") }}</label>
+                                <input type="text" name="items[${index}][descripcion]" 
+                                    class="form-control" placeholder="Descripción adicional"
+                                    value="${item.descripcion || ''}">
+                            </div>
+                            <div class="col-md-1">
+                                <button type="button" class="btn btn-danger btn-remove-item-group mt-4">
+                                    <i class="fa fa-times-circle" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="productos-container"></div>
+                        <button type="button" class="btn btn-success btn-add-producto mt-2">
+                            {{ __("Agregar Producto") }}
+                        </button>
+                    </div>
+                `);
+
+                $('#items-container').append(newItemGroup);
+                
+                const $selectTrabajo = newItemGroup.find('.select2-trabajo');
+                const $precioTrabajo = newItemGroup.find('.precio-trabajo');
+
+                $selectTrabajo.select2({
+                    placeholder: "Seleccione un trabajo",
+                    width: '100%',
+                    dropdownParent: $selectTrabajo.closest('.item-group')
+                });
+
+                if (item.trabajo_id) {
+                    $selectTrabajo.off('change');
+                    
+                    cargarTrabajosEnSelect($selectTrabajo, item.trabajo_id).then(() => {
+                        $selectTrabajo.val(item.trabajo_id);
+
+                        $selectTrabajo.trigger('change.select2');
+
+                        $precioTrabajo.val(item.precio_trabajo || '0');
+
+                        setTimeout(() => {
+                            $selectTrabajo.on('change', function() {
+                                const precio = $(this).find('option:selected').data('precio') || 0;
+                                $(this).closest('.item-group').find('.precio-trabajo').val(precio);
+                                calcularTotalTrabajos();
+                            });
+                        }, 100);
+                    });
+                } 
+                else if (item.trabajo) {
+                    $selectTrabajo.append(`<option value="${item.trabajo}" selected>${item.trabajo}</option>`);
+                    newItemGroup.find('input[name$="[trabajo_nombre]"]').val(item.trabajo);
+                    $precioTrabajo.val(item.precio_trabajo || '0');
+                }
+
+                $selectTrabajo.on('change', function() {
+                    const precio = $(this).find('option:selected').data('precio') || 0;
+                    $(this).closest('.item-group').find('.precio-trabajo').val(precio);
+                    calcularTotalTrabajos();
+                });
+
+                if (item.productos && item.productos.length > 0) {
+                    item.productos.forEach(producto => {
+                        addNewProductRow(newItemGroup, producto);
+                    });
+                }
             });
+            
+            itemGroupIndex = itemsExistentes.length;
         } else {
             addNewItemGroup();
         }
+        
+        calcularTotalTrabajos();
         calcularPorcentajeCerrajero();
     });
 
