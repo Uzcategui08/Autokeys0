@@ -344,10 +344,9 @@ class CierreVentasSemanalController extends Controller
             ->sortByDesc('total_ventas');
     }
 
-    private function getVentasPorTrabajo($month, $year, $metodosPago)
+    private function getVentasPorTrabajo($startDate, $endDate, $metodosPago)
     {
-        $ventas = RegistroV::whereMonth('fecha_h', $month)
-            ->whereYear('fecha_h', $year)
+        $ventas = RegistroV::whereBetween('fecha_h', [$startDate, $endDate])
             ->get(['id', 'tipo_venta', 'valor_v', 'pagos', 'items']);
         
         $contado = collect();
@@ -436,14 +435,13 @@ class CierreVentasSemanalController extends Controller
         ];
     }
 
-    private function getResumenTrabajos($month, $year)
+    private function getResumenTrabajos($startDate, $endDate)
     {
-        $ventas = RegistroV::whereMonth('fecha_h', $month)
-            ->whereYear('fecha_h', $year)
+        $ventas = RegistroV::whereBetween('fecha_h', [$startDate, $endDate])
             ->get(['items']);
-    
+
         $trabajos = collect();
-    
+
         foreach ($ventas as $venta) {
             $items = json_decode($venta->items, true) ?? [];
             
@@ -457,7 +455,7 @@ class CierreVentasSemanalController extends Controller
                 $trabajos->put($trabajoKey, $trabajos->get($trabajoKey) + 1);
             }
         }
-    
+
         return $trabajos->map(function ($cantidad, $trabajoKey) {
             return [
                 'cantidad' => $cantidad,
