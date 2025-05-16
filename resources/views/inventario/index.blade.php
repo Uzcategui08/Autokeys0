@@ -243,9 +243,9 @@ $(document).ready(function() {
                                         <a class="btn btn-sm btn-success mx-1" href="/inventarios/${inventario.id_inventario}/edit">
                                             <i class="fas fa-exchange-alt"></i>
                                         </a>
-                                        <a class="btn btn-sm btn-success mx-1" href="{{ route('inventarios.editar', '') }}/${inventario.id_inventario}">
-    <i class="fas fa-edit"></i>
-</a>
+                                          <a class="btn btn-sm btn-success mx-1" href="/inventarios/${inventario.id_inventario}/editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
                                         <form onsubmit="return confirmDelete(this)" action="/inventarios/${inventario.id_inventario}" method="POST" class="d-inline mx-1">
                                             @csrf
                                             @method('DELETE')
