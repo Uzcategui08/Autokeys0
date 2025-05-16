@@ -70,7 +70,6 @@
 
                     <form action="{{ route('inventarios.actualizar-ajustes', $inventario->id_inventario) }}" method="POST">
                         @csrf
-                        @method('PUT')
 
                         <div class="form-group mb-3">
                             <label for="tipo_ajuste" class="form-label fw-bold">Tipo de Ajuste</label>

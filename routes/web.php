@@ -63,6 +63,7 @@ Route::get('/inventarios/data', [InventarioController::class, 'getData'])->name(
 Route::get('/inventarios/export', [InventarioController::class, 'export'])->name('inventarios.export');
 Route::resource('inventarios', InventarioController::class);
 Route::get('/cargas', [InventarioController::class, 'cargas'])->name('inventario.cargas');
+// Rutas para el sistema de ajustes
 Route::get('/inventarios/{inventario}/ajustar', [InventarioController::class, 'editarConAjustes'])
      ->name('inventarios.ajustar');
 Route::post('/inventarios/{inventario}/ajustar', [InventarioController::class, 'actualizarConAjustes'])
