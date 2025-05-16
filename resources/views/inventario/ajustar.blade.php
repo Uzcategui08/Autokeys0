@@ -68,7 +68,7 @@
                         </div>
                     </div>
 
-                    <form action="{{ route('inventarios.update', $inventario->id_inventario) }}" method="POST" id="ajusteForm">
+                    <form action="{{ route('inventarios.actualizar-ajustes', $inventario->id_inventario) }}" method="POST">
                         @csrf
                         @method('PUT')
 

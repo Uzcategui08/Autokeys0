@@ -1,4 +1,10 @@
-@extends('layouts.app')
+@extends('adminlte::page')
+
+@section('title', 'Editar Inventario')
+
+@section('content_header')
+<h1>Registro</h1>
+@stop
 
 @section('content')
 <div class="container">
