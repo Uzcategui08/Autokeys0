@@ -175,7 +175,7 @@ public function actualizarConAjustes(Request $request, $id_inventario)
         'id_inventario' => $inventario->id_inventario,
         'id_producto' => $inventario->id_producto,
         'id_almacen' => $inventario->id_almacen,
-        'tipo_movimiento' => $request->tipo_ajuste, 
+        'tipo_ajuste' => $request->tipo_ajuste, 
         'cantidad_anterior' => $cantidadAnterior,
         'cantidad_ajuste' => $cantidadAjuste,
         'nueva_cantidad' => $nuevaCantidad,
