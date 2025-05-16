@@ -172,13 +172,12 @@ public function actualizarConAjustes(Request $request, $id_inventario)
 
     // Registrar el ajuste
     AjusteInventario::create([
-        'id_inventario' => $inventario->id_inventario,
         'id_producto' => $inventario->id_producto,
         'id_almacen' => $inventario->id_almacen,
         'tipo_ajuste' => $request->tipo_ajuste, 
         'cantidad_anterior' => $cantidadAnterior,
-        'cantidad_ajuste' => $cantidadAjuste,
-        'nueva_cantidad' => $nuevaCantidad,
+        'diferencia' => $cantidadAjuste,
+        'cantidad_nueva' => $nuevaCantidad,
         'descripcion' => $request->descripcion, 
         'user_id' => Auth::id(),
     ]);
