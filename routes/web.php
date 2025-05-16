@@ -63,6 +63,10 @@ Route::get('/inventarios/data', [InventarioController::class, 'getData'])->name(
 Route::get('/inventarios/export', [InventarioController::class, 'export'])->name('inventarios.export');
 Route::resource('inventarios', InventarioController::class);
 Route::get('/cargas', [InventarioController::class, 'cargas'])->name('inventario.cargas');
+Route::get('/inventarios/{inventario}/ajustar', [InventarioController::class, 'editarConAjustes'])
+     ->name('inventarios.ajustar');
+Route::post('/inventarios/{inventario}/ajustar', [InventarioController::class, 'actualizarConAjustes'])
+     ->name('inventarios.actualizar-ajustes');
 
 Route::resource('almacenes', AlmaceneController::class);
 
@@ -148,8 +152,6 @@ Route::get('prestamos/empleado/{id}', [PrestamoController::class, 'porEmpleado']
     ->name('prestamos.empleado');
 Route::get('prestamos/{id}/cuotas', [PrestamoController::class, 'showCuotas'])
 ->name('prestamos.cuotas');
-Route::get('/inventarios/{id_inventario}/editar', [InventarioController::class, 'edit'])
-     ->name('inventarios.editar');
 
 
 Route::resource('abonos', AbonoController::class);
