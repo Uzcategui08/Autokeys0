@@ -241,7 +241,7 @@ $(document).ready(function() {
                                             <i class="fa fa-fw fa-eye"></i> 
                                         </a>
                                         <a class="btn btn-sm btn-success mx-1" href="/inventarios/${inventario.id_inventario}/edit">
-                                            <i class="fas fa-exchange-alt"></i>
+                                            <i class="fas fa-edit"></i>
                                         </a>
                 <a class="btn btn-sm btn-success mx-1" href="/inventarios/${inventario.id_inventario}/ajustar">
                     <i class="fas fa-exchange-alt"></i>

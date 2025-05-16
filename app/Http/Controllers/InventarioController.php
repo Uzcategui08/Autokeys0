@@ -132,7 +132,7 @@ public function cargas(Request $request)
     public function editarConAjustes($id_inventario): View
     {
         $inventario = Inventario::with(['producto', 'almacene'])->findOrFail($id_inventario);
-        $productos = Producto::select('id_producto', 'item', 'codigo', 'stock')->get();
+        $productos = Producto::select('id_producto', 'item',)->get();
         $almacenes = Almacene::select('id_almacen', 'nombre', 'ubicacion')->get();
         
         return view('inventario.ajustar', compact('inventario', 'productos', 'almacenes'));
