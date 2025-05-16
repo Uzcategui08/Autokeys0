@@ -141,53 +141,51 @@ public function cargas(Request $request)
     /**
      * Actualización con sistema de ajustes
      */
-    public function actualizarConAjustes(Request $request, $id_inventario)
-    {
-        $request->validate([
-            'tipo_movimiento' => 'required|in:entrada,salida,ajuste',
-            'cantidad' => 'required|integer|min:1',
-            'motivo' => 'nullable|string|max:500',
-        ]);
+public function actualizarConAjustes(Request $request, $id_inventario)
+{
+    $request->validate([
+        'tipo_ajuste' => 'required|in:compra,resta,ajuste', 
+        'cantidad_ajuste' => 'required|integer|min:1', 
+        'descripcion' => 'nullable|string|max:500', 
+    ]);
 
-        $inventario = Inventario::findOrFail($id_inventario);
-        $cantidadAnterior = $inventario->cantidad;
-        $cantidadAjuste = $request->cantidad;
+    $inventario = Inventario::findOrFail($id_inventario);
+    $cantidadAnterior = $inventario->cantidad;
+    $cantidadAjuste = $request->cantidad_ajuste; 
 
-        // Calcular nueva cantidad
-        switch ($request->tipo_movimiento) {
-            case 'entrada':
-                $nuevaCantidad = $cantidadAnterior + $cantidadAjuste;
-                break;
-            case 'salida':
-                $nuevaCantidad = $cantidadAnterior - $cantidadAjuste;
-                if ($nuevaCantidad < 0) {
-                    return back()->withErrors(['cantidad' => 'La cantidad resultante no puede ser negativa']);
-                }
-                break;
-            case 'ajuste':
-                $nuevaCantidad = $cantidadAjuste;
-                break;
-        }
-
-        // Actualizar inventario
-        $inventario->update(['cantidad' => $nuevaCantidad]);
-
-        // Registrar el ajuste
-        AjusteInventario::create([
-            'id_inventario' => $inventario->id_inventario,
-            'id_producto' => $inventario->id_producto,
-            'id_almacen' => $inventario->id_almacen,
-            'tipo_movimiento' => $request->tipo_movimiento,
-            'cantidad_anterior' => $cantidadAnterior,
-            'cantidad_ajuste' => $cantidadAjuste,
-            'nueva_cantidad' => $nuevaCantidad,
-            'motivo' => $request->motivo,
-            'user_id' => Auth::id(),
-        ]);
-
-        return redirect()->route('inventarios.index')
-             ->with('success', 'Inventario ajustado correctamente. Se registró el movimiento.');
+    
+    switch ($request->tipo_ajuste) { 
+        case 'compra':
+        case 'ajuste':
+            $nuevaCantidad = $cantidadAnterior + $cantidadAjuste;
+            break;
+        case 'resta':
+            $nuevaCantidad = $cantidadAnterior - $cantidadAjuste;
+            if ($nuevaCantidad < 0) {
+                return back()->withErrors(['cantidad_ajuste' => 'La cantidad resultante no puede ser negativa']);
+            }
+            break;
     }
+
+    // Actualizar inventario
+    $inventario->update(['cantidad' => $nuevaCantidad]);
+
+    // Registrar el ajuste
+    AjusteInventario::create([
+        'id_inventario' => $inventario->id_inventario,
+        'id_producto' => $inventario->id_producto,
+        'id_almacen' => $inventario->id_almacen,
+        'tipo_movimiento' => $request->tipo_ajuste, 
+        'cantidad_anterior' => $cantidadAnterior,
+        'cantidad_ajuste' => $cantidadAjuste,
+        'nueva_cantidad' => $nuevaCantidad,
+        'descripcion' => $request->descripcion, 
+        'user_id' => Auth::id(),
+    ]);
+
+    return redirect()->route('inventarios.index')
+         ->with('success', 'Inventario ajustado correctamente. Se registró el movimiento.');
+}
 
     
     public function destroy($id): RedirectResponse
