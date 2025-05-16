@@ -104,6 +104,14 @@ public function cargas(Request $request)
         'i' => 0 // Como no hay paginación, el índice comienza en 0
     ]);
 }
+public function editar($id_inventario): View
+{
+    $inventario = Inventario::with(['producto', 'almacene'])->findOrFail($id_inventario);
+    $productos = Producto::select('id_producto', 'item', 'codigo', 'stock')->get();
+    $almacenes = Almacene::select('id_almacen', 'nombre', 'ubicacion')->get();
+    
+    return view('inventario.editar', compact('inventario', 'productos', 'almacenes'));
+}
 
     public function edit($id_inventario): View
     {
