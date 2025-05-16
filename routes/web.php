@@ -148,6 +148,8 @@ Route::get('prestamos/empleado/{id}', [PrestamoController::class, 'porEmpleado']
     ->name('prestamos.empleado');
 Route::get('prestamos/{id}/cuotas', [PrestamoController::class, 'showCuotas'])
 ->name('prestamos.cuotas');
+Route::get('/inventarios/{id_inventario}/editar', [InventarioController::class, 'edit'])
+     ->name('inventarios.editar');
 
 
 Route::resource('abonos', AbonoController::class);
