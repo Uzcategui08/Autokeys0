@@ -628,37 +628,30 @@ public function cxc(Request $request): View
     // MÃ©todo para ajustar el inventario
     private function ajustarInventario($itemsAntiguos, $itemsNuevos)
     {
-        // Recorrer los items nuevos
-        foreach ($itemsNuevos as $trabajoNuevo) {
-            if (isset($trabajoNuevo['productos'])) {
-                foreach ($trabajoNuevo['productos'] as $productoNuevo) {
-                    // Buscar el producto en los items antiguos
-                    $productoAntiguo = $this->buscarProductoAntiguo($itemsAntiguos, $trabajoNuevo['trabajo'], $productoNuevo['producto']);
 
-                    if ($productoAntiguo) {
-                        // Ajustar el inventario segÃºn la diferencia
-                        $diferencia = $productoAntiguo['cantidad'] - $productoNuevo['cantidad'];
-                        if ($diferencia != 0) {
-                            $this->actualizarInventario($productoNuevo['producto'], $diferencia, $productoNuevo['almacen']);
-                        }
-                    } else {
-                        // Si no se encontrÃ³ el producto antiguo, restar la cantidad nueva del inventario
-                        $this->actualizarInventario($productoNuevo['producto'], -$productoNuevo['cantidad'], $productoNuevo['almacen']);
+        foreach ($itemsAntiguos as $trabajoAntiguo) {
+            if (isset($trabajoAntiguo['productos'])) {
+                foreach ($trabajoAntiguo['productos'] as $productoAntiguo) {
+                    if (!empty($productoAntiguo['producto'])) {
+                        $this->actualizarInventario(
+                            $productoAntiguo['producto'], 
+                            $productoAntiguo['cantidad'], 
+                            $productoAntiguo['almacen'] ?? null
+                        );
                     }
                 }
             }
         }
 
-        // Recorrer los items antiguos para verificar si se eliminaron productos
-        foreach ($itemsAntiguos as $trabajoAntiguo) {
-            if (isset($trabajoAntiguo['productos'])) {
-                foreach ($trabajoAntiguo['productos'] as $productoAntiguo) {
-                    // Buscar el producto en los items nuevos
-                    $productoNuevo = $this->buscarProductoNuevo($itemsNuevos, $trabajoAntiguo['trabajo'], $productoAntiguo['producto']);
-
-                    if (!$productoNuevo) {
-                        // Si no se encontrÃ³ el producto nuevo, sumar la cantidad antigua al inventario
-                        $this->actualizarInventario($productoAntiguo['producto'], $productoAntiguo['cantidad'], $productoAntiguo['almacen']);
+        foreach ($itemsNuevos as $trabajoNuevo) {
+            if (isset($trabajoNuevo['productos'])) {
+                foreach ($trabajoNuevo['productos'] as $productoNuevo) {
+                    if (!empty($productoNuevo['producto'])) {
+                        $this->actualizarInventario(
+                            $productoNuevo['producto'], 
+                            -$productoNuevo['cantidad'], 
+                            $productoNuevo['almacen'] ?? null
+                        );
                     }
                 }
             }
@@ -707,59 +700,87 @@ public function cxc(Request $request): View
             'request_data' => $request->all(),
             'time' => now()
         ]);
-    
+
         $productoId = $request->input('producto_id');
         $almacenId = $request->input('almacen_id');
-        $cantidadRequerida = $request->input('cantidad');
+        $cantidadRequerida = (int)$request->input('cantidad');
+        $ventaId = $request->input('venta_id');
         
         Log::debug('Datos recibidos', [
             'producto_id' => $productoId,
             'almacen_id' => $almacenId,
-            'cantidad_requerida' => $cantidadRequerida
+            'cantidad_requerida' => $cantidadRequerida,
+            'venta_id' => $ventaId
         ]);
-    
+
         $inventario = Inventario::where('id_producto', $productoId)
                             ->where('id_almacen', $almacenId)
                             ->first();
         
-        Log::debug('Resultado de consulta de inventario', [
-            'inventario' => $inventario,
-            'exists' => !is_null($inventario)
-        ]);
-    
         $stockDisponible = $inventario ? $inventario->cantidad : 0;
+
+        $cantidadOriginal = 0;
+        if ($ventaId) {
+            $venta = RegistroV::find($ventaId);
+            if ($venta) {
+                $items = json_decode($venta->items, true) ?? [];
+                foreach ($items as $item) {
+                    if (isset($item['productos'])) {
+                        foreach ($item['productos'] as $producto) {
+                            if ($producto['producto'] == $productoId && $producto['almacen'] == $almacenId) {
+                                $cantidadOriginal += $producto['cantidad'];
+                            }
+                        }
+                    }
+                }
+
+                $stockDisponible += $cantidadOriginal;
+                Log::debug('Ajuste por venta existente', [
+                    'cantidad_original' => $cantidadOriginal,
+                    'stock_ajustado' => $stockDisponible
+                ]);
+            }
+        }
+
+        $suficiente = $stockDisponible >= $cantidadRequerida;
         
         Log::info('Resultado de verificaciÃ³n de stock', [
             'stock_disponible' => $stockDisponible,
             'cantidad_requerida' => $cantidadRequerida,
-            'suficiente' => $stockDisponible >= $cantidadRequerida
+            'suficiente' => $suficiente,
+            'cantidad_original' => $cantidadOriginal
         ]);
-    
+
         return response()->json([
-            'suficiente' => $stockDisponible >= $cantidadRequerida,
+            'suficiente' => $suficiente,
             'stock' => $stockDisponible,
             'producto_id' => $productoId,
-            'almacen_id' => $almacenId
+            'almacen_id' => $almacenId,
+            'cantidad_original' => $cantidadOriginal
         ]);
     }
      
-    // MÃ©todo para actualizar el inventario
-    private function actualizarInventario($productoId, $cantidad, $almacen)
+    // Método para actualizar el inventario
+    private function actualizarInventario($productoId, $cantidad, $almacenId = null)
     {
-        $inventario = Inventario::where('id_producto', $productoId)
-            ->first();
-    
+        $query = Inventario::where('id_producto', $productoId);
+        
+        if ($almacenId) {
+            $query->where('id_almacen', $almacenId);
+        }
+
+        $inventario = $query->first();
+
         if ($inventario) {
             $nuevaCantidad = $inventario->cantidad + $cantidad;
+            
             if ($nuevaCantidad < 0) {
-                // Manejar el caso cuando la cantidad resultante es negativa
                 throw new \Exception("No hay suficiente stock para el producto $productoId");
             }
-    
+
             $inventario->update(['cantidad' => $nuevaCantidad]);
         } else {
-            // Manejar el caso cuando no se encuentra el producto en el inventario
-            throw new \Exception("El producto $productoId no existe en el inventario");
+            throw new \Exception("El producto $productoId no existe en el inventario" . ($almacenId ? " para el almacén $almacenId" : ""));
         }
     }
 
@@ -797,7 +818,7 @@ public function cxc(Request $request): View
             Log::debug('Validando datos del request');
             $validatedData = $request->validated();
             Log::debug('Datos validados', ['data' => $validatedData]);
-
+            
             // Procesamiento de items
             Log::debug('Procesando items');
             $items = $request->input('items');
@@ -1093,6 +1114,17 @@ public function cxc(Request $request): View
     
         try {
             $registroV = RegistroV::findOrFail($id);
+
+            $items = json_decode($registroV->items, true) ?? [];
+            foreach ($items as $item) {
+                if (isset($item['productos'])) {
+                    foreach ($item['productos'] as $producto) {
+                        if (!empty($producto['producto'])) {
+                            $this->actualizarInventario($producto['producto'], $producto['cantidad'], $producto['almacen'] ?? null);
+                        }
+                    }
+                }
+            }
 
             $costosIds = is_string($registroV->costos) ? json_decode($registroV->costos, true) ?? [] : ($registroV->costos ?: []);
             $gastosIds = is_string($registroV->gastos) ? json_decode($registroV->gastos, true) ?? [] : ($registroV->gastos ?: []);
