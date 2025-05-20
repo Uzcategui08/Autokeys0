@@ -24,6 +24,7 @@ use App\Models\Inventario;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 use App\Models\Trabajo;
+use Illuminate\Support\Facades\Auth;
 
 class RegistroVController extends Controller
 {
@@ -33,32 +34,32 @@ class RegistroVController extends Controller
     public function index(Request $request): View
     {
         $query = RegistroV::with('cliente')
-        ->where('estatus', 'pagado');
-    
-    // Si el usuario es limited, filtrar solo sus registros
-    if (auth()->user()->hasRole('limited')) {
-        $query->where('id_empleado', auth()->id());
-    }
-    $registroVs = $query->get();
+            ->where('estatus', 'pagado');
+
+        // Si el usuario es limited, filtrar solo sus registros
+        if (auth()->check() && auth()->user()->hasRole('limited')) {
+            $query->where('id_empleado', auth()->id());
+        }
+        $registroVs = $query->get();
 
         return view('registro-v.index', compact('registroVs'));
     }
 
-public function cxc(Request $request): View
-{
-    $query = RegistroV::with('cliente')
-        ->where('estatus', '!=', 'pagado');
-    
-    // Si el usuario es limited, filtrar solo sus registros
-    if (auth()->user()->hasRole('limited')) {
-        $query->where('id_empleado', auth()->id());
-    }
-    
-    $registroVs = $query->get();
+    public function cxc(Request $request): View
+    {
+        $query = RegistroV::with('cliente')
+            ->where('estatus', '!=', 'pagado');
 
-    return view('registro-v.cxc', compact('registroVs'));
-}
-    
+        // Si el usuario es limited, filtrar solo sus registros
+        if (auth()->check() && auth()->user()->hasRole('limited')) {
+            $query->where('id_empleado', auth()->id());
+        }
+
+        $registroVs = $query->get();
+
+        return view('registro-v.cxc', compact('registroVs'));
+    }
+
     /**
      * Show the form for creating a new resource.
      */
@@ -73,7 +74,7 @@ public function cxc(Request $request): View
         $trabajos = Trabajo::all();
         $categorias = Categoria::all();
 
-        return view('registro-v.create', compact('registroV', 'clientes', 'inventario', 'almacenes', 'empleados','tiposDePago', 'trabajos', 'categorias'));
+        return view('registro-v.create', compact('registroV', 'clientes', 'inventario', 'almacenes', 'empleados', 'tiposDePago', 'trabajos', 'categorias'));
     }
 
 
@@ -82,9 +83,8 @@ public function cxc(Request $request): View
         try {
             $trabajos = Trabajo::orderBy('nombre', 'asc')
                 ->get(['id_trabajo', 'nombre']);
-            
+
             return response()->json($trabajos);
-            
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Error al cargar los trabajos',
@@ -121,11 +121,11 @@ public function cxc(Request $request): View
     {
         DB::beginTransaction();
         Log::info('Iniciando transacción para crear registro de venta');
-    
+
         try {
             Log::info('Validando datos del request');
             $validatedData = $request->validated();
-    
+
             $trabajos = [];
             Log::info('Procesando items de trabajos');
             if ($request->has('items')) {
@@ -133,15 +133,15 @@ public function cxc(Request $request): View
                     Log::debug("Procesando item {$index}", ['item' => $item]);
                     $trabajoId = $item['trabajo_id'] ?? null;
                     $descripcionTrabajo = $item['trabajo_nombre'] ?? $item['trabajo'] ?? null;
-                    $precioTrabajo = $item['precio_trabajo'] ?? 0; 
-    
+                    $precioTrabajo = $item['precio_trabajo'] ?? 0;
+
                     if ($trabajoId && empty($descripcionTrabajo)) {
                         Log::debug("Buscando trabajo con ID {$trabajoId}");
                         $trabajo = Trabajo::find($trabajoId);
                         $descripcionTrabajo = $trabajo ? $trabajo->nombre : 'Trabajo no especificado';
                         $precioTrabajo = $precioTrabajo ?: ($trabajo ? $trabajo->precio : 0);
                     }
-    
+
                     if (!empty($descripcionTrabajo)) {
                         $productos = [];
                         if (isset($item['productos'])) {
@@ -149,8 +149,8 @@ public function cxc(Request $request): View
                             foreach ($item['productos'] as $productoIndex => $producto) {
                                 if (!empty($producto['producto'])) {
                                     Log::debug("Restando inventario para producto {$productoIndex}", ['producto' => $producto]);
-                                    $this->restarInventario($producto['producto'], $producto['cantidad']);
-                                    
+                                    $this->restarInventario($producto['producto'], $producto['cantidad'], $producto['almacen']);
+
                                     $productos[] = [
                                         'producto' => $producto['producto'],
                                         'cantidad' => $producto['cantidad'],
@@ -161,12 +161,12 @@ public function cxc(Request $request): View
                                 }
                             }
                         }
-                        
+
                         $trabajos[] = [
-                            'trabajo_id' => $trabajoId, 
+                            'trabajo_id' => $trabajoId,
                             'trabajo' => $descripcionTrabajo,
-                            'precio_trabajo' => (float)$precioTrabajo, 
-                            'descripcion' => $item['descripcion'] ?? null, 
+                            'precio_trabajo' => (float)$precioTrabajo,
+                            'descripcion' => $item['descripcion'] ?? null,
                             'productos' => $productos,
                         ];
                     }
@@ -174,7 +174,7 @@ public function cxc(Request $request): View
             }
             $validatedData['items'] = json_encode($trabajos);
             Log::debug('Items procesados', ['items' => $trabajos]);
-    
+
             $costosIds = [];
             Log::info('Procesando costos extras');
             if ($request->has('costos_extras')) {
@@ -188,24 +188,24 @@ public function cxc(Request $request): View
                                 'fecha' => $validatedData['fecha_h'] ?? now()->format('Y-m-d')
                             ]
                         ];
-    
+
                         $costo = Costo::create([
                             'f_costos' => $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
                             'id_tecnico' => $request->input('id_empleado'),
                             'descripcion' => $costoData['descripcion'],
-                            'subcategoria' => $costoData['subcategoria'], 
+                            'subcategoria' => $costoData['subcategoria'],
                             'valor' => (float)($costoData['monto'] ?? 0),
                             'estatus' => 'pagado',
                             'pagos' => $pagoCosto
                         ]);
-                        
+
                         $costosIds[] = $costo->id_costos;
                     }
                 }
             }
             $validatedData['costos'] = $costosIds;
             Log::debug('Costos extras procesados', ['costos' => $costosIds]);
-    
+
             $gastosIds = [];
             Log::info('Procesando gastos');
             if ($request->has('gastos')) {
@@ -219,7 +219,7 @@ public function cxc(Request $request): View
                                 'fecha' => $validatedData['fecha_h'] ?? now()->format('Y-m-d')
                             ]
                         ];
-    
+
                         $gasto = Gasto::create([
                             'f_gastos' => $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
                             'id_tecnico' => $request->input('id_empleado'),
@@ -229,45 +229,45 @@ public function cxc(Request $request): View
                             'estatus' => 'pagado',
                             'pagos' => $pagoGasto,
                         ]);
-                        
+
                         $gastosIds[] = $gasto->id_gastos;
                     }
                 }
             }
             $validatedData['gastos'] = $gastosIds;
             Log::debug('Gastos procesados', ['gastos' => $gastosIds]);
-    
+
             $pagosValidados = [];
             $totalPagado = 0;
             Log::info('Procesando pagos');
-            
+
             if ($request->has('pagos')) {
                 try {
                     $pagosInput = $request->input('pagos');
                     Log::debug('Pagos recibidos', ['pagos_input' => $pagosInput]);
                     $pagos = is_string($pagosInput) ? json_decode($pagosInput, true) : $pagosInput;
-                    
+
                     foreach ($pagos as $pagoIndex => $pago) {
                         if (!isset($pago['monto']) || !is_numeric($pago['monto']) || $pago['monto'] <= 0) {
                             Log::warning("Pago {$pagoIndex} inválido", ['pago' => $pago]);
                             continue;
                         }
-                        
+
                         $pagosValidados[] = [
                             'monto' => (float) $pago['monto'],
                             'metodo_pago' => $pago['metodo_pago'] ?? 'efectivo',
                             'fecha' => $pago['fecha'] ?? now()->format('Y-m-d'),
                         ];
-                        
+
                         $totalPagado += (float) $pago['monto'];
                     }
-                    
+
                     $validatedData['pagos'] = json_encode($pagosValidados);
                     Log::debug('Pagos validados', ['pagos' => $pagosValidados]);
-    
+
                     $valorTotal = (float) ($validatedData['valor_v'] ?? 0);
                     Log::debug('Calculando estado del pago', ['total_pagado' => $totalPagado, 'valor_total' => $valorTotal]);
-                    
+
                     if ($totalPagado >= $valorTotal) {
                         $validatedData['estatus'] = 'pagado';
                     } elseif ($totalPagado > 0) {
@@ -275,7 +275,6 @@ public function cxc(Request $request): View
                     } else {
                         $validatedData['estatus'] = 'pendiente';
                     }
-                    
                 } catch (\Exception $e) {
                     Log::error('Error al procesar pagos', ['error' => $e->getMessage()]);
                     $validatedData['pagos'] = json_encode([]);
@@ -284,11 +283,11 @@ public function cxc(Request $request): View
                 Log::info('No se recibieron pagos');
                 $validatedData['pagos'] = json_encode([]);
             }
-    
+
             Log::info('Creando registro de venta');
             $registroV = RegistroV::create($validatedData);
             Log::debug('Registro de venta creado', ['registro_id' => $registroV->id]);
-    
+
             Log::info('Creando abono asociado');
             $abono = Abono::create([
                 'a_fecha' => $registroV->fecha_h,
@@ -296,17 +295,16 @@ public function cxc(Request $request): View
                 'concepto' => 'Abono por venta #' . $registroV->id,
                 'valor' => $registroV->porcentaje_c,
             ]);
-            
+
             $registroV->id_abono = $abono->id_abonos;
             $registroV->save();
             Log::debug('Abono creado y asociado', ['abono_id' => $abono->id_abonos]);
-    
+
             DB::commit();
             Log::info('Transacción completada exitosamente');
-    
+
             return Redirect::route('registro-vs.index')
                 ->with('success', 'Registro creado satisfactoriamente.');
-    
         } catch (\Exception $e) {
             Log::error('Error en transacción', [
                 'error' => $e->getMessage(),
@@ -316,7 +314,7 @@ public function cxc(Request $request): View
             return back()->withInput()->with('error', 'Error al crear el registro: ' . $e->getMessage());
         }
     }
-    
+
     /**
      * Display the specified resource.
      */
@@ -327,9 +325,9 @@ public function cxc(Request $request): View
         $tiposDePago = TiposDePago::all();
         $trabajos = Trabajo::all();
         $categorias = Categoria::all();
-    
+
         $items = json_decode($registroV->items, true) ?? [];
-        
+
         foreach ($items as &$itemGroup) {
             if (isset($itemGroup['trabajo_id']) && $itemGroup['trabajo_id']) {
                 $trabajo = Trabajo::find($itemGroup['trabajo_id']);
@@ -359,20 +357,20 @@ public function cxc(Request $request): View
 
         $costosExtras = [];
         $costosIds = [];
-        
+
         if ($registroV->costos) {
             $costosIds = is_string($registroV->costos) ? json_decode($registroV->costos, true) ?? [] : $registroV->costos;
         }
-    
+
         if (!empty($costosIds)) {
             $costos = Costo::whereIn('id_costos', $costosIds)->get();
-            
+
             foreach ($costos as $costo) {
                 $pagosData = $costo->pagos;
                 if (is_string($pagosData)) {
                     $pagosData = json_decode($pagosData, true) ?? [];
                 }
-                
+
                 $costosExtras[] = [
                     'id_costos' => $costo->id_costos,
                     'descripcion' => $costo->descripcion,
@@ -387,20 +385,20 @@ public function cxc(Request $request): View
 
         $gastos = [];
         $gastosIds = [];
-        
+
         if ($registroV->gastos) {
             $gastosIds = is_string($registroV->gastos) ? json_decode($registroV->gastos, true) ?? [] : $registroV->gastos;
         }
-    
+
         if (!empty($gastosIds)) {
             $gastosModels = Gasto::whereIn('id_gastos', $gastosIds)->get();
-            
+
             foreach ($gastosModels as $gasto) {
                 $pagosData = $gasto->pagos;
                 if (is_string($pagosData)) {
                     $pagosData = json_decode($pagosData, true) ?? [];
                 }
-                
+
                 $gastos[] = [
                     'id_gastos' => $gasto->id_gastos,
                     'descripcion' => $gasto->descripcion,
@@ -414,13 +412,13 @@ public function cxc(Request $request): View
         }
 
         $pagos = [];
-        
+
         if ($registroV->pagos) {
             $pagosData = $registroV->pagos;
             if (is_string($pagosData)) {
                 $pagosData = json_decode($pagosData, true) ?? [];
             }
-            
+
             if (is_array($pagosData)) {
                 foreach ($pagosData as $pago) {
                     $pagos[] = [
@@ -432,7 +430,7 @@ public function cxc(Request $request): View
                 }
             }
         }
-    
+
         return view('registro-v.show', [
             'registroV' => $registroV,
             'almacenes' => $almacenes,
@@ -462,10 +460,10 @@ public function cxc(Request $request): View
         } catch (\Exception $e) {
             throw $e;
         }
-    
+
         try {
             $registroV = RegistroV::findOrFail($id);
-            
+
             $empleadoId = null;
             if ($registroV->tecnico) {
                 $empleado = Empleado::where('nombre', $registroV->tecnico)->first();
@@ -474,7 +472,7 @@ public function cxc(Request $request): View
         } catch (\Exception $e) {
             throw $e;
         }
-    
+
         try {
             $registroV = RegistroV::findOrFail($id);
 
@@ -509,7 +507,7 @@ public function cxc(Request $request): View
                         $producto['cantidad'] = $producto['cantidad'] ?? 1;
                         $producto['almacen'] = $producto['almacen'] ?? null;
                         $producto['precio'] = $producto['precio'] ?? 0;
-                        
+
                         if ($producto['producto']) {
                             $productoModel = Producto::find($producto['producto']);
                             $producto['nombre_producto'] = $productoModel ? $productoModel->item : 'Producto no encontrado';
@@ -518,28 +516,28 @@ public function cxc(Request $request): View
                     }
                 }
             }
-            
+
             $registroV->items = $items;
         } catch (\Exception $e) {
             throw $e;
         }
-    
+
         $costosExtras = [];
         try {
             $costosIds = [];
             if ($registroV->costos) {
                 $costosIds = is_string($registroV->costos) ? json_decode($registroV->costos, true) ?? [] : $registroV->costos;
             }
-    
+
             if (!empty($costosIds)) {
                 $costos = Costo::whereIn('id_costos', $costosIds)->get();
-                
+
                 foreach ($costos as $costo) {
                     $pagosData = $costo->pagos;
                     if (is_string($pagosData)) {
                         $pagosData = json_decode($pagosData, true) ?? [];
                     }
-                    
+
                     $costosExtras[] = [
                         'id_costos' => $costo->id_costos,
                         'descripcion' => $costo->descripcion,
@@ -554,23 +552,23 @@ public function cxc(Request $request): View
         } catch (\Exception $e) {
             throw $e;
         }
-    
+
         $gastosData = [];
         try {
             $gastosIds = [];
             if ($registroV->gastos) {
                 $gastosIds = is_string($registroV->gastos) ? json_decode($registroV->gastos, true) ?? [] : $registroV->gastos;
             }
-    
+
             if (!empty($gastosIds)) {
                 $gastos = Gasto::whereIn('id_gastos', $gastosIds)->get();
-                
+
                 foreach ($gastos as $gasto) {
                     $pagosData = $gasto->pagos;
                     if (is_string($pagosData)) {
                         $pagosData = json_decode($pagosData, true) ?? [];
                     }
-                    
+
                     $gastosData[] = [
                         'id_gastos' => $gasto->id_gastos,
                         'descripcion' => $gasto->descripcion,
@@ -585,7 +583,7 @@ public function cxc(Request $request): View
         } catch (\Exception $e) {
             throw $e;
         }
-    
+
         $pagosRegistro = [];
         try {
             if ($registroV->pagos) {
@@ -593,7 +591,7 @@ public function cxc(Request $request): View
                 if (is_string($pagosData)) {
                     $pagosData = json_decode($pagosData, true) ?? [];
                 }
-                
+
                 if (is_array($pagosData)) {
                     foreach ($pagosData as $pago) {
                         $pagosRegistro[] = [
@@ -607,7 +605,7 @@ public function cxc(Request $request): View
         } catch (\Exception $e) {
             throw $e;
         }
-    
+
         $viewData = [
             'registroV' => $registroV,
             'almacenes' => $almacenes,
@@ -621,7 +619,7 @@ public function cxc(Request $request): View
             'trabajos' => $trabajos,
             'categorias' => $categorias
         ];
-        
+
         return view('registro-v.edit', $viewData);
     }
 
@@ -634,8 +632,8 @@ public function cxc(Request $request): View
                 foreach ($trabajoAntiguo['productos'] as $productoAntiguo) {
                     if (!empty($productoAntiguo['producto'])) {
                         $this->actualizarInventario(
-                            $productoAntiguo['producto'], 
-                            $productoAntiguo['cantidad'], 
+                            $productoAntiguo['producto'],
+                            $productoAntiguo['cantidad'],
                             $productoAntiguo['almacen'] ?? null
                         );
                     }
@@ -648,8 +646,8 @@ public function cxc(Request $request): View
                 foreach ($trabajoNuevo['productos'] as $productoNuevo) {
                     if (!empty($productoNuevo['producto'])) {
                         $this->actualizarInventario(
-                            $productoNuevo['producto'], 
-                            -$productoNuevo['cantidad'], 
+                            $productoNuevo['producto'],
+                            -$productoNuevo['cantidad'],
                             $productoNuevo['almacen'] ?? null
                         );
                     }
@@ -657,7 +655,7 @@ public function cxc(Request $request): View
             }
         }
     }
-     
+
     // MÃ©todo para buscar un producto antiguo
     private function buscarProductoAntiguo($itemsAntiguos, $trabajo, $producto)
     {
@@ -675,7 +673,7 @@ public function cxc(Request $request): View
         }
         return null;
     }
-    
+
     // MÃ©todo para buscar un producto nuevo
     private function buscarProductoNuevo($itemsNuevos, $trabajo, $producto)
     {
@@ -705,7 +703,7 @@ public function cxc(Request $request): View
         $almacenId = $request->input('almacen_id');
         $cantidadRequerida = (int)$request->input('cantidad');
         $ventaId = $request->input('venta_id');
-        
+
         Log::debug('Datos recibidos', [
             'producto_id' => $productoId,
             'almacen_id' => $almacenId,
@@ -714,9 +712,9 @@ public function cxc(Request $request): View
         ]);
 
         $inventario = Inventario::where('id_producto', $productoId)
-                            ->where('id_almacen', $almacenId)
-                            ->first();
-        
+            ->where('id_almacen', $almacenId)
+            ->first();
+
         $stockDisponible = $inventario ? $inventario->cantidad : 0;
 
         $cantidadOriginal = 0;
@@ -743,7 +741,7 @@ public function cxc(Request $request): View
         }
 
         $suficiente = $stockDisponible >= $cantidadRequerida;
-        
+
         Log::info('Resultado de verificaciÃ³n de stock', [
             'stock_disponible' => $stockDisponible,
             'cantidad_requerida' => $cantidadRequerida,
@@ -759,12 +757,12 @@ public function cxc(Request $request): View
             'cantidad_original' => $cantidadOriginal
         ]);
     }
-     
+
     // Método para actualizar el inventario
     private function actualizarInventario($productoId, $cantidad, $almacenId = null)
     {
         $query = Inventario::where('id_producto', $productoId);
-        
+
         if ($almacenId) {
             $query->where('id_almacen', $almacenId);
         }
@@ -773,7 +771,7 @@ public function cxc(Request $request): View
 
         if ($inventario) {
             $nuevaCantidad = $inventario->cantidad + $cantidad;
-            
+
             if ($nuevaCantidad < 0) {
                 throw new \Exception("No hay suficiente stock para el producto $productoId");
             }
@@ -784,24 +782,22 @@ public function cxc(Request $request): View
         }
     }
 
-    private function restarInventario($productoId, $cantidad)
+    private function restarInventario($productoId, $cantidad, $almacenId = null)
     {
-        $inventario = Inventario::where('id_producto', $productoId)
-            ->first();
+        $query = Inventario::where('id_producto', $productoId);
+        if ($almacenId) {
+            $query->where('id_almacen', $almacenId);
+        }
+        $inventario = $query->first();
 
         if ($inventario) {
             $nuevaCantidad = $inventario->cantidad - $cantidad;
             if ($nuevaCantidad < 0) {
-                // Manejar el caso cuando la cantidad a restar es mayor que la existente
-                // Puedes lanzar una excepciÃ³n o mostrar un mensaje
                 throw new \Exception("No hay suficiente stock para el producto $productoId");
             }
-
             $inventario->update(['cantidad' => $nuevaCantidad]);
         } else {
-            // Manejar el caso cuando no se encuentra el producto en el inventario
-            // Puedes lanzar una excepciÃ³n o mostrar un mensaje
-            throw new \Exception("El producto $productoId no existe en el inventario");
+            throw new \Exception("El producto $productoId no existe en el inventario" . ($almacenId ? " para el almacén $almacenId" : ""));
         }
     }
 
@@ -811,21 +807,21 @@ public function cxc(Request $request): View
     public function update(RegistroVRequest $request, RegistroV $registroV): RedirectResponse
     {
         DB::beginTransaction();
-        
+
         Log::info('Iniciando actualización de registro V', ['registro_id' => $registroV->id]);
 
         try {
             Log::debug('Validando datos del request');
             $validatedData = $request->validated();
             Log::debug('Datos validados', ['data' => $validatedData]);
-            
+
             // Procesamiento de items
             Log::debug('Procesando items');
             $items = $request->input('items');
             $itemsAntiguos = json_decode($registroV->items, true) ?? [];
             Log::debug('Items antiguos', ['items' => $itemsAntiguos]);
             Log::debug('Items nuevos', ['items' => $items]);
-            
+
             try {
                 $this->ajustarInventario($itemsAntiguos, $items);
                 Log::info('Inventario ajustado correctamente');
@@ -870,7 +866,7 @@ public function cxc(Request $request): View
                                     }
                                 }
                             }
-                            
+
                             $trabajos[] = [
                                 'trabajo_id' => $trabajoId,
                                 'trabajo' => $descripcionTrabajo,
@@ -1011,26 +1007,26 @@ public function cxc(Request $request): View
             Log::debug('Procesando pagos');
             $pagosValidados = [];
             $totalPagado = 0;
-            
+
             if ($request->has('pagos')) {
                 try {
                     $pagosInput = $request->input('pagos');
                     $pagos = is_string($pagosInput) ? json_decode($pagosInput, true) : $pagosInput;
                     Log::debug('Datos de pagos recibidos', ['pagos' => $pagos]);
-                    
+
                     foreach ($pagos as $pIndex => $pago) {
                         try {
                             if (!isset($pago['monto']) || !is_numeric($pago['monto']) || $pago['monto'] <= 0) {
                                 Log::warning("Pago $pIndex ignorado por monto inválido", ['pago' => $pago]);
                                 continue;
                             }
-                            
+
                             $pagosValidados[] = [
                                 'monto' => (float) $pago['monto'],
                                 'metodo_pago' => $pago['metodo_pago'] ?? 'efectivo',
                                 'fecha' => $pago['fecha'] ?? now()->format('Y-m-d'),
                             ];
-                            
+
                             $totalPagado += (float) $pago['monto'];
                             Log::debug("Pago $pIndex procesado", ['pago' => end($pagosValidados), 'total_acumulado' => $totalPagado]);
                         } catch (\Exception $e) {
@@ -1038,13 +1034,13 @@ public function cxc(Request $request): View
                             throw $e;
                         }
                     }
-                    
+
                     $validatedData['pagos'] = json_encode($pagosValidados);
                     Log::debug('Pagos validados', ['pagos' => $pagosValidados]);
 
                     $valorTotal = (float) ($validatedData['valor_v'] ?? $registroV->valor_v);
                     Log::debug('Calculando estatus de pago', ['total_pagado' => $totalPagado, 'valor_total' => $valorTotal]);
-                    
+
                     if ($totalPagado >= $valorTotal) {
                         $validatedData['estatus'] = 'pagado';
                     } elseif ($totalPagado > 0) {
@@ -1053,7 +1049,6 @@ public function cxc(Request $request): View
                         $validatedData['estatus'] = 'pendiente';
                     }
                     Log::debug('Estatus determinado', ['estatus' => $validatedData['estatus']]);
-                    
                 } catch (\Exception $e) {
                     Log::error('Error al procesar pagos', ['error' => $e->getMessage()]);
                     $validatedData['pagos'] = json_encode([]);
@@ -1091,12 +1086,11 @@ public function cxc(Request $request): View
                 Log::info('Nuevo abono creado', ['id_abono' => $abono->id_abonos]);
             }
 
-            DB::commit(); 
+            DB::commit();
             Log::info('Transacción completada con éxito', ['registro_id' => $registroV->id]);
 
             return Redirect::route('registro-vs.index')
                 ->with('success', 'Registro actualizado satisfactoriamente.');
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error en la transacción', [
@@ -1111,7 +1105,7 @@ public function cxc(Request $request): View
     public function destroy($id): RedirectResponse
     {
         DB::beginTransaction();
-    
+
         try {
             $registroV = RegistroV::findOrFail($id);
 
@@ -1128,7 +1122,7 @@ public function cxc(Request $request): View
 
             $costosIds = is_string($registroV->costos) ? json_decode($registroV->costos, true) ?? [] : ($registroV->costos ?: []);
             $gastosIds = is_string($registroV->gastos) ? json_decode($registroV->gastos, true) ?? [] : ($registroV->gastos ?: []);
-    
+
             if ($registroV->id_abono) {
                 Abono::where('id_abonos', $registroV->id_abono)->delete();
             }
@@ -1136,18 +1130,17 @@ public function cxc(Request $request): View
             if (is_array($costosIds) && count($costosIds) > 0) {
                 Costo::whereIn('id_costos', $costosIds)->delete();
             }
-    
+
             if (is_array($gastosIds) && count($gastosIds) > 0) {
                 Gasto::whereIn('id_gastos', $gastosIds)->delete();
             }
-    
+
             $registroV->delete();
-    
+
             DB::commit();
-    
+
             return Redirect::route('registro-vs.index')
                 ->with('success', 'Registro eliminado satisfactoriamente.');
-    
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Error al eliminar el registro: ' . $e->getMessage());
@@ -1175,7 +1168,7 @@ public function cxc(Request $request): View
             if (!isset($itemGroup['productos']) || !is_array($itemGroup['productos'])) {
                 $itemGroup['productos'] = [];
             }
-            
+
             foreach ($itemGroup['productos'] as &$producto) {
                 if (isset($producto['producto'])) {
                     $productoDetalle = Producto::find($producto['producto']);
@@ -1189,11 +1182,11 @@ public function cxc(Request $request): View
         if (is_string($pagos)) {
             $pagos = json_decode($pagos, true);
         }
-        
+
         if (!is_array($pagos)) {
             $pagos = [];
         }
-    
+
         $totalPagado = collect($pagos)->sum('monto');
         $saldoPendiente = max($registroV->valor_v - $totalPagado, 0);
 
@@ -1213,8 +1206,8 @@ public function cxc(Request $request): View
         $pdf->setOption('margin-bottom', 10);
         $pdf->setOption('margin-left', 10);
         $pdf->setOption('margin-right', 10);
-        
-        return $pdf->stream('recibo_'.$registroV->id.'.pdf');
+
+        return $pdf->stream('recibo_' . $registroV->id . '.pdf');
     }
 
     public function generatePdf($id)
@@ -1235,7 +1228,7 @@ public function cxc(Request $request): View
             if (!isset($itemGroup['productos']) || !is_array($itemGroup['productos'])) {
                 $itemGroup['productos'] = [];
             }
-            
+
             foreach ($itemGroup['productos'] as &$producto) {
                 if (isset($producto['producto'])) {
                     $productoDetalle = Producto::find($producto['producto']);
@@ -1249,11 +1242,11 @@ public function cxc(Request $request): View
         if (is_string($pagos)) {
             $pagos = json_decode($pagos, true);
         }
-        
+
         if (!is_array($pagos)) {
             $pagos = [];
         }
-    
+
         $totalPagado = collect($pagos)->sum('monto');
         $saldoPendiente = max($registroV->valor_v - $totalPagado, 0);
 
@@ -1265,7 +1258,7 @@ public function cxc(Request $request): View
             'saldo_pendiente' => $saldoPendiente,
             'tiposDePago' => $tiposDePago
         ];
-    
+
         $pdf = Pdf::loadView('registro-v.invoice', $data);
 
         $pdf->setPaper('letter', 'portrait');
@@ -1273,7 +1266,7 @@ public function cxc(Request $request): View
         $pdf->setOption('margin-bottom', 10);
         $pdf->setOption('margin-left', 10);
         $pdf->setOption('margin-right', 10);
-    
+
         return $pdf->stream('invoice' . $registroV->id . '.pdf');
     }
 
@@ -1303,19 +1296,19 @@ public function cxc(Request $request): View
                 $query->where('cliente', $cliente->nombre);
             }
         }
-        
+
         if ($request->estatus) {
             $query->where('estatus', $request->estatus);
         }
 
-        $resumenClientes = $query->get()->groupBy('cliente')->map(function($ventas, $clienteNombre) {
-            $totalPagado = $ventas->sum(function($venta) {
+        $resumenClientes = $query->get()->groupBy('cliente')->map(function ($ventas, $clienteNombre) {
+            $totalPagado = $ventas->sum(function ($venta) {
                 if (is_array($venta->pagos)) {
                     return collect($venta->pagos)->sum('monto');
                 }
                 return 0;
             });
-            
+
             return (object) [
                 'cliente' => $clienteNombre,
                 'telefono' => $ventas->first()->telefono,
@@ -1325,15 +1318,15 @@ public function cxc(Request $request): View
                 'saldo_pendiente' => $ventas->sum('valor_v') - $totalPagado
             ];
         })->values();
-        
+
         return view('registro-v.reporte', compact(
-            'clientes', 
-            'fechaDesde', 
+            'clientes',
+            'fechaDesde',
             'fechaHasta',
             'resumenClientes'
         ));
     }
-    
+
     public function detalleCliente(Request $request)
     {
         $request->validate([
@@ -1341,18 +1334,18 @@ public function cxc(Request $request): View
             'fecha_desde' => 'required|date',
             'fecha_hasta' => 'required|date'
         ]);
-        
+
         $ventas = RegistroV::where('cliente', $request->cliente)
             ->whereBetween('fecha_h', [$request->fecha_desde, $request->fecha_hasta])
             ->where('tipo_venta', 'credito')
             ->get()
-            ->map(function($venta) {
+            ->map(function ($venta) {
                 $totalPagado = 0;
-                
+
                 if ($venta->pagos && is_array($venta->pagos)) {
                     $totalPagado = collect($venta->pagos)->sum('monto');
                 }
-                
+
                 return [
                     'id' => $venta->id,
                     'fecha' => $venta->fecha_h->format('d/m/Y'),
@@ -1362,10 +1355,10 @@ public function cxc(Request $request): View
                     'estatus' => $venta->estatus
                 ];
             });
-            
+
         return response()->json($ventas);
     }
-    
+
     public function cxcPdf(Request $request)
     {
         $fechaDesde = $request->fecha_desde;
@@ -1382,18 +1375,18 @@ public function cxc(Request $request): View
                 $query->where('cliente', $cliente->nombre);
             }
         }
-        
+
         if ($estatus) {
             $query->where('estatus', $estatus);
         }
 
         $ventas = $query->get();
 
-        $data = $ventas->groupBy('cliente')->map(function($ventasGrupo, $clienteNombre) {
-            $totalPagado = $ventasGrupo->sum(function($venta) {
+        $data = $ventas->groupBy('cliente')->map(function ($ventasGrupo, $clienteNombre) {
+            $totalPagado = $ventasGrupo->sum(function ($venta) {
                 return is_array($venta->pagos) ? collect($venta->pagos)->sum('monto') : 0;
             });
-            
+
             return (object) [
                 'cliente' => $clienteNombre,
                 'telefono' => $ventasGrupo->first()->telefono,
@@ -1401,10 +1394,10 @@ public function cxc(Request $request): View
                 'total_ventas_monto' => $ventasGrupo->sum('valor_v'),
                 'total_pagado' => $totalPagado,
                 'saldo_pendiente' => $ventasGrupo->sum('valor_v') - $totalPagado,
-                'ventas' => $ventasGrupo->map(function($venta) {
+                'ventas' => $ventasGrupo->map(function ($venta) {
                     $pagos = is_array($venta->pagos) ? $venta->pagos : [];
                     $totalPagadoVenta = collect($pagos)->sum('monto');
-                    
+
                     return (object) [
                         'id' => $venta->id,
                         'fecha_h' => $venta->fecha_h,
@@ -1415,7 +1408,7 @@ public function cxc(Request $request): View
                 })
             ];
         })->values();
-    
+
         $pdf = PDF::loadView('registro-v.reportecxc', [
             'data' => $data,
             'fechaDesde' => $fechaDesde,
@@ -1423,7 +1416,7 @@ public function cxc(Request $request): View
             'totalSaldo' => $data->sum('saldo_pendiente'),
             'tiposDePago' => TiposDePago::all()
         ]);
-    
+
         return $pdf->stream('reporte-cxc-resumen.pdf');
     }
 }
