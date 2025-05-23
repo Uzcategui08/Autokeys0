@@ -30,19 +30,35 @@ class VanesController extends Controller
 
         // Obtener IDs de gastos y costos asociados a cada van
         $gastoIdsGrande = $ventasVanGrande['ventas']->flatMap(function ($venta) {
-            return collect(json_decode($venta->gastos, true) ?: []);
+            $gastos = $venta->gastos;
+            if (is_string($gastos)) {
+                $gastos = json_decode($gastos, true);
+            }
+            return collect($gastos ?: []);
         })->unique()->values();
 
         $gastoIdsPequena = $ventasVanPequena['ventas']->flatMap(function ($venta) {
-            return collect(json_decode($venta->gastos, true) ?: []);
+            $gastos = $venta->gastos;
+            if (is_string($gastos)) {
+                $gastos = json_decode($gastos, true);
+            }
+            return collect($gastos ?: []);
         })->unique()->values();
 
         $costoIdsGrande = $ventasVanGrande['ventas']->flatMap(function ($venta) {
-            return collect(json_decode($venta->costos, true) ?: []);
+            $costos = $venta->costos;
+            if (is_string($costos)) {
+                $costos = json_decode($costos, true);
+            }
+            return collect($costos ?: []);
         })->unique()->values();
 
         $costoIdsPequena = $ventasVanPequena['ventas']->flatMap(function ($venta) {
-            return collect(json_decode($venta->costos, true) ?: []);
+            $costos = $venta->costos;
+            if (is_string($costos)) {
+                $costos = json_decode($costos, true);
+            }
+            return collect($costos ?: []);
         })->unique()->values();
 
         // Consultar solo los gastos y costos asociados

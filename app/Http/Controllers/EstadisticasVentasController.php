@@ -298,24 +298,8 @@ class EstadisticasVentasController extends Controller
             'registros' => $registros,
             'gastos' => $gastos,
             'costos' => $costos,
-            'totalTrabajos' => $registros->sum(function ($r) {
-                $items = $r->items;
-                if (is_string($items)) {
-                    $items = json_decode($items, true);
-                } elseif (is_object($items)) {
-                    $items = (array)$items;
-                }
-                return is_array($items) ? count($items) : 0;
-            }),
-            'totalPagos' => $registros->sum(function ($r) {
-                $pagos = $r->pagos;
-                if (is_string($pagos)) {
-                    $pagos = json_decode($pagos, true);
-                } elseif (is_object($pagos)) {
-                    $pagos = (array)$pagos;
-                }
-                return is_array($pagos) ? array_sum(array_column($pagos, 'monto')) : 0;
-            }),
+            'totalTrabajos' => $registros->sum(fn($r) => count(json_decode($r->items, true) ?? [])),
+            'totalPagos' => $registros->sum(fn($r) => $r->pagos ? array_sum(array_column($r->pagos, 'monto')) : 0)
         ];
 
         $pdf = PDF::loadView('estadisticas.stats-pdf', [
