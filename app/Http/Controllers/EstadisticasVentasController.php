@@ -299,12 +299,22 @@ class EstadisticasVentasController extends Controller
             'gastos' => $gastos,
             'costos' => $costos,
             'totalTrabajos' => $registros->sum(function ($r) {
-                $items = is_array($r->items) ? $r->items : json_decode($r->items, true);
-                return count($items ?? []);
+                $items = $r->items;
+                if (is_string($items)) {
+                    $items = json_decode($items, true);
+                } elseif (is_object($items)) {
+                    $items = (array)$items;
+                }
+                return is_array($items) ? count($items) : 0;
             }),
             'totalPagos' => $registros->sum(function ($r) {
-                $pagos = is_array($r->pagos) ? $r->pagos : json_decode($r->pagos, true);
-                return $pagos ? array_sum(array_column($pagos, 'monto')) : 0;
+                $pagos = $r->pagos;
+                if (is_string($pagos)) {
+                    $pagos = json_decode($pagos, true);
+                } elseif (is_object($pagos)) {
+                    $pagos = (array)$pagos;
+                }
+                return is_array($pagos) ? array_sum(array_column($pagos, 'monto')) : 0;
             }),
         ];
 
