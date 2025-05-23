@@ -26,14 +26,14 @@ class EstadisticasVentasController extends Controller
     {
         $this->month = $request->input('month', date('m'));
         $this->year = $request->input('year', date('Y'));
-        
+
         // Verificar si hay datos de ventas para el mes seleccionado
         $hasData = RegistroV::whereYear('fecha_h', $this->year)
             ->whereMonth('fecha_h', $this->month)
             ->exists();
-        
+
         $stats = $hasData ? $this->getAllStats() : null;
-        
+
         return view('estadisticas.ventas', [
             'stats' => $stats,
             'monthSelected' => $this->month,
@@ -49,18 +49,18 @@ class EstadisticasVentasController extends Controller
         $yearsRegistroV = RegistroV::selectRaw('EXTRACT(YEAR FROM fecha_h) as year')
             ->distinct()
             ->pluck('year');
-        
+
         $yearsGastos = Gasto::selectRaw('EXTRACT(YEAR FROM f_gastos) as year')
             ->distinct()
             ->pluck('year');
-            
+
         $yearsCostos = Costo::selectRaw('EXTRACT(YEAR FROM f_costos) as year')
             ->distinct()
             ->pluck('year');
-            
+
         // Combinar y obtener años únicos
         $allYears = $yearsRegistroV->merge($yearsGastos)->merge($yearsCostos)->unique()->sortDesc();
-        
+
         return $allYears->values()->all();
     }
 
@@ -111,18 +111,18 @@ class EstadisticasVentasController extends Controller
     }
 
     // Métodos para costos y gastos
-protected function totalCostosDelMes()
-{
-    return Costo::whereYear('f_costos', $this->year)
-        ->whereMonth('f_costos', $this->month)
-        ->sum('valor');
-}
-protected function totalCostoVenta()
-{
-    return Costo::whereYear('f_costos', $this->year)
-        ->whereMonth('f_costos', $this->month)
-        ->sum('valor');
-}
+    protected function totalCostosDelMes()
+    {
+        return Costo::whereYear('f_costos', $this->year)
+            ->whereMonth('f_costos', $this->month)
+            ->sum('valor');
+    }
+    protected function totalCostoVenta()
+    {
+        return Costo::whereYear('f_costos', $this->year)
+            ->whereMonth('f_costos', $this->month)
+            ->sum('valor');
+    }
 
     protected function totalGastoPersonal()
     {
@@ -185,32 +185,32 @@ protected function totalCostoVenta()
         $facturacion = $this->facturacionDelMes();
         $utilidadBruta = $this->calcularUtilidadBruta();
         $utilidadNeta = $this->calcularUtilidadNeta();
-    // Obtener subcategorías únicas (son strings, no IDs)
-    $subcategorias = Gasto::whereYear('f_gastos', $this->year)
-        ->whereMonth('f_gastos', $this->month)
-        ->pluck('subcategoria')
-        ->unique()
-        ->filter(); // Elimina valores nulos
-
-    $gastosPorSubcategoria = [];
-
-    foreach ($subcategorias as $subcategoria) {
-        $total = Gasto::whereYear('f_gastos', $this->year)
+        // Obtener subcategorías únicas (son strings, no IDs)
+        $subcategorias = Gasto::whereYear('f_gastos', $this->year)
             ->whereMonth('f_gastos', $this->month)
-            ->where('subcategoria', $subcategoria)
-            ->sum('valor');
+            ->pluck('subcategoria')
+            ->unique()
+            ->filter(); // Elimina valores nulos
 
-        $gastosPorSubcategoria[] = [
-            'nombre' => $subcategoria, // Usamos directamente el nombre de la subcategoría
-            'total' => $total,
-            'porcentaje' => $this->calcularPorcentaje($total, $facturacion)
-        ];
-}
+        $gastosPorSubcategoria = [];
+
+        foreach ($subcategorias as $subcategoria) {
+            $total = Gasto::whereYear('f_gastos', $this->year)
+                ->whereMonth('f_gastos', $this->month)
+                ->where('subcategoria', $subcategoria)
+                ->sum('valor');
+
+            $gastosPorSubcategoria[] = [
+                'nombre' => $subcategoria, // Usamos directamente el nombre de la subcategoría
+                'total' => $total,
+                'porcentaje' => $this->calcularPorcentaje($total, $facturacion)
+            ];
+        }
         return [
             // Datos básicos
             'month' => $this->month,
             'year' => $this->year,
-            
+
             // Estadísticas de ventas
             'ventas' => [
                 'cobrado_mes' => $this->cobradoDelMes(),
@@ -219,24 +219,24 @@ protected function totalCostoVenta()
                 'num_transacciones' => $this->numeroTransacciones(),
                 'ticket_promedio' => $this->ticketPromedio(),
             ],
-            
+
             // Costos y utilidad
             'costos' => [
                 'total_costo_venta' => $this->totalCostoVenta(),
                 'porcentaje_costo_venta' => $this->calcularPorcentaje($this->totalCostoVenta(), $facturacion),
                 'utilidad_bruta' => $utilidadBruta,
                 'porcentaje_utilidad_bruta' => $this->calcularPorcentaje($utilidadBruta, $facturacion),
-                'total_costos_mes' => $this->totalCostosDelMes(), 
+                'total_costos_mes' => $this->totalCostosDelMes(),
                 'porcentaje_total_costos' => $this->calcularPorcentaje($this->totalCostosDelMes(), $facturacion)
             ],
-      'gastos' => [
-            'por_subcategoria' => $gastosPorSubcategoria,
-            'total_gastos' => $this->totalGastos(),
-            'porcentaje_gastos' => $this->calcularPorcentaje($this->totalGastos(), $facturacion)
-        ],
-            
-           
-            
+            'gastos' => [
+                'por_subcategoria' => $gastosPorSubcategoria,
+                'total_gastos' => $this->totalGastos(),
+                'porcentaje_gastos' => $this->calcularPorcentaje($this->totalGastos(), $facturacion)
+            ],
+
+
+
             // Resultados finales
             'resultados' => [
                 'utilidad_neta' => $utilidadNeta,
@@ -244,67 +244,74 @@ protected function totalCostoVenta()
             ]
         ];
     }
-        //PDF   Que muestra todo
-        public function showReportForm()
-        {
-            // Obtener fechas del mes actual
-            $fechaInicio = Carbon::now()->firstOfMonth()->format('Y-m-d');
-            $fechaFin = Carbon::now()->lastOfMonth()->format('Y-m-d');
-            
-            return view('registrosV.report-form', [
-                'fecha_inicio' => $fechaInicio,
-                'fecha_fin' => $fechaFin
-            ]);
-        }
-    
-public function generateStatsPdf(Request $request)
-{
-    $request->validate([
-        'month' => 'required|numeric|between:1,12',
-        'year' => 'required|numeric|min:2020|max:' . (date('Y') + 1)
-    ]);
+    //PDF   Que muestra todo
+    public function showReportForm()
+    {
+        // Obtener fechas del mes actual
+        $fechaInicio = Carbon::now()->firstOfMonth()->format('Y-m-d');
+        $fechaFin = Carbon::now()->lastOfMonth()->format('Y-m-d');
 
-    $this->month = $request->input('month');
-    $this->year = $request->input('year');
+        return view('registrosV.report-form', [
+            'fecha_inicio' => $fechaInicio,
+            'fecha_fin' => $fechaFin
+        ]);
+    }
 
-    // Obtener todas las estadísticas
-    $stats = $this->getAllStats();
-    
-    // Obtener registros detallados
-    $registros = RegistroV::with('empleado')
-        ->whereYear('fecha_h', $this->year)
-        ->whereMonth('fecha_h', $this->month)
-        ->orderBy('fecha_h', 'desc')
-        ->get();
+    public function generatePdfTotal(Request $request)
+    {
+        $request->validate([
+            'month' => 'required|numeric|between:1,12',
+            'year' => 'required|numeric|min:2020|max:' . (date('Y') + 1)
+        ]);
 
-    // Obtener gastos detallados
-    $gastos = Gasto::whereYear('f_gastos', $this->year)
-        ->whereMonth('f_gastos', $this->month)
-        ->orderBy('f_gastos', 'desc')
-        ->get();
+        $this->month = $request->input('month');
+        $this->year = $request->input('year');
 
-    // Obtener costos detallados
-    $costos = Costo::whereYear('f_costos', $this->year)
-        ->whereMonth('f_costos', $this->month)
-        ->orderBy('f_costos', 'desc')
-        ->get();
+        // Obtener todas las estadísticas
+        $stats = $this->getAllStats();
 
-    // Preparar datos para el PDF
-    $data = [
-        'title' => 'Reporte Estadístico Mensual',
-        'date' => now()->format('d/m/Y H:i'),
-        'mes' => Carbon::create($this->year, $this->month, 1)->translatedFormat('F Y'),
-        'stats' => $stats,
-        'registros' => $registros,
-        'gastos' => $gastos,
-        'costos' => $costos,
-        'totalTrabajos' => $registros->sum(fn($r) => count(json_decode($r->items, true) ?? [])),
-        'totalPagos' => $registros->sum(fn($r) => $r->pagos ? array_sum(array_column($r->pagos, 'monto')) : 0)
-    ];
+        // Obtener registros detallados
+        $registros = RegistroV::with('empleado')
+            ->whereYear('fecha_h', $this->year)
+            ->whereMonth('fecha_h', $this->month)
+            ->orderBy('fecha_h', 'desc')
+            ->get();
 
-    $pdf = PDF::loadView('estadisticas.stats-pdf', $data)
-              ->setPaper('a4', 'portrait');
+        // Obtener gastos detallados
+        $gastos = Gasto::whereYear('f_gastos', $this->year)
+            ->whereMonth('f_gastos', $this->month)
+            ->orderBy('f_gastos', 'desc')
+            ->get();
 
-    return $pdf->stream('reporte_estadistico_'.$this->month.'_'.$this->year.'.pdf');
-}
+        // Obtener costos detallados
+        $costos = Costo::whereYear('f_costos', $this->year)
+            ->whereMonth('f_costos', $this->month)
+            ->orderBy('f_costos', 'desc')
+            ->get();
+
+        // Preparar datos para el PDF
+        $data = [
+            'title' => 'Reporte Estadístico Mensual',
+            'date' => now()->format('d/m/Y H:i'),
+            'mes' => Carbon::create($this->year, $this->month, 1)->translatedFormat('F Y'),
+            'stats' => $stats,
+            'registros' => $registros,
+            'gastos' => $gastos,
+            'costos' => $costos,
+            'totalTrabajos' => $registros->sum(fn($r) => count(json_decode($r->items, true) ?? [])),
+            'totalPagos' => $registros->sum(fn($r) => $r->pagos ? array_sum(array_column($r->pagos, 'monto')) : 0)
+        ];
+
+        $pdf = PDF::loadView('estadisticas.stats-pdf', [
+            'title' => 'Reporte Financiero',
+            'mes' => $this->month . '/' . $this->year,
+            'date' => now()->format('d/m/Y H:i'),
+            'stats' => $stats,
+            'registros' => $registros,
+            'gastos' => $gastos,
+            'costos' => $costos,
+        ])->setPaper('a4', 'landscape'); // <-- Esto lo pone horizontal
+
+        return $pdf->stream('reporte_financiero.pdf');
+    }
 }

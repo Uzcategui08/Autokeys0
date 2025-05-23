@@ -13,6 +13,7 @@ use Illuminate\Support\Collection;
 
 class VanesController extends Controller
 {
+
     public function index(Request $request)
     {
         // Definir los lugares de venta
@@ -27,27 +28,39 @@ class VanesController extends Controller
         $ventasVanGrande = $this->procesarVentasPorVan($vanGrande, $monthSelected, $yearSelected);
         $ventasVanPequena = $this->procesarVentasPorVan($vanPequena, $monthSelected, $yearSelected);
 
-        // Obtener fechas únicas para consultas
-        $fechasVanGrande = $ventasVanGrande['ventas']->pluck('fecha_h')->map(function($date) {
-            return Carbon::parse($date)->format('Y-m-d');
-        })->unique()->toArray();
+        // Obtener IDs de gastos y costos asociados a cada van
+        $gastoIdsGrande = $ventasVanGrande['ventas']->flatMap(function ($venta) {
+            return collect(json_decode($venta->gastos, true) ?: []);
+        })->unique()->values();
 
-        $fechasVanPequena = $ventasVanPequena['ventas']->pluck('fecha_h')->map(function($date) {
-            return Carbon::parse($date)->format('Y-m-d');
-        })->unique()->toArray();
+        $gastoIdsPequena = $ventasVanPequena['ventas']->flatMap(function ($venta) {
+            return collect(json_decode($venta->gastos, true) ?: []);
+        })->unique()->values();
 
-        // Filtrar gastos y costos que coincidan con fechas de ventas
-        $gastosVanGrande = $this->getGastosPorFechas($fechasVanGrande);
-        $gastosVanPequena = $this->getGastosPorFechas($fechasVanPequena);
-        $costosVanGrande = $this->getCostosPorFechas($fechasVanGrande);
-        $costosVanPequena = $this->getCostosPorFechas($fechasVanPequena);
+        $costoIdsGrande = $ventasVanGrande['ventas']->flatMap(function ($venta) {
+            return collect(json_decode($venta->costos, true) ?: []);
+        })->unique()->values();
+
+        $costoIdsPequena = $ventasVanPequena['ventas']->flatMap(function ($venta) {
+            return collect(json_decode($venta->costos, true) ?: []);
+        })->unique()->values();
+
+        // Consultar solo los gastos y costos asociados
+        $gastosVanGrande = Gasto::whereIn('id_gastos', $gastoIdsGrande)->get();
+        $gastosVanPequena = Gasto::whereIn('id_gastos', $gastoIdsPequena)->get();
+        $costosVanGrande = Costo::whereIn('id_costos', $costoIdsGrande)->get();
+        $costosVanPequena = Costo::whereIn('id_costos', $costoIdsPequena)->get();
 
         // Obtener porcentajes de cerrajero
         $porcentajeCerrajeroGrande = $ventasVanGrande['ventas']->sum('porcentaje_c');
         $porcentajeCerrajeroPequena = $ventasVanPequena['ventas']->sum('porcentaje_c');
 
-        // Procesar llaves por técnico (como en el ejemplo original)
-        $llavesPorTecnico = $this->procesarLlavesPorTecnico($monthSelected, $yearSelected);
+        $llavesPorTecnico = $this->procesarLlavesPorTecnico(
+            $monthSelected,
+            $yearSelected,
+            [$vanGrande, $vanPequena]
+        );
+
         // Calcular totales
         $totales = [
             'porcentajeCerrajeroGrande' => $porcentajeCerrajeroGrande,
@@ -65,17 +78,17 @@ class VanesController extends Controller
             'totalLlaves' => $llavesPorTecnico->sum('total_llaves'),
             'totalValorLlaves' => $llavesPorTecnico->sum('total_valor'),
 
-            'utilidadGrande' => 
+            'utilidadGrande' =>
             $ventasVanGrande['ventas']->sum('valor_v')
-            - $costosVanGrande->sum('valor')
-            - $porcentajeCerrajeroGrande
-            - $gastosVanGrande->sum('valor'),
-    
-        'utilidadPequena' => 
+                - $costosVanGrande->sum('valor')
+                - $porcentajeCerrajeroGrande
+                - $gastosVanGrande->sum('valor'),
+
+            'utilidadPequena' =>
             $ventasVanPequena['ventas']->sum('valor_v')
-            - $costosVanPequena->sum('valor')
-            - $porcentajeCerrajeroPequena
-            - $gastosVanPequena->sum('valor'),
+                - $costosVanPequena->sum('valor')
+                - $porcentajeCerrajeroPequena
+                - $gastosVanPequena->sum('valor'),
         ];
 
         return view('estadisticas.vanes', compact(
@@ -103,7 +116,7 @@ class VanesController extends Controller
 
         if ($month && $year) {
             $query->whereMonth('fecha_h', $month)
-                  ->whereYear('fecha_h', $year);
+                ->whereYear('fecha_h', $year);
         }
 
         $ventas = $query->orderBy('fecha_h', 'desc')->get();
@@ -114,7 +127,7 @@ class VanesController extends Controller
 
         foreach ($ventas as $venta) {
             $items = json_decode($venta->items, true) ?? [];
-            
+
             foreach ($items as $item) {
                 if (isset($item['productos']) && is_array($item['productos'])) {
                     foreach ($item['productos'] as $producto) {
@@ -122,7 +135,7 @@ class VanesController extends Controller
                             $itemNombre = $producto['nombre_producto'] ?? 'Producto sin nombre';
                             $cantidad = (int)$producto['cantidad'];
                             $precio = (float)$producto['precio'];
-                            
+
                             if (!$itemsInfo->has($itemNombre)) {
                                 $itemsInfo->put($itemNombre, [
                                     'nombre' => $itemNombre,
@@ -131,11 +144,11 @@ class VanesController extends Controller
                                     'ventas' => collect()
                                 ]);
                             }
-                            
+
                             $itemData = $itemsInfo->get($itemNombre);
                             $itemData['total_cantidad'] += $cantidad;
                             $itemData['total_valor'] += ($cantidad * $precio);
-                            
+
                             // Agregar información de la venta específica
                             $itemData['ventas']->push([
                                 'fecha' => Carbon::parse($venta->fecha_h)->format('d/m/Y'),
@@ -145,9 +158,9 @@ class VanesController extends Controller
                                 'total' => $cantidad * $precio,
                                 'tecnico' => $venta->empleado->nombre ?? 'Sin técnico'
                             ]);
-                            
+
                             $itemsInfo->put($itemNombre, $itemData);
-                            
+
                             $totalItems += $cantidad;
                             $totalValor += ($cantidad * $precio);
                         }
@@ -164,41 +177,57 @@ class VanesController extends Controller
         ];
     }
 
-    private function getGastosPorFechas($fechas)
+    private function getGastosPorFechas($fechas, $lugaresVenta = [], $month = null, $year = null)
     {
-        return Gasto::where('subcategoria', 'gasto_extra')
-                  ->whereIn(DB::raw('DATE(f_gastos)'), $fechas)
-                  ->orderBy('f_gastos', 'desc')
-                  ->get();
+        $query = Gasto::where('subcategoria', 'gasto_extra')
+            ->whereIn(DB::raw('DATE(f_gastos)'), $fechas);
+
+        if ($month && $year) {
+            $query->whereMonth('f_gastos', $month)
+                ->whereYear('f_gastos', $year);
+        }
+
+        return $query->orderBy('f_gastos', 'desc')->get();
     }
 
-    private function getCostosPorFechas($fechas)
+    private function getCostosPorFechas($fechas, $lugaresVenta = [], $month = null, $year = null)
     {
-        return Costo::where('subcategoria', 'costo_extra')
-                  ->whereIn(DB::raw('DATE(f_costos)'), $fechas)
-                  ->orderBy('f_costos', 'desc')
-                  ->get();
+        $query = Costo::where('subcategoria', 'costo_extra')
+            ->whereIn(DB::raw('DATE(f_costos)'), $fechas);
+
+        if ($month && $year) {
+            $query->whereMonth('f_costos', $month)
+                ->whereYear('f_costos', $year);
+        }
+
+        return $query->orderBy('f_costos', 'desc')->get();
     }
 
-    private function procesarLlavesPorTecnico($month, $year)
+    private function procesarLlavesPorTecnico($month, $year, $lugaresVenta = [])
     {
-        return Empleado::with(['ventas' => function($query) use ($month, $year) {
+        return Empleado::with(['ventas' => function ($query) use ($month, $year, $lugaresVenta) {
+            $query->whereMonth('fecha_h', $month)
+                ->whereYear('fecha_h', $year);
+            if (!empty($lugaresVenta)) {
+                $query->whereIn('lugarventa', $lugaresVenta);
+            }
+        }])
+            ->whereHas('ventas', function ($query) use ($month, $year, $lugaresVenta) {
                 $query->whereMonth('fecha_h', $month)
-                      ->whereYear('fecha_h', $year);
-            }])
-            ->whereHas('ventas', function($query) use ($month, $year) {
-                $query->whereMonth('fecha_h', $month)
-                      ->whereYear('fecha_h', $year);
+                    ->whereYear('fecha_h', $year);
+                if (!empty($lugaresVenta)) {
+                    $query->whereIn('lugarventa', $lugaresVenta);
+                }
             })
             ->get()
-            ->map(function($tecnico) {
+            ->map(function ($tecnico) {
                 $llavesInfo = collect();
                 $totalLlaves = 0;
                 $totalValor = 0;
-                
+
                 foreach ($tecnico->ventas as $venta) {
                     $items = json_decode($venta->items, true) ?? [];
-                    
+
                     foreach ($items as $item) {
                         if (isset($item['productos']) && is_array($item['productos'])) {
                             foreach ($item['productos'] as $producto) {
@@ -207,7 +236,7 @@ class VanesController extends Controller
                                     $llaveNombre = $producto['nombre_producto'] ?? 'Llave sin nombre';
                                     $cantidad = (int)$producto['cantidad'];
                                     $precio = (float)$producto['precio'];
-                                    
+
                                     if (!$llavesInfo->has($llaveNombre)) {
                                         $llavesInfo->put($llaveNombre, [
                                             'nombre' => $llaveNombre,
@@ -216,25 +245,25 @@ class VanesController extends Controller
                                             'total_valor' => 0
                                         ]);
                                     }
-                                    
+
                                     $llave = $llavesInfo->get($llaveNombre);
-                                    
+
                                     if (!$llave['almacenes']->has($almacenId)) {
                                         $llave['almacenes']->put($almacenId, [
                                             'cantidad' => 0,
                                             'total' => 0
                                         ]);
                                     }
-                                    
+
                                     $almacen = $llave['almacenes']->get($almacenId);
                                     $almacen['cantidad'] += $cantidad;
                                     $almacen['total'] += ($cantidad * $precio);
                                     $llave['almacenes']->put($almacenId, $almacen);
-                                    
+
                                     $llave['total_cantidad'] += $cantidad;
                                     $llave['total_valor'] += ($cantidad * $precio);
                                     $llavesInfo->put($llaveNombre, $llave);
-                                    
+
                                     $totalLlaves += $cantidad;
                                     $totalValor += ($cantidad * $precio);
                                 }
@@ -242,7 +271,7 @@ class VanesController extends Controller
                         }
                     }
                 }
-        
+
                 return $totalLlaves > 0 ? [
                     'tecnico' => $tecnico->nombre,
                     'llaves' => $llavesInfo->values(),

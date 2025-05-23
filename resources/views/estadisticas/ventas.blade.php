@@ -51,25 +51,27 @@
 <div class="container-fluid px-0">  <!-- px-0 para eliminar padding horizontal -->
     <div class="card shadow-sm rounded-0" style="border-left: 4px solid #0d6efd;">  <!-- rounded-0 para esquinas rectas -->
     <div class="card-body p-4">
-        <form action="{{ route('generatePdfTotal.pdf') }}" method="GET">
-            <div class="row g-2 align-items-center">
-                <div class="col-md-4">
-                    <label for="fecha_inicio" class="form-label small mb-1">Fecha Inicio</label>
-                    <input type="date" class="form-control form-control-sm" id="fecha_inicio" name="fecha_inicio" 
-                           value="{{ old('fecha_inicio', $fecha_inicio ?? '') }}">
-                </div>
-                <div class="col-md-4">
-                    <label for="fecha_fin" class="form-label small mb-1">Fecha Fin</label>
-                    <input type="date" class="form-control form-control-sm" id="fecha_fin" name="fecha_fin" 
-                           value="{{ old('fecha_fin', $fecha_fin ?? '') }}">
-                </div>
-                <div class="col-md-4">
-                    <button type="submit" class="btn btn-sm btn-primary mt-3">
-                        <i class="fas fa-file-pdf me-1"></i> Generar PDF
-                    </button>
-                </div>
-            </div>
-        </form>
+<form action="{{ route('generatePdfTotal.pdf') }}" method="GET" target="_blank">
+    <div class="row g-2 align-items-center">
+        <div class="col-md-4">
+            <label for="fecha_inicio" class="form-label small mb-1">Fecha Inicio</label>
+            <input type="date" class="form-control form-control-sm" id="fecha_inicio" name="fecha_inicio" 
+                   value="{{ old('fecha_inicio', $fecha_inicio ?? '') }}">
+        </div>
+        <div class="col-md-4">
+            <label for="fecha_fin" class="form-label small mb-1">Fecha Fin</label>
+            <input type="date" class="form-control form-control-sm" id="fecha_fin" name="fecha_fin" 
+                   value="{{ old('fecha_fin', $fecha_fin ?? '') }}">
+        </div>
+        <input type="hidden" name="month" value="{{ $monthSelected }}">
+        <input type="hidden" name="year" value="{{ $yearSelected }}">
+        <div class="col-md-4">
+            <button type="submit" class="btn btn-sm btn-primary mt-3">
+                <i class="fas fa-file-pdf me-1"></i> Generar PDF
+            </button>
+        </div>
+    </div>
+</form>
     </div>
 </div>
 </div>
@@ -81,16 +83,9 @@
                     {{ \Carbon\Carbon::create($yearSelected, $monthSelected, 1)->format('F Y') }}
                 </span>
             </div>
-            <div> 
-                <form action="{{ route('estadisticas.pdf') }}" method="POST" target="_blank">
-    @csrf
-    <input type="hidden" name="month" value="{{ $monthSelected }}">
-    <input type="hidden" name="year" value="{{ $yearSelected }}">
-    <button type="submit" class="btn btn-danger">
-        <i class="fas fa-file-pdf"></i> Generar PDF Completo
-    </button>
-</form>
-</div>
+<button onclick="window.print()" class="btn btn-secondary">
+    <i class="fas fa-print"></i> Imprimir Página
+</button>
         </div>
         
         <div class="card-body">

@@ -5,135 +5,107 @@
     <meta charset="UTF-8">
     <title>{{ $title }}</title>
     <style>
-        body { font-family: Arial, sans-serif; font-size: 12px; }
+        body { font-family: Arial, sans-serif; font-size: 10px; }
         .header { text-align: center; margin-bottom: 20px; }
-        .header h1 { font-size: 18px; margin-bottom: 5px; }
-        .header p { font-size: 14px; margin-top: 0; }
-        .section { margin-bottom: 15px; page-break-inside: avoid; }
-        .section-title { background-color: #f5f5f5; padding: 5px; font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-        table th { background-color: #f2f2f2; text-align: left; padding: 5px; }
-        table td { padding: 5px; border-bottom: 1px solid #ddd; }
+        .header h1 { font-size: 22px; margin-bottom: 5px; }
+        .header p { font-size: 14px; margin: 0; }
+        .summary-table { width: 100%; margin: 20px 0 30px 0; border-collapse: collapse; }
+        .summary-table td { font-size: 13px; padding: 8px 10px; border: none; }
+        .summary-label { font-weight: bold; background: #f5f5f5; }
+        .summary-value { font-size: 15px; color: #0d6efd; font-weight: bold; }
+        .section { margin-bottom: 10px; }
+        .section-title { background: #222; color: #fff; padding: 6px; font-weight: bold; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+        th, td { 
+            padding: 4px; 
+            border: 1px solid #bbb; /* Add border to all sides */
+            font-size: 10px;
+        }
+        th { background: #f2f2f2; font-size: 11px; }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
         .totals { font-weight: bold; }
-        .page-break { page-break-after: always; }
-        .signature { margin-top: 50px; }
-        .signature-line { border-top: 1px solid #000; width: 200px; margin-top: 40px; }
+        .signature { margin-top: 40px; }
+        .signature-line { border-top: 1px solid #000; width: 200px; margin-top: 30px; }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>{{ $title }}</h1>
-        <p>Período: {{ $mes }}</p>
-        <p>Generado el: {{ $date }}</p>
+        <p><strong>Período:</strong> {{ $mes }}</p>
+        <p><strong>Generado el:</strong> {{ $date }}</p>
     </div>
 
-    <!-- Resumen General -->
-    <div class="section">
-        <div class="section-title">RESUMEN GENERAL DEL MES</div>
-        <table>
-            <tr>
-                <td>Facturación Total:</td>
-                <td class="text-right">${{ number_format($stats['ventas']['facturacion'], 2) }}</td>
-            </tr>
-            <tr>
-                <td>Cobrado Total:</td>
-                <td class="text-right">${{ number_format($stats['ventas']['cobrado_mes'], 2) }}</td>
-            </tr>
-            <tr>
-                <td>N° de Transacciones:</td>
-                <td class="text-right">{{ $stats['ventas']['num_transacciones'] }}</td>
-            </tr>
-            <tr>
-                <td>Ticket Promedio:</td>
-                <td class="text-right">${{ number_format($stats['ventas']['ticket_promedio'], 2) }}</td>
-            </tr>
-            <tr>
-                <td>N° de Trabajos Realizados:</td>
-                <td class="text-right">{{ $totalTrabajos }}</td>
-            </tr>
-        </table>
-    </div>
+    <!-- Resumen Compacto Mejorado -->
+    <table class="summary-table">
+        <tr>
+            <td class="summary-label">Facturación</td>
+            <td class="summary-value">${{ number_format($stats['ventas']['facturacion'], 2) }}</td>
+            <td class="summary-label">Cobrado</td>
+            <td class="summary-value">${{ number_format($stats['ventas']['cobrado_mes'], 2) }}</td>
+            <td class="summary-label">Transacciones</td>
+            <td class="summary-value">{{ $stats['ventas']['num_transacciones'] }}</td>
+        </tr>
+        <tr>
+            <td class="summary-label">Ticket Promedio</td>
+            <td class="summary-value">${{ number_format($stats['ventas']['ticket_promedio'], 2) }}</td>
+            <td class="summary-label">Utilidad Bruta</td>
+            <td class="summary-value">${{ number_format($stats['costos']['utilidad_bruta'], 2) }}</td>
+            <td class="summary-label">Utilidad Neta</td>
+            <td class="summary-value">${{ number_format($stats['resultados']['utilidad_neta'], 2) }}</td>
+        </tr>
+        <tr>
+            <td class="summary-label">Total Gastos</td>
+            <td class="summary-value">${{ number_format($stats['gastos']['total_gastos'], 2) }}</td>
+            <td class="summary-label">Total Costos</td>
+            <td class="summary-value">${{ number_format($stats['costos']['total_costos_mes'], 2) }}</td>
+            <td></td>
+            <td></td>
+        </tr>
+    </table>
 
-    <!-- Análisis de Utilidades -->
+    <!-- Tabla Detallada de Ventas (registroV) -->
     <div class="section">
-        <div class="section-title">ANÁLISIS DE UTILIDADES</div>
-        <table>
-            <tr>
-                <td>Utilidad Bruta:</td>
-                <td class="text-right">${{ number_format($stats['costos']['utilidad_bruta'], 2) }}</td>
-                <td class="text-right">{{ number_format($stats['costos']['porcentaje_utilidad_bruta'], 2) }}%</td>
-            </tr>
-            <tr>
-                <td>Total Gastos:</td>
-                <td class="text-right">${{ number_format($stats['gastos']['total_gastos'], 2) }}</td>
-                <td class="text-right">{{ number_format($stats['gastos']['porcentaje_gastos'], 2) }}%</td>
-            </tr>
-            <tr class="totals">
-                <td>Utilidad Neta:</td>
-                <td class="text-right">${{ number_format($stats['resultados']['utilidad_neta'], 2) }}</td>
-                <td class="text-right">{{ number_format($stats['resultados']['porcentaje_utilidad_neta'], 2) }}%</td>
-            </tr>
-        </table>
-    </div>
-
-    <!-- Detalle de Gastos por Subcategoría -->
-    <div class="section">
-        <div class="section-title">DETALLE DE GASTOS POR SUBCATEGORÍA</div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Subcategoría</th>
-                    <th class="text-right">Total</th>
-                    <th class="text-right">% Facturación</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($stats['gastos']['por_subcategoria'] as $gasto)
-                <tr>
-                    <td>{{ $gasto['nombre'] }}</td>
-                    <td class="text-right">${{ number_format($gasto['total'], 2) }}</td>
-                    <td class="text-right">{{ number_format($gasto['porcentaje'], 2) }}%</td>
-                </tr>
-                @endforeach
-                <tr class="totals">
-                    <td>Total Gastos</td>
-                    <td class="text-right">${{ number_format($stats['gastos']['total_gastos'], 2) }}</td>
-                    <td class="text-right">{{ number_format($stats['gastos']['porcentaje_gastos'], 2) }}%</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-@php
-use Carbon\Carbon;
-@endphp
-    <!-- Detalle de Transacciones -->
-    <div class="section">
-        <div class="section-title">DETALLE DE TRANSACCIONES ({{ $registros->count() }})</div>
+        <div class="section-title">DETALLE DE VENTAS ({{ $registros->count() }})</div>
         <table>
             <thead>
                 <tr>
                     <th>Fecha</th>
                     <th>Cliente</th>
-                    <th>Técnico</th>
-                    <th class="text-right">Valor</th>
+                    <th>Teléfono</th>
+                    <th>Valor</th>
                     <th>Estatus</th>
+                    <th>Tipo Venta</th>
+                    <th>Titular</th>
+                    <th>Lugar Venta</th>
+                    <th>Porcentaje C</th>
+                    <th>Marca</th>
+                    <th>Modelo</th>
+                    <th>Año</th>
+                    <th>Técnico</th>
                     <th>Trabajos</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($registros as $registro)
                 <tr>
-                    <td>{{ Carbon::parse($registro->fecha_h)->format('d/m/Y') }}</td>
+                    <td>{{ \Carbon\Carbon::parse($registro->fecha_h)->format('d/m/Y') }}</td>
                     <td>{{ $registro->cliente }}</td>
-                    <td>{{ $registro->empleado->nombre ?? 'N/A' }}</td>
+                    <td>{{ $registro->telefono }}</td>
                     <td class="text-right">${{ number_format($registro->valor_v, 2) }}</td>
                     <td>{{ $registro->estatus }}</td>
+                    <td>{{ $registro->tipo_venta }}</td>
+                    <td>{{ $registro->titular_c }}</td>
+                    <td>{{ $registro->lugarventa }}</td>
+                    <td>{{ $registro->porcentaje_c }}</td>
+                    <td>{{ $registro->marca }}</td>
+                    <td>{{ $registro->modelo }}</td>
+                    <td>{{ $registro->año }}</td>
+                    <td>{{ $registro->empleado->nombre ?? 'N/A' }}</td>
                     <td>
                         @php
                             $items = json_decode($registro->items, true);
-                            $trabajos = array_column($items, 'trabajo_nombre');
+                            $trabajos = array_column($items ?? [], 'trabajo_nombre');
                         @endphp
                         {{ implode(', ', $trabajos) }}
                     </td>
@@ -143,14 +115,13 @@ use Carbon\Carbon;
         </table>
     </div>
 
-    <!-- Detalle de Gastos -->
+    <!-- Gastos y Costos Detallados -->
     <div class="section">
-        <div class="section-title">DETALLE DE GASTOS ({{ $gastos->count() }})</div>
+        <div class="section-title">GASTOS DEL MES ({{ $gastos->count() }})</div>
         <table>
             <thead>
                 <tr>
                     <th>Fecha</th>
-                    <th>Subcategoría</th>
                     <th>Descripción</th>
                     <th class="text-right">Valor</th>
                 </tr>
@@ -158,10 +129,30 @@ use Carbon\Carbon;
             <tbody>
                 @foreach($gastos as $gasto)
                 <tr>
-                    <td>{{ Carbon::parse($gasto->f_gastos)->format('d/m/Y') }}</td>
-                    <td>{{ $gasto->subcategoria }}</td>
+                    <td>{{ \Carbon\Carbon::parse($gasto->f_gastos)->format('d/m/Y') }}</td>
                     <td>{{ $gasto->descripcion ?? 'N/A' }}</td>
                     <td class="text-right">${{ number_format($gasto->valor, 2) }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+    <div class="section">
+        <div class="section-title">COSTOS DEL MES ({{ $costos->count() }})</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Descripción</th>
+                    <th class="text-right">Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($costos as $costo)
+                <tr>
+                    <td>{{ \Carbon\Carbon::parse($costo->f_costos)->format('d/m/Y') }}</td>
+                    <td>{{ $costo->descripcion ?? 'N/A' }}</td>
+                    <td class="text-right">${{ number_format($costo->valor, 2) }}</td>
                 </tr>
                 @endforeach
             </tbody>
