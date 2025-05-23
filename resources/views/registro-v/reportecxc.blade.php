@@ -293,18 +293,20 @@
         </div>
         
         <table>
-            <colgroup>
-                <col class="col-fecha">
-                <col class="col-factura">
-                <col class="col-monto">
-                <col class="col-pagado">
-                <col class="col-saldo">
-                <col class="col-estado">
-            </colgroup>
+    <colgroup>
+        <col style="width: 12%;">
+        <col style="width: 10%;">
+        <col style="width: 18%;">
+        <col style="width: 13%;">
+        <col style="width: 13%;">
+        <col style="width: 13%;">
+        <col style="width: 11%;">
+    </colgroup>
             <thead>
                 <tr>
                     <th>Fecha</th>
                     <th class="text-center">Factura</th>
+                    <th class="text-center">Trabajos</th>
                     <th class="text-right">Monto</th>
                     <th class="text-right">Pagado</th>
                     <th class="text-right">Saldo</th>
@@ -328,6 +330,15 @@
                             box-shadow: 0 1px 3px rgba(0,0,0,0.2);
                         ">#{{ $venta->id }}</span>
                     </td>
+                    <td>
+    @foreach($venta->trabajos as $trabajo)
+        <div>
+            <strong>{{ $trabajo['nombre'] }}</strong>
+            <br>
+            <small>{{ $trabajo['descripcion'] }}</small>
+        </div>
+    @endforeach
+</td>
                     <td class="text-right">${{ number_format($venta->valor_v, 2) }}</td>
                     <td class="text-right">${{ number_format($venta->total_pagado, 2) }}</td>
                     <td class="text-right">${{ number_format($venta->valor_v - $venta->total_pagado, 2) }}</td>
@@ -344,7 +355,7 @@
                 
                 @if($venta->pagos && count($venta->pagos) > 0)
                 <tr>
-                    <td colspan="6" style="padding: 2mm 0 0 0;">
+                    <td colspan="7" style="padding: 2mm 0 0 0;">
                         <div class="pagos-detalle">
                             <strong>Detalle de pagos:</strong>
                             @foreach($venta->pagos as $pago)
@@ -367,7 +378,7 @@
             </tbody>
             <tfoot>
                 <tr class="total-row">
-                    <td colspan="2">TOTAL CLIENTE</td>
+                    <td colspan="3">TOTAL CLIENTE</td>
                     <td class="text-right">${{ number_format($item->total_ventas_monto, 2) }}</td>
                     <td class="text-right">${{ number_format($item->total_pagado, 2) }}</td>
                     <td class="text-right">${{ number_format($item->saldo_pendiente, 2) }}</td>
@@ -418,4 +429,12 @@
         </div>
     </div>
 </body>
+<style>
+        table {
+        table-layout: fixed;
+    }
+    th, td {
+        word-break: break-word;
+    }
+</style>
 </html>

@@ -37,8 +37,9 @@ class RegistroVController extends Controller
             ->where('estatus', 'pagado');
 
         // Si el usuario es limited, filtrar solo sus registros
-        if (auth()->check() && auth()->user()->hasRole('limited')) {
-            $query->where('id_empleado', auth()->id());
+
+        if (Auth::check() && Auth::user()->hasRole('limited')) {
+            $query->where('id_empleado', Auth::id());
         }
         $registroVs = $query->get();
 
@@ -1345,7 +1346,16 @@ class RegistroVController extends Controller
                 if ($venta->pagos && is_array($venta->pagos)) {
                     $totalPagado = collect($venta->pagos)->sum('monto');
                 }
-
+                $trabajos = [];
+                $items = is_string($venta->items) ? json_decode($venta->items, true) : $venta->items;
+                if (is_array($items)) {
+                    foreach ($items as $item) {
+                        $trabajos[] = [
+                            'nombre' => $item['trabajo_nombre'] ?? $item['trabajo'] ?? '',
+                            'descripcion' => $item['descripcion'] ?? '',
+                        ];
+                    }
+                }
                 return [
                     'id' => $venta->id,
                     'fecha' => $venta->fecha_h->format('d/m/Y'),
@@ -1398,12 +1408,24 @@ class RegistroVController extends Controller
                     $pagos = is_array($venta->pagos) ? $venta->pagos : [];
                     $totalPagadoVenta = collect($pagos)->sum('monto');
 
+                    $trabajos = [];
+                    $items = is_string($venta->items) ? json_decode($venta->items, true) : $venta->items;
+                    if (is_array($items)) {
+                        foreach ($items as $item) {
+                            $trabajos[] = [
+                                'nombre' => $item['trabajo_nombre'] ?? $item['trabajo'] ?? '',
+                                'descripcion' => $item['descripcion'] ?? '',
+                            ];
+                        }
+                    }
+
                     return (object) [
                         'id' => $venta->id,
                         'fecha_h' => $venta->fecha_h,
                         'valor_v' => $venta->valor_v,
                         'total_pagado' => $totalPagadoVenta,
-                        'pagos' => $pagos
+                        'pagos' => $pagos,
+                        'trabajos' => $trabajos
                     ];
                 })
             ];
