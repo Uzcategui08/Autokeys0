@@ -98,13 +98,15 @@ class VanesController extends Controller
             $ventasVanGrande['ventas']->sum('valor_v')
                 - $costosVanGrande->sum('valor')
                 - $porcentajeCerrajeroGrande
-                - $gastosVanGrande->sum('valor'),
+                - $gastosVanGrande->sum('valor')
+                - $ventasVanGrande['items']->sum('total_valor'),
 
             'utilidadPequena' =>
             $ventasVanPequena['ventas']->sum('valor_v')
                 - $costosVanPequena->sum('valor')
                 - $porcentajeCerrajeroPequena
-                - $gastosVanPequena->sum('valor'),
+                - $gastosVanPequena->sum('valor')
+                - $ventasVanPequena['items']->sum('total_valor'),
         ];
 
         return view('estadisticas.vanes', compact(
