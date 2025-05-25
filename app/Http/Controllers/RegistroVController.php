@@ -32,34 +32,62 @@ class RegistroVController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = RegistroV::with('cliente')
-        ->where('estatus', 'pagado');
-    
-    // Si el usuario es limited_user, filtrar solo sus registros
-    if (auth()->user()->hasRole('limited_user')) {
-        $query->where('id_empleado', auth()->id());
-    }
-    $registroVs = $query->paginate(20);
+        $query = RegistroV::with(['cliente', 'empleado'])
+            ->where('estatus', 'pagado')
+            ->select([
+                'registroV.*',
+                DB::raw('JSON_UNQUOTE(JSON_EXTRACT(items, "$[*].trabajo")) as tipo_trabajo'),
+                DB::raw('JSON_UNQUOTE(JSON_EXTRACT(pagos, "$[*].metodo_pago")) as metodo_pago'),
+                'titular_c',
+                DB::raw('JSON_UNQUOTE(JSON_EXTRACT(items, "$[*].productos[*].nombre_producto")) as tipo_llave'),
+                DB::raw('JSON_UNQUOTE(JSON_EXTRACT(items, "$[*].productos[*].cantidad")) as cantidad_utilizada')
+            ]);
+        
+        // Si el usuario es limited_user, filtrar solo sus registros
+        if (auth()->user()->hasRole('limited_user')) {
+            $query->where('id_empleado', auth()->id());
+        }
+        
+        $registroVs = $query->paginate(20);
 
         return view('registro-v.index', compact('registroVs'))
             ->with('i', ($request->input('page', 1) - 1) * $registroVs->perPage());
     }
 
-public function cxc(Request $request): View
-{
-    $query = RegistroV::with('cliente')
-        ->where('estatus', '!=', 'pagado');
-    
-    // Si el usuario es limited_user, filtrar solo sus registros
-    if (auth()->user()->hasRole('limited_user')) {
-        $query->where('id_empleado', auth()->id());
-    }
-    
-    $registroVs = $query->paginate(20);
+    public function cxc(Request $request): View
+    {
+        $query = RegistroV::with(['cliente', 'empleado'])
+            ->where('estatus', '!=', 'pagado')
+            ->select([
+                'registroV.*',
+                DB::raw('JSON_UNQUOTE(JSON_EXTRACT(items, "$[*].trabajo")) as tipo_trabajo'),
+                DB::raw('JSON_UNQUOTE(JSON_EXTRACT(pagos, "$[*].metodo_pago")) as metodo_pago'),
+                'titular_c',
+                DB::raw('JSON_UNQUOTE(JSON_EXTRACT(items, "$[*].productos[*].nombre_producto")) as tipo_llave'),
+                DB::raw('JSON_UNQUOTE(JSON_EXTRACT(items, "$[*].productos[*].cantidad")) as cantidad_utilizada')
+            ]);
+        
+        // Si el usuario es limited_user, filtrar solo sus registros
+        if (auth()->user()->hasRole('limited_user')) {
+            $query->where('id_empleado', auth()->id());
+        }
+        
+        $registroVs = $query->paginate(20);
 
-    return view('registro-v.cxc', compact('registroVs'))
-        ->with('i', ($request->input('page', 1) - 1) * $registroVs->perPage());
-}
+        return view('registro-v.cxc', compact('registroVs'))
+            ->with('i', ($request->input('page', 1) - 1) * $registroVs->perPage());
+    }
+
+    public function toggleCargado(RegistroV $registroV)
+    {
+        $registroV->cargado = !$registroV->cargado;
+        $registroV->save();
+
+        return response()->json([
+            'success' => true,
+            'cargado' => $registroV->cargado
+        ]);
+    }
     
     /**
      * Show the form for creating a new resource.

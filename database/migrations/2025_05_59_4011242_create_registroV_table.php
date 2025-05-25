@@ -28,13 +28,14 @@ return new class extends Migration
             $table->string('cobro')->nullable();
             $table->string('porcentaje_c');
             $table->string('metodo_pce')->nullable();
-            $table->string('marca');
-            $table->string('modelo');
-            $table->integer('año');
+            $table->string('marca')->nullable();
+            $table->string('modelo')->nullable();
+            $table->integer('año')->nullable();
             $table->json('items');
             $table->json('costos')->nullable();
             $table->json('gastos')->nullable();
             $table->integer('id_abono')->nullable();
+            $table->integer('cargado')->default(0);
         });
     }
 

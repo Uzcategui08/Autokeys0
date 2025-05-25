@@ -34,9 +34,9 @@ class RegistroVRequest extends FormRequest
 			'monto_ce' => 'nullable',
 			'porcentaje_c' => 'required|string',
             'lugarventa' => 'required|string',
-			'marca' => 'required|string',
-			'modelo' => 'string',
-			'año' => 'integer',
+			'marca' => 'nullable|string',
+			'modelo' => 'nullable|string',
+			'año' => 'nullable|integer',
 			'items' => 'required',
             'metodo_pce' => 'nullable|string',
             'tipo_venta' => 'required|string'
