@@ -225,9 +225,7 @@
     </div>
 
     {{-- Paginación --}}
-    <div class="d-flex justify-content-center mt-3">
-        {{ $registroVs->links() }}
-    </div>
+    {{-- Eliminada la paginación de Laravel para usar solo la de DataTables --}}
 @stop
 
 @section('css')
@@ -266,8 +264,19 @@
 
 @section('js')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     <script>
         $(document).ready(function() {
+            // Inicializar DataTables solo con su paginación
+            $('.dataTable').DataTable({
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json"
+                },
+                "order": [],
+                "pageLength": 10
+            });
+
             function showToggleAlert(button, newValue) {
                 const title = newValue ? '¿Marcar como cargado?' : '¿Marcar como no cargado?';
                 const text = newValue ? 'La venta aparecerá como completada en el sistema.' : 'La venta volverá a estado pendiente.';
