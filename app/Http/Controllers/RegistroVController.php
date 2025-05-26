@@ -44,8 +44,8 @@ class RegistroVController extends Controller
                 DB::raw('JSON_UNQUOTE(JSON_EXTRACT(items, "$[*].productos[*].cantidad")) as cantidad_utilizada')
             ]);
 
-        // Si el usuario es limited_user, filtrar solo sus registros
-        if (auth()->user()->hasRole('limited_user')) {
+        // Si el usuario es limited, filtrar solo sus registros
+        if (auth()->user()->hasRole('limited')) {
             $query->where('id_empleado', auth()->id());
         }
 
@@ -67,8 +67,8 @@ class RegistroVController extends Controller
                 DB::raw('JSON_UNQUOTE(JSON_EXTRACT(items, "$[*].productos[*].cantidad")) as cantidad_utilizada')
             ]);
 
-        // Si el usuario es limited_user, filtrar solo sus registros
-        if (auth()->user()->hasRole('limited_user')) {
+        // Si el usuario es limited, filtrar solo sus registros
+        if (auth()->user()->hasRole('limited')) {
             $query->where('id_empleado', auth()->id());
         }
 
