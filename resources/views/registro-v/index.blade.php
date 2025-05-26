@@ -57,25 +57,22 @@
                                             foreach ($pagos as $pago) {
                                                 $metodo = $pago['metodo_pago'] ?? '';
                                                 $monto = isset($pago['monto']) ? number_format($pago['monto'], 2) : '0.00';
-                                                
                                                 if (is_numeric($metodo)) {
-                                                    $metodoObj = \App\Models\TiposDePago::find($metodo);
-                                                    $nombreMetodo = $metodoObj ? $metodoObj->name : $metodo;
+                                                    $nombreMetodo = $tiposDePago[$metodo]->name ?? $metodo;
                                                     $metodosPago[] = "$nombreMetodo (\$$monto)";
                                                 } else {
                                                     $metodosPago[] = "$metodo (\$$monto)";
                                                 }
                                             }
 
-                                            $productos = [];
+                                            $productosArr = [];
                                             foreach ($items as $item) {
                                                 if (isset($item['productos']) && is_array($item['productos'])) {
                                                     foreach ($item['productos'] as $producto) {
                                                         $nombre = $producto['nombre_producto'] ?? 'Producto no especificado';
                                                         $cantidad = $producto['cantidad'] ?? 0;
-                                                        $productoModel = \App\Models\Producto::where('item', $nombre)->first();
-                                                        $codigo = $productoModel ? $productoModel->id_producto : 'N/A';
-                                                        $productos[] = [
+                                                        $codigo = $productos[$nombre]->id_producto ?? 'N/A';
+                                                        $productosArr[] = [
                                                             'nombre' => $nombre,
                                                             'codigo' => $codigo,
                                                             'cantidad' => $cantidad
@@ -154,17 +151,17 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                @if(!empty($productos))
+                                                @if(!empty($productosArr))
                                                     <div class="d-flex flex-column">
-                                                        @foreach(array_slice($productos, 0, 2) as $producto)
+                                                        @foreach(array_slice($productosArr, 0, 2) as $producto)
                                                             <small>
                                                                 <span class="font-weight-bold">#{{ $producto['codigo'] }}</span> - 
                                                                 {{ $producto['nombre'] }}
                                                                 <span class="text-muted">x{{ $producto['cantidad'] }}</span>
                                                             </small>
                                                         @endforeach
-                                                        @if(count($productos) > 2)
-                                                            <small class="text-muted">+{{ count($productos) - 2 }} más</small>
+                                                        @if(count($productosArr) > 2)
+                                                            <small class="text-muted">+{{ count($productosArr) - 2 }} más</small>
                                                         @endif
                                                     </div>
                                                 @else
@@ -225,6 +222,11 @@
                     </div>
             </div>
         </div>
+    </div>
+
+    {{-- Paginación --}}
+    <div class="d-flex justify-content-center mt-3">
+        {{ $registroVs->links() }}
     </div>
 @stop
 
