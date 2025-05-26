@@ -37,14 +37,13 @@ class RegistroVController extends Controller
             ->where('estatus', 'pagado')
             ->select([
                 'registroV.*',
-                DB::raw("jsonb_array_elements_text(items::jsonb->'trabajo') as tipo_trabajo"),
-                DB::raw("jsonb_array_elements_text(pagos::jsonb->'metodo_pago') as metodo_pago"),
+                DB::raw("jsonb_path_query_array(items::jsonb, '$.trabajo[*]')::text as tipo_trabajo"),
+                DB::raw("jsonb_path_query_array(pagos::jsonb, '$.metodo_pago[*]')::text as metodo_pago"),
                 'titular_c',
-                DB::raw("jsonb_array_elements_text(jsonb_array_elements(items::jsonb->'productos')->'nombre_producto') as tipo_llave"),
-                DB::raw("jsonb_array_elements_text(jsonb_array_elements(items::jsonb->'productos')->'cantidad') as cantidad_utilizada")
+                DB::raw("jsonb_path_query_array(items::jsonb, '$.productos[*].nombre_producto')::text as tipo_llave"),
+                DB::raw("jsonb_path_query_array(items::jsonb, '$.productos[*].cantidad')::text as cantidad_utilizada")
             ]);
 
-        // If user is limited, filter only their records
         if (auth()->user()->hasRole('limited')) {
             $query->where('id_empleado', auth()->id());
         }
@@ -60,14 +59,13 @@ class RegistroVController extends Controller
             ->where('estatus', '!=', 'pagado')
             ->select([
                 'registroV.*',
-                DB::raw("jsonb_array_elements_text(items::jsonb->'trabajo') as tipo_trabajo"),
-                DB::raw("jsonb_array_elements_text(pagos::jsonb->'metodo_pago') as metodo_pago"),
+                DB::raw("jsonb_path_query_array(items::jsonb, '$.trabajo[*]')::text as tipo_trabajo"),
+                DB::raw("jsonb_path_query_array(pagos::jsonb, '$.metodo_pago[*]')::text as metodo_pago"),
                 'titular_c',
-                DB::raw("jsonb_array_elements_text(jsonb_array_elements(items::jsonb->'productos')->'nombre_producto') as tipo_llave"),
-                DB::raw("jsonb_array_elements_text(jsonb_array_elements(items::jsonb->'productos')->'cantidad') as cantidad_utilizada")
+                DB::raw("jsonb_path_query_array(items::jsonb, '$.productos[*].nombre_producto')::text as tipo_llave"),
+                DB::raw("jsonb_path_query_array(items::jsonb, '$.productos[*].cantidad')::text as cantidad_utilizada")
             ]);
 
-        // If user is limited, filter only their records
         if (auth()->user()->hasRole('limited')) {
             $query->where('id_empleado', auth()->id());
         }
