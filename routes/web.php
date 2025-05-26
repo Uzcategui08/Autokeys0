@@ -78,6 +78,9 @@ Route::get('/reportes/cxc', [RegistroVController::class, 'reporteCxc'])->name('r
 Route::get('/reportes/cxc/detalle-cliente', [RegistroVController::class, 'detalleCliente'])->name('reportes.cxc.detalle-cliente');
 Route::get('/reportes/cxc/generar-pdf', [RegistroVController::class, 'cxcPdf'])->name('reportes.cxc.generar-pdf');
 
+Route::patch('/registro-vs/{registroV}/toggle-cargado', [RegistroVController::class, 'toggleCargado'])
+    ->name('registro-vs.toggle-cargado');
+
 Route::resource('registro-vs', RegistroVController::class);
 
 Route::get('/estadisticas-ventas/{month?}/{year?}', [EstadisticasVentasController::class, 'index'])

@@ -1460,7 +1460,10 @@ $(document).ready(function() {
         const precio = $(this).find('option:selected').data('precio') || '0';
         precioInput.val(precio);
 
-        const nombreProducto = $(this).find('option:selected').text().split('-')[1]?.trim();
+        const nombreCompleto = $(this).find('option:selected').text();
+        const nombreProducto = nombreCompleto.includes('-') 
+            ? nombreCompleto.split('-').slice(1).join('-').trim() 
+            : nombreCompleto;
         $row.find('input[name$="[nombre_producto]"]').val(nombreProducto);
     });
 
@@ -1468,7 +1471,10 @@ $(document).ready(function() {
         const $row = $(this).closest('.producto-row');
         const $selectProducto = $row.find('.select2-producto');
         const productoSeleccionado = $selectProducto.val();
-        const nombreProducto = $selectProducto.find('option:selected').text().split('-')[1]?.trim();
+        const nombreCompleto = $(this).find('option:selected').text();
+        const nombreProducto = nombreCompleto.includes('-') 
+            ? nombreCompleto.split('-').slice(1).join('-').trim() 
+            : nombreCompleto;
         const precioActual = $row.find('.precio-producto').val();
         
         cargarProductosEnSelect(

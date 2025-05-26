@@ -8,65 +8,81 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-group mb-3">
-                                <label for="id_producto" class="form-label fw-bold">Producto</label>
-                                <select name="id_producto" id="id_producto" class="form-select select2" required>
-                                    <option value="">Seleccione un producto</option>
-                                    @foreach($productos as $producto)
-                                        <option value="{{ $producto->id_producto }}" {{ old('id_producto') == $producto->id_producto ? 'selected' : '' }}>
-                                            {{ $producto->item }} - {{ $producto->sku }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                    <form id="transferenciaForm">
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="id_producto" class="form-label fw-bold">Producto</label>
+                                    <select name="id_producto" id="id_producto" class="form-select select2" style="width: 100%; height: 38px;" required>
+                                        <option value="">Seleccione un producto</option>
+                                        @foreach($productos as $producto)
+                                            <option value="{{ $producto->id_producto }}" {{ old('id_producto') == $producto->id_producto ? 'selected' : '' }}>
+                                                {{ $producto->id_producto }} - {{ $producto->item }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="id_almacen_origen" class="form-label fw-bold">Almacén Origen</label>
+                                    <select name="id_almacen_origen" id="id_almacen_origen" class="form-select select2" style="width: 100%; height: 38px;" required>
+                                        <option value="">Seleccione almacén</option>
+                                        @foreach($almacenes as $almacen)
+                                            <option value="{{ $almacen->id_almacen }}" {{ old('id_almacen_origen') == $almacen->id_almacen ? 'selected' : '' }}>
+                                                {{ $almacen->nombre }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <small id="stockDisponible" class="text-muted"></small>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="id_almacen_destino" class="form-label fw-bold">Almacén Destino</label>
+                                    <select name="id_almacen_destino" id="id_almacen_destino" class="form-select select2" style="width: 100%; height: 38px;" required>
+                                        <option value="">Seleccione almacén</option>
+                                        @foreach($almacenes as $almacen)
+                                            <option value="{{ $almacen->id_almacen }}" {{ old('id_almacen_destino') == $almacen->id_almacen ? 'selected' : '' }}>
+                                                {{ $almacen->nombre }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="col-md-4">
-                            <div class="form-group mb-3">
-                                <label for="id_almacen_origen" class="form-label fw-bold">Almacén Origen</label>
-                                <select name="id_almacen_origen" id="id_almacen_origen" class="form-select select2" required>
-                                    <option value="">Seleccione almacén</option>
-                                    @foreach($almacenes as $almacen)
-                                        <option value="{{ $almacen->id_almacen }}" {{ old('id_almacen_origen') == $almacen->id_almacen ? 'selected' : '' }}>
-                                            {{ $almacen->nombre }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="cantidad" class="form-label fw-bold">Cantidad</label>
+                                    <input type="number" name="cantidad" id="cantidad" class="form-control" required min="1" value="{{ old('cantidad') }}">
+                                    <small class="form-text text-muted">Cantidad mínima: 1 unidad</small>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-group mb-3">
-                                <label for="id_almacen_destino" class="form-label fw-bold">Almacén Destino</label>
-                                <select name="id_almacen_destino" id="id_almacen_destino" class="form-select select2" required>
-                                    <option value="">Seleccione almacén</option>
-                                    @foreach($almacenes as $almacen)
-                                        <option value="{{ $almacen->id_almacen }}" {{ old('id_almacen_destino') == $almacen->id_almacen ? 'selected' : '' }}>
-                                            {{ $almacen->nombre }}
-                                        </option>
-                                    @endforeach
-                                </select>
+
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="observaciones" class="form-label fw-bold">Observaciones</label>
+                                    <textarea name="observaciones" id="observaciones" class="form-control" rows="3" placeholder="Observaciones...">{{ old('observaciones') }}</textarea>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="form-group mb-3">
-                        <label for="cantidad" class="form-label fw-bold">Cantidad</label>
-                        <input type="number" name="cantidad" id="cantidad" class="form-control" required min="1" value="{{ old('cantidad') }}">
-                        <small class="form-text text-muted">Cantidad mínima: 1 unidad</small>
-                    </div>
-
-                    <div class="form-group mb-3">
-                        <label for="observaciones" class="form-label fw-bold">Observaciones</label>
-                        <textarea name="observaciones" id="observaciones" class="form-control" rows="3" placeholder="Observaciones...">{{ old('observaciones') }}</textarea>
-                    </div>
-
-                    <div class="form-group text-right">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            Realizar Transferencia
-                        </button>
-                    </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group text-end">
+                                    <button type="submit" class="btn btn-primary btn-lg px-4">
+                                        <i class="fas fa-exchange-alt me-2"></i> Realizar Transferencia
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -74,7 +90,32 @@
 </div>
 
 <link rel="stylesheet" href="{{ asset('vendor/select2/css/select2.min.css') }}">
+<link rel="stylesheet" href="{{ asset('vendor/select2-bootstrap4-theme/select2-bootstrap4.min.css') }}">
 <style>
+    .card-title { 
+        font-size: 1.3rem; 
+        margin-bottom: 0;
+    }
+    .form-label { 
+        font-weight: 600; 
+        margin-bottom: 0.3rem;
+    }
+    .select2-container--bootstrap4 .select2-selection {
+        height: 38px;
+        line-height: 1.5;
+    }
+    .select2-container--bootstrap4 .select2-selection__rendered {
+        line-height: 36px;
+    }
+    .select2-container--bootstrap4 .select2-selection__arrow {
+        height: 36px;
+    }
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .card-body {
+        padding: 1.5rem;
+    }
     .card-title { font-size: 1.3rem; }
     .form-label { font-weight: 600; }
 </style>
