@@ -72,8 +72,7 @@ class RegistroVController extends Controller
 
         $registroVs = $query->get();
 
-        return view('registro-v.cxc', compact('registroVs'))
-            ->with('i', ($request->input('page', 1) - 1) * $registroVs->perPage());
+        return view('registro-v.cxc', compact('registroVs'));
     }
 
     public function toggleCargado(RegistroV $registroV)
