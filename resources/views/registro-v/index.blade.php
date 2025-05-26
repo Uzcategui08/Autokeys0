@@ -3,7 +3,7 @@
 @section('title', 'Ventas')
 
 @section('content_header')
-    <h1>Registro</h1>
+    <h1>Registro de Ventas</h1>
 @stop
 
 @section('content')
@@ -16,6 +16,12 @@
                             <span id="card_title">
                                 {{ __('Ventas') }}
                             </span>
+
+                            <div class="float-right">
+                                <a href="{{ route('registro-vs.create') }}" class="btn btn-secondary btn-m float-right" data-placement="left">
+                                    {{ __('Crear Nuevo') }}
+                                </a>
+                            </div>
                         </div>
                     </div>
 
@@ -34,6 +40,7 @@
                                         <th>Productos</th>
                                         <th>Valor</th>
                                         <th>Comisión</th>
+                                        <th>Cargado</th>
                                         <th>Estado</th>
                                         <th>Acciones</th>
                                     </tr>
@@ -77,6 +84,11 @@
                                                 }
                                             }
 
+                                            $cargado = $registroV->cargado ?? 0;
+                                            $cargadoClass = $cargado ? 'bg-success' : 'bg-secondary';
+                                            $cargadoIcon = $cargado ? 'fa-check-circle' : 'fa-times-circle';
+                                            $cargadoText = $cargado ? 'Sí' : 'No';
+
                                             $estadosStyles = [
                                                 'pagado' => ['class' => 'badge-success', 'icon' => 'fa-check-circle'],
                                                 'pendiente' => ['class' => 'badge-danger', 'icon' => 'fa-clock'],
@@ -84,12 +96,12 @@
                                             ];
                                             $estado = $estadosStyles[strtolower($registroV->estatus)] ?? ['class' => 'badge-secondary', 'icon' => 'fa-question'];
                                         @endphp
-                                        <tr>
+                                        <tr class="{{ $cargado ? 'table-success' : '' }}" data-cargado="{{ $cargado }}">
                                             <td class="font-weight-bold">{{ $registroV->id }}</td>
                                             <td>
                                                 <span class="text-nowrap">
                                                     <i class="far fa-calendar-alt text-primary mr-1"></i>
-                                                    {{ $registroV->fecha_h->format('m/d/Y') }}
+                                                    {{ $registroV->fecha_h->format('d/m/Y') }}
                                                 </span>
                                             </td>
                                             <td>
@@ -168,13 +180,22 @@
                                                 {{ number_format($registroV->porcentaje_c, 2) }}
                                             </td>
                                             <td>
+                                                <form class="toggle-cargado-form" action="{{ route('registro-vs.toggle-cargado', $registroV->id) }}" method="POST">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="button" class="btn btn-sm toggle-cargado-btn {{ $cargadoClass }}" data-cargado="{{ $cargado }}">
+                                                        <i class="fas {{ $cargadoIcon }}"></i> {{ $cargadoText }}
+                                                    </button>
+                                                </form>
+                                            </td>
+                                            <td>
                                                 <span class="badge {{ $estado['class'] }}">
                                                     <i class="fas {{ $estado['icon'] }} mr-1"></i>
                                                     {{ ucfirst($registroV->estatus) }}
                                                 </span>
                                             </td>
                                             <td>
-                                                <form onsubmit="return confirmDelete(this)" action="{{ route('registro-vs.destroy', $registroV->id) }}" method="POST" class="delete-form" style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
+                                                <form onsubmit="return confirmDelete(this)" action="{{ route('registro-vs.destroy', $registroV->id) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
                                                     <a class="btn btn-sm btn-primary" href="{{ route('registro-vs.show', $registroV->id) }}">
                                                         <i class="fa fa-fw fa-eye"></i>
                                                     </a>
@@ -182,17 +203,18 @@
                                                         <i class="fa fa-fw fa-edit"></i> 
                                                     </a>
                                                     <a href="{{ route('registro-vs.pdf', $registroV->id) }}" class="btn btn-sm btn-warning" target="_blank">
-                                                        <i class="">Es</i>
+                                                        <i class="fa fa-fw fa-print"></i> 
+                                                        Es
                                                     </a>
                                                     <a href="{{ route('invoice.pdf', $registroV->id) }}" class="btn btn-sm btn-info" target="_blank">
-                                                        <i class="En">En</i>
+                                                        <i class="fa fa-fw fa-print"></i>
+                                                        En
                                                     </a>
-                                                    <form onsubmit="return confirmDelete(this)" action="{{ route('registro-vs.destroy', $registroV->id) }}" method="POST" style="display: inline;">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm btn-danger"> 
-                                                            <i class="fa fa-fw fa-trash"></i>
-                                                        </button>
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-danger btn-sm"> 
+                                                        <i class="fa fa-fw fa-trash"></i>
+                                                    </button>
                                                 </form>
                                             </td>
                                         </tr>
@@ -201,6 +223,10 @@
                             </table>
                         </div>
                     </div>
+                    <div class="card-footer">
+                        <div class="float-right">
+                            {{ $registroVs->links() }}
+                        </div>
                 </div>
             </div>
         </div>
@@ -224,11 +250,92 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-        .font-weight-bold {
-            font-weight: bold;
+        .toggle-cargado-btn {
+            width: 80px;
+            color: white;
+            transition: all 0.3s ease;
         }
-        .text-muted {
-            color: #6c757d;
+        .toggle-cargado-btn:hover {
+            opacity: 0.8;
+        }
+        .table-success {
+            background-color: rgba(40, 167, 69, 0.1) !important;
+        }
+        .table tr {
+            transition: background-color 0.3s ease;
         }
     </style>
+@stop
+
+@section('js')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function() {
+            function showToggleAlert(button, newValue) {
+                const title = newValue ? '¿Marcar como cargado?' : '¿Marcar como no cargado?';
+                const text = newValue ? 'La venta aparecerá como completada en el sistema.' : 'La venta volverá a estado pendiente.';
+                
+                Swal.fire({
+                    title: title,
+                    text: text,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sí, confirmar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        toggleCargado(button, newValue);
+                    }
+                });
+            }
+
+            function toggleCargado(button, newValue) {
+                const form = button.closest('form');
+                const row = button.closest('tr');
+                
+                $.ajax({
+                    url: form.attr('action'),
+                    type: 'POST',
+                    data: form.serialize(),
+                    success: function(response) {
+                        if (response.success) {
+                            if (newValue) {
+                                button.removeClass('bg-secondary').addClass('bg-success');
+                                button.find('i').removeClass('fa-times-circle').addClass('fa-check-circle');
+                                button.html('<i class="fas fa-check-circle"></i> Sí');
+                                row.addClass('table-success').attr('data-cargado', '1');
+                            } else {
+                                button.removeClass('bg-success').addClass('bg-secondary');
+                                button.find('i').removeClass('fa-check-circle').addClass('fa-times-circle');
+                                button.html('<i class="fas fa-times-circle"></i> No');
+                                row.removeClass('table-success').attr('data-cargado', '0');
+                            }
+
+                            Swal.fire(
+                                '¡Actualizado!',
+                                'El estado ha sido cambiado.',
+                                'success'
+                            );
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error(xhr);
+                        Swal.fire(
+                            'Error',
+                            'No se pudo actualizar el estado',
+                            'error'
+                        );
+                    }
+                });
+            }
+
+            $('.toggle-cargado-btn').click(function() {
+                const currentValue = $(this).data('cargado') == 1;
+                showToggleAlert($(this), !currentValue);
+            });
+
+        });
+    </script>
 @stop
