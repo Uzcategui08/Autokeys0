@@ -89,7 +89,7 @@
                                             <td>
                                                 <span class="text-nowrap">
                                                     <i class="far fa-calendar-alt text-primary mr-1"></i>
-                                                    {{ $registroV->fecha_h->format('d/m/Y') }}
+                                                    {{ $registroV->fecha_h->format('m/d/Y') }}
                                                 </span>
                                             </td>
                                             <td>

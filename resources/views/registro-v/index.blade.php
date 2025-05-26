@@ -1,10 +1,9 @@
-
 @extends('adminlte::page')
 
 @section('title', 'Ventas')
 
 @section('content_header')
-    <h1>Registro de Ventas</h1>
+    <h1>Registro</h1>
 @stop
 
 @section('content')
@@ -17,12 +16,6 @@
                             <span id="card_title">
                                 {{ __('Ventas') }}
                             </span>
-
-                            <div class="float-right">
-                                <a href="{{ route('registro-vs.create') }}" class="btn btn-secondary btn-m float-right" data-placement="left">
-                                    {{ __('Crear Nuevo') }}
-                                </a>
-                            </div>
                         </div>
                     </div>
 
@@ -41,7 +34,6 @@
                                         <th>Productos</th>
                                         <th>Valor</th>
                                         <th>Comisión</th>
-                                        <th>Cargado</th>
                                         <th>Estado</th>
                                         <th>Acciones</th>
                                     </tr>
@@ -85,11 +77,6 @@
                                                 }
                                             }
 
-                                            $cargado = $registroV->cargado ?? 0;
-                                            $cargadoClass = $cargado ? 'bg-success' : 'bg-secondary';
-                                            $cargadoIcon = $cargado ? 'fa-check-circle' : 'fa-times-circle';
-                                            $cargadoText = $cargado ? 'Sí' : 'No';
-
                                             $estadosStyles = [
                                                 'pagado' => ['class' => 'badge-success', 'icon' => 'fa-check-circle'],
                                                 'pendiente' => ['class' => 'badge-danger', 'icon' => 'fa-clock'],
@@ -97,12 +84,12 @@
                                             ];
                                             $estado = $estadosStyles[strtolower($registroV->estatus)] ?? ['class' => 'badge-secondary', 'icon' => 'fa-question'];
                                         @endphp
-                                        <tr class="{{ $cargado ? 'table-success' : '' }}" data-cargado="{{ $cargado }}">
+                                        <tr>
                                             <td class="font-weight-bold">{{ $registroV->id }}</td>
                                             <td>
                                                 <span class="text-nowrap">
                                                     <i class="far fa-calendar-alt text-primary mr-1"></i>
-                                                    {{ $registroV->fecha_h->format('d/m/Y') }}
+                                                    {{ $registroV->fecha_h->format('m/d/Y') }}
                                                 </span>
                                             </td>
                                             <td>
@@ -181,15 +168,6 @@
                                                 {{ number_format($registroV->porcentaje_c, 2) }}
                                             </td>
                                             <td>
-                                                <form class="toggle-cargado-form" action="{{ route('registro-vs.toggle-cargado', $registroV->id) }}" method="POST">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <button type="button" class="btn btn-sm toggle-cargado-btn {{ $cargadoClass }}" data-cargado="{{ $cargado }}">
-                                                        <i class="fas {{ $cargadoIcon }}"></i> {{ $cargadoText }}
-                                                    </button>
-                                                </form>
-                                            </td>
-                                            <td>
                                                 <span class="badge {{ $estado['class'] }}">
                                                     <i class="fas {{ $estado['icon'] }} mr-1"></i>
                                                     {{ ucfirst($registroV->estatus) }}
@@ -223,10 +201,6 @@
                             </table>
                         </div>
                     </div>
-                    
-                    <div class="card-footer clearfix">
-                        {{ $registroVs->links() }}
-                    </div>
                 </div>
             </div>
         </div>
@@ -250,92 +224,11 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-        .toggle-cargado-btn {
-            width: 80px;
-            color: white;
-            transition: all 0.3s ease;
+        .font-weight-bold {
+            font-weight: bold;
         }
-        .toggle-cargado-btn:hover {
-            opacity: 0.8;
-        }
-        .table-success {
-            background-color: rgba(40, 167, 69, 0.1) !important;
-        }
-        .table tr {
-            transition: background-color 0.3s ease;
+        .text-muted {
+            color: #6c757d;
         }
     </style>
-@stop
-
-@section('js')
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        $(document).ready(function() {
-            function showToggleAlert(button, newValue) {
-                const title = newValue ? '¿Marcar como cargado?' : '¿Marcar como no cargado?';
-                const text = newValue ? 'La venta aparecerá como completada en el sistema.' : 'La venta volverá a estado pendiente.';
-                
-                Swal.fire({
-                    title: title,
-                    text: text,
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Sí, confirmar',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        toggleCargado(button, newValue);
-                    }
-                });
-            }
-
-            function toggleCargado(button, newValue) {
-                const form = button.closest('form');
-                const row = button.closest('tr');
-                
-                $.ajax({
-                    url: form.attr('action'),
-                    type: 'POST',
-                    data: form.serialize(),
-                    success: function(response) {
-                        if (response.success) {
-                            if (newValue) {
-                                button.removeClass('bg-secondary').addClass('bg-success');
-                                button.find('i').removeClass('fa-times-circle').addClass('fa-check-circle');
-                                button.html('<i class="fas fa-check-circle"></i> Sí');
-                                row.addClass('table-success').attr('data-cargado', '1');
-                            } else {
-                                button.removeClass('bg-success').addClass('bg-secondary');
-                                button.find('i').removeClass('fa-check-circle').addClass('fa-times-circle');
-                                button.html('<i class="fas fa-times-circle"></i> No');
-                                row.removeClass('table-success').attr('data-cargado', '0');
-                            }
-
-                            Swal.fire(
-                                '¡Actualizado!',
-                                'El estado ha sido cambiado.',
-                                'success'
-                            );
-                        }
-                    },
-                    error: function(xhr) {
-                        console.error(xhr);
-                        Swal.fire(
-                            'Error',
-                            'No se pudo actualizar el estado',
-                            'error'
-                        );
-                    }
-                });
-            }
-
-            $('.toggle-cargado-btn').click(function() {
-                const currentValue = $(this).data('cargado') == 1;
-                showToggleAlert($(this), !currentValue);
-            });
-
-        });
-    </script>
 @stop
