@@ -48,7 +48,7 @@ class RegistroVController extends Controller
             $query->where('id_empleado', auth()->id());
         }
 
-        $registroVs = $query->paginate(20); // Paginación
+        $registroVs = $query->get(); // Paginación
         $tiposDePago = TiposDePago::all()->keyBy('id');
         $productos = Producto::all()->keyBy('item');
 
