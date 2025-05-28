@@ -34,6 +34,7 @@
                                     <th class="text-center align-middle">Cantidad nueva</th>
                                     <th class="text-center align-middle">Motivo</th>
                                     <th class="text-center align-middle">Fecha</th>
+                                    <th class="text-center align-middle">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -55,6 +56,13 @@
                                     <td class="text-center align-middle">{{ $ajuste->cantidad_nueva }}</td>
                                     <td class="text-center align-middle">{{ $ajuste->descripcion }}</td>
                                     <td class="text-center align-middle">{{ $ajuste->created_at->format('m/d/Y') }}</td>
+                                    <td class="text-center align-middle">
+                                        <form action="{{ route('ajustes.destroy', $ajuste->id) }}" method="POST" class="delete-ajuste-form" style="display:inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i></button>
+                                        </form>
+                                    </td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -65,4 +73,32 @@
         </div>
     </div>
 </div>
+@stop
+
+@section('js')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Delegación para todos los formularios de eliminación
+            document.querySelectorAll('.delete-ajuste-form').forEach(function(form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: '¿Estás seguro?',
+                        text: 'Esta acción eliminará el ajuste de inventario de forma permanente.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Sí, eliminar',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                });
+            });
+        });
+    </script>
 @stop

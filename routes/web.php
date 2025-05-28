@@ -31,8 +31,8 @@ use Illuminate\Http\Request;
 use App\Models\Trabajo;
 
 Route::get('/', function () {
-    return view('auth.login'); 
-})->name('login'); 
+    return view('auth.login');
+})->name('login');
 
 Route::get('/dashboard', [DashboardController::class, "index"])->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -65,9 +65,9 @@ Route::resource('inventarios', InventarioController::class);
 Route::get('/cargas', [InventarioController::class, 'cargas'])->name('inventario.cargas');
 // Rutas para el sistema de ajustes
 Route::get('/inventarios/{inventario}/ajustar', [InventarioController::class, 'editarConAjustes'])
-     ->name('inventarios.ajustar');
+    ->name('inventarios.ajustar');
 Route::post('/inventarios/{inventario}/ajustar', [InventarioController::class, 'actualizarConAjustes'])
-     ->name('inventarios.actualizar-ajustes');
+    ->name('inventarios.actualizar-ajustes');
 
 Route::resource('almacenes', AlmaceneController::class);
 
@@ -87,14 +87,14 @@ Route::get('/estadisticas-ventas/{month?}/{year?}', [EstadisticasVentasControlle
     ->name('estadisticas.ventas');
 
 Route::get('/cierre-ventas', [CierreVentasController::class, 'index'])->name('cierre.mensual');
-    Route::get('/cierre-ventas', [CierreVentasController::class, 'index'])->name('cierre.ventas');
-    Route::get('/estadisticas/RegistroVpdf', [EstadisticasVentasController::class, 'generatePdfTotal'])->name('generatePdfTotal.pdf');
-    
-    Route::get('/cierre-ventas', [CierreVentasController::class, 'index'])->name('cierre.mensual');
+Route::get('/cierre-ventas', [CierreVentasController::class, 'index'])->name('cierre.ventas');
+Route::get('/estadisticas/RegistroVpdf', [EstadisticasVentasController::class, 'generatePdfTotal'])->name('generatePdfTotal.pdf');
+
+Route::get('/cierre-ventas', [CierreVentasController::class, 'index'])->name('cierre.mensual');
 Route::get('/cierre-ventas-semanal', [CierreVentasSemanalController::class, 'index'])->name('cierre.semanal');
 
-    Route::get('/estadisticas-vanes', [VanesController::class, 'index'])->name('ventas.reporte');
-    Route::get('/estadisticas/vanespdf', [VanesController::class, 'descargarReporteFinDeSemana'])->name('ventas.descargar-reporte');
+Route::get('/estadisticas-vanes', [VanesController::class, 'index'])->name('ventas.reporte');
+Route::get('/estadisticas/vanespdf', [VanesController::class, 'descargarReporteFinDeSemana'])->name('ventas.descargar-reporte');
 
 Route::resource('tipos-de-pagos', TiposDePagoController::class);
 
@@ -133,8 +133,6 @@ Route::prefix('nempleados')->group(function () {
 
     Route::get('/detalle/{id}', [NempleadoController::class, 'show'])
         ->name('nempleados.show');
-    
-
 });
 Route::get('/nomina/registros', [NempleadoController::class, 'getRegistros'])->name('nomina.getRegistros');
 
@@ -143,9 +141,11 @@ Route::get('/nempleados/pdf/{id}', [NempleadoController::class, 'generarReciboIn
 
 // PDF General
 Route::get('/nomina/generar-recibo-general/{fechaDesde}/{fechaHasta}', [NempleadoController::class, 'generarReciboGeneral'])
-     ->name('nempleados.general')
-     ->where(['fechaDesde' => '^[0-9]{4}-[0-9]{2}-[0-9]{2}$', 
-              'fechaHasta' => '^[0-9]{4}-[0-9]{2}-[0-9]{2}$']);
+    ->name('nempleados.general')
+    ->where([
+        'fechaDesde' => '^[0-9]{4}-[0-9]{2}-[0-9]{2}$',
+        'fechaHasta' => '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+    ]);
 
 Route::get('/nempleados/reporte', [NempleadoController::class, 'reporte'])->name('nempleados.reporte');
 
@@ -155,7 +155,7 @@ Route::resource('prestamos', PrestamoController::class);
 Route::get('prestamos/empleado/{id}', [PrestamoController::class, 'porEmpleado'])
     ->name('prestamos.empleado');
 Route::get('prestamos/{id}/cuotas', [PrestamoController::class, 'showCuotas'])
-->name('prestamos.cuotas');
+    ->name('prestamos.cuotas');
 
 
 Route::resource('abonos', AbonoController::class);
@@ -170,21 +170,21 @@ Route::get('/inventario/{productoId}/{almacenId}', function ($productoId, $almac
     $inventario = Inventario::where('id_producto', $productoId)
         ->where('id_almacen', $almacenId)
         ->first();
-    
+
     if (!$inventario) {
         return response()->json([
             'cantidad' => 0
         ]);
     }
-    
+
     return response()->json([
         'cantidad' => $inventario->cantidad
     ]);
 });
 
 Route::post('/estadisticas/pdf', [EstadisticasVentasController::class, 'generateStatsPdf'])
-     ->name('estadisticas.pdf')
-     ->middleware('auth');
+    ->name('estadisticas.pdf')
+    ->middleware('auth');
 
 Route::get('/verificar-stock-transferencia', [TransferenciaController::class, 'verificarStock'])->name('verificarTransferencia.stock');
 
@@ -202,5 +202,5 @@ Route::get('/obtener-todos-trabajos', [RegistroVController::class, 'obtenerTodos
 
 Route::resource('categorias', CategoriaController::class);
 
-
-
+// Eliminar un ajuste de inventario (carga/descarga)
+Route::delete('/ajustes/{id}', [InventarioController::class, 'destroyAjuste'])->name('ajustes.destroy');

@@ -23,29 +23,29 @@ class InventarioController extends Controller
      * Display a listing of the resource.
      */
 
-     public function getData(Request $request)
-     {
-         $query = Inventario::with(['producto', 'almacene']);
-             
-         if ($request->has('almacen_id') && $request->almacen_id) {
-             $query->where('id_almacen', $request->almacen_id);
-         }
-         
-         $inventarios = $query->get();
-         
-         return response()->json([
-             'data' => $inventarios
-         ]);
-     }
+    public function getData(Request $request)
+    {
+        $query = Inventario::with(['producto', 'almacene']);
+
+        if ($request->has('almacen_id') && $request->almacen_id) {
+            $query->where('id_almacen', $request->almacen_id);
+        }
+
+        $inventarios = $query->get();
+
+        return response()->json([
+            'data' => $inventarios
+        ]);
+    }
 
     public function index(Request $request): View
     {
         $inventarios1 = Inventario::with(['producto', 'almacene'])
             ->orderByRaw('CAST(cantidad AS NUMERIC) ASC')
             ->get();
-    
+
         $almacenes = Almacene::all();
-    
+
         return view('inventario.index', compact('inventarios1', 'almacenes'));
     }
 
@@ -81,29 +81,29 @@ class InventarioController extends Controller
     {
         // Carga el inventario con sus relaciones y maneja el caso de no encontrado
         $inventario = Inventario::with(['producto', 'almacene'])
-                      ->findOrFail($id);
-    
+            ->findOrFail($id);
+
         return view('inventario.show', compact('inventario'));
     }
-    
-public function cargas(Request $request)
-{
-    $query = AjusteInventario::with(['producto', 'almacene', 'user'])
-                ->orderBy('created_at', 'desc');
-    
-    // Si el usuario es limited_user, filtrar solo sus cargas
-    if (auth()->user()->hasRole('limited')) {
-        $query->where('user_id', auth()->id());
+
+    public function cargas(Request $request)
+    {
+        $query = AjusteInventario::with(['producto', 'almacene', 'user'])
+            ->orderBy('created_at', 'desc');
+
+        // Si el usuario es limited_user, filtrar solo sus cargas
+        if (auth()->user()->hasRole('limited')) {
+            $query->where('user_id', auth()->id());
+        }
+
+        // Obtener todos los registros sin paginación
+        $cargas = $query->get();
+
+        return view('inventario.cargas', [
+            'cargas' => $cargas,
+            'i' => 0 // Como no hay paginación, el índice comienza en 0
+        ]);
     }
-    
-    // Obtener todos los registros sin paginación
-    $cargas = $query->get();
-    
-    return view('inventario.cargas', [
-        'cargas' => $cargas,
-        'i' => 0 // Como no hay paginación, el índice comienza en 0
-    ]);
-}
     public function edit($id_inventario): View
     {
         $inventario = Inventario::with(['producto', 'almacene'])->findOrFail($id_inventario);
@@ -123,7 +123,7 @@ public function cargas(Request $request)
         $inventario->update(['cantidad' => $request->cantidad]);
 
         return redirect()->route('inventarios.index')
-             ->with('success', 'Inventario actualizado correctamente');
+            ->with('success', 'Inventario actualizado correctamente');
     }
 
     /**
@@ -134,59 +134,59 @@ public function cargas(Request $request)
         $inventario = Inventario::with(['producto', 'almacene'])->findOrFail($id_inventario);
         $productos = Producto::select('id_producto', 'item',)->get();
         $almacenes = Almacene::select('id_almacen', 'nombre')->get();
-        
+
         return view('inventario.ajustar', compact('inventario', 'productos', 'almacenes'));
     }
 
     /**
      * Actualización con sistema de ajustes
      */
-public function actualizarConAjustes(Request $request, $id_inventario)
-{
-    $request->validate([
-        'tipo_ajuste' => 'required|in:compra,resta,ajuste', 
-        'cantidad_ajuste' => 'required|integer|min:1', 
-        'descripcion' => 'nullable|string|max:500', 
-    ]);
+    public function actualizarConAjustes(Request $request, $id_inventario)
+    {
+        $request->validate([
+            'tipo_ajuste' => 'required|in:compra,resta,ajuste',
+            'cantidad_ajuste' => 'required|integer|min:1',
+            'descripcion' => 'nullable|string|max:500',
+        ]);
 
-    $inventario = Inventario::findOrFail($id_inventario);
-    $cantidadAnterior = $inventario->cantidad;
-    $cantidadAjuste = $request->cantidad_ajuste; 
+        $inventario = Inventario::findOrFail($id_inventario);
+        $cantidadAnterior = $inventario->cantidad;
+        $cantidadAjuste = $request->cantidad_ajuste;
 
-    
-    switch ($request->tipo_ajuste) { 
-        case 'compra':
-        case 'ajuste':
-            $nuevaCantidad = $cantidadAnterior + $cantidadAjuste;
-            break;
-        case 'resta':
-            $nuevaCantidad = $cantidadAnterior - $cantidadAjuste;
-            if ($nuevaCantidad < 0) {
-                return back()->withErrors(['cantidad_ajuste' => 'La cantidad resultante no puede ser negativa']);
-            }
-            break;
+
+        switch ($request->tipo_ajuste) {
+            case 'compra':
+            case 'ajuste':
+                $nuevaCantidad = $cantidadAnterior + $cantidadAjuste;
+                break;
+            case 'resta':
+                $nuevaCantidad = $cantidadAnterior - $cantidadAjuste;
+                if ($nuevaCantidad < 0) {
+                    return back()->withErrors(['cantidad_ajuste' => 'La cantidad resultante no puede ser negativa']);
+                }
+                break;
+        }
+
+        // Actualizar inventario
+        $inventario->update(['cantidad' => $nuevaCantidad]);
+
+        // Registrar el ajuste
+        AjusteInventario::create([
+            'id_producto' => $inventario->id_producto,
+            'id_almacen' => $inventario->id_almacen,
+            'tipo_ajuste' => $request->tipo_ajuste,
+            'cantidad_anterior' => $cantidadAnterior,
+            'diferencia' => $cantidadAjuste,
+            'cantidad_nueva' => $nuevaCantidad,
+            'descripcion' => $request->descripcion,
+            'user_id' => Auth::id(),
+        ]);
+
+        return redirect()->route('inventarios.index')
+            ->with('success', 'Inventario ajustado correctamente. Se registró el movimiento.');
     }
 
-    // Actualizar inventario
-    $inventario->update(['cantidad' => $nuevaCantidad]);
 
-    // Registrar el ajuste
-    AjusteInventario::create([
-        'id_producto' => $inventario->id_producto,
-        'id_almacen' => $inventario->id_almacen,
-        'tipo_ajuste' => $request->tipo_ajuste, 
-        'cantidad_anterior' => $cantidadAnterior,
-        'diferencia' => $cantidadAjuste,
-        'cantidad_nueva' => $nuevaCantidad,
-        'descripcion' => $request->descripcion, 
-        'user_id' => Auth::id(),
-    ]);
-
-    return redirect()->route('inventarios.index')
-         ->with('success', 'Inventario ajustado correctamente. Se registró el movimiento.');
-}
-
-    
     public function destroy($id): RedirectResponse
     {
         Inventario::find($id)->delete();
@@ -194,11 +194,19 @@ public function actualizarConAjustes(Request $request, $id_inventario)
         return Redirect::route('inventarios.index')
             ->with('success', 'Inventario eliminado satifactoriamente.');
     }
-    
-    public function export() 
+
+    public function export()
     {
         return Excel::download(new InventariosExport, 'inventario.xlsx');
     }
 
+    /**
+     * Elimina un ajuste de inventario (carga/descarga) por id
+     */
+    public function destroyAjuste($id)
+    {
+        \App\Models\AjusteInventario::findOrFail($id)->delete();
+        return redirect()->route('inventario.cargas')
+            ->with('success', 'Ajuste de inventario eliminado correctamente.');
+    }
 }
-
