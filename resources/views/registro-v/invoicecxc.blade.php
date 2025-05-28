@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Recibo de Cuentas por Cobrar</title>
+    <title>Accounts Receivable Report</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -156,12 +156,12 @@
     <div class="recibo-container">
         <div class="header">
             <div class="divider"></div>
-            <h1>RECIBO</h1>
-            <p>Generado el: {{ date('d/m/Y') }}</p>
+            <h1>RECEIPT</h1>
+            <p>Generated on: {{ date('d/m/Y') }}</p>
         </div>
 
         <div class="periodo-info">
-            <p>Período: {{ \Carbon\Carbon::parse($fechaDesde)->format('d/m/Y') }} al {{ \Carbon\Carbon::parse($fechaHasta)->format('d/m/Y') }}</p>
+            <p>Period: {{ \Carbon\Carbon::parse($fechaDesde)->format('d/m/Y') }} to {{ \Carbon\Carbon::parse($fechaHasta)->format('d/m/Y') }}</p>
         </div>
 
         @foreach($data as $item)
@@ -174,12 +174,12 @@
             <table>
                 <thead>
                     <tr>
-                        <th width="15%">Factura #{{ $venta->id }}</th>
-                        <th width="15%">Fecha</th>
-                        <th width="20%" class="text-right">Monto</th>
-                        <th width="20%" class="text-right">Pagado</th>
-                        <th width="20%" class="text-right">Saldo</th>
-                        <th width="10%">Estado</th>
+                        <th width="15%">Invoice #{{ $venta->id }}</th>
+                        <th width="15%">Date</th>
+                        <th width="20%" class="text-right">Amount</th>
+                        <th width="20%" class="text-right">Paid</th>
+                        <th width="20%" class="text-right">Balance</th>
+                        <th width="10%">Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -191,18 +191,18 @@
                         <td class="text-right">${{ number_format($venta->valor_v - $venta->total_pagado, 2) }}</td>
                         <td>
                             @if($venta->valor_v == $venta->total_pagado)
-                                Pagado
+                                Paid
                             @elseif($venta->total_pagado > 0)
-                                Parcial
+                                Partial
                             @else
-                                Pendiente
+                                Pending
                             @endif
                         </td>
                     </tr>
                 </tbody>
             </table>
 
-            <!-- Detalle de trabajos -->
+            <!-- Work details -->
             @foreach($venta->items as $itemGroup)
             <div class="trabajo-info">
                 <div class="trabajo-nombre">{{ $itemGroup->trabajo }}</div>
@@ -213,7 +213,7 @@
                 @if(count($itemGroup->productos) > 0)
                 <table class="productos-table">
                     <tr>
-                        <td width="15%">Productos:</td>
+                        <td width="15%">Products:</td>
                         <td>
                             @foreach($itemGroup->productos as $producto)
                                 {{ $producto->nombre_producto }} ({{ $producto->cantidad }}),
@@ -230,7 +230,7 @@
         <table>
             <tfoot>
                 <tr class="total-row">
-                    <td colspan="2">TOTAL CLIENTE</td>
+                    <td colspan="2">CUSTOMER TOTAL</td>
                     <td class="text-right">${{ number_format($item->total_ventas_monto, 2) }}</td>
                     <td class="text-right">${{ number_format($item->total_pagado, 2) }}</td>
                     <td class="text-right">${{ number_format($item->saldo_pendiente, 2) }}</td>
@@ -247,21 +247,21 @@
         @endforeach
 
         <div class="resumen-section">
-            <div class="section-title">RESUMEN GENERAL</div>
+            <div class="section-title">SUMMARY</div>
             <div class="resumen-row">
-                <span>Total Ventas:</span>
+                <span>Total Sales:</span>
                 <span>${{ number_format($data->sum('total_ventas_monto'), 2) }}</span>
             </div>
             <div class="resumen-row">
-                <span>Total Pagado:</span>
+                <span>Total Paid:</span>
                 <span>${{ number_format($data->sum('total_pagado'), 2) }}</span>
             </div>
             <div class="resumen-row resumen-total">
-                <span>Saldo Pendiente:</span>
+                <span>Outstanding Balance:</span>
                 <span>${{ number_format($totalSaldo, 2) }}</span>
             </div>
             <div class="resumen-row">
-                <span>Porcentaje Pagado:</span>
+                <span>Percentage Paid:</span>
                 <span>
                     @if($data->sum('total_ventas_monto') > 0)
                         {{ number_format(($data->sum('total_pagado') / $data->sum('total_ventas_monto')) * 100, 2) }}%

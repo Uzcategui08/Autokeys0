@@ -1402,9 +1402,11 @@ class RegistroVController extends Controller
         $fechaHasta = $request->fecha_hasta;
         $clienteId = $request->cliente_id;
         $estatus = $request->estatus;
+        $language = $request->language ?? 'es'; 
 
         $query = RegistroV::whereBetween('fecha_h', [$fechaDesde, $fechaHasta])
-            ->where('tipo_venta', 'credito');
+            ->where('tipo_venta', 'credito')
+            ->with(['cliente']);
 
         if ($clienteId) {
             $cliente = Cliente::find($clienteId);
@@ -1419,7 +1421,7 @@ class RegistroVController extends Controller
 
         $ventas = $query->get();
 
-        $data = $ventas->groupBy('cliente')->map(function($ventasGrupo, $clienteNombre) {
+        $data = $ventas->groupBy('cliente')->map(function($ventasGrupo, $clienteNombre) use ($language) {
             $totalPagado = $ventasGrupo->sum(function($venta) {
                 return is_array($venta->pagos) ? collect($venta->pagos)->sum('monto') : 0;
             });
@@ -1431,29 +1433,57 @@ class RegistroVController extends Controller
                 'total_ventas_monto' => $ventasGrupo->sum('valor_v'),
                 'total_pagado' => $totalPagado,
                 'saldo_pendiente' => $ventasGrupo->sum('valor_v') - $totalPagado,
-                'ventas' => $ventasGrupo->map(function($venta) {
+                'ventas' => $ventasGrupo->map(function($venta) use ($language) {
                     $pagos = is_array($venta->pagos) ? $venta->pagos : [];
                     $totalPagadoVenta = collect($pagos)->sum('monto');
+
+                    $items = [];
+                    if ($venta->items) {
+                        $itemsData = is_string($venta->items) ? json_decode($venta->items) : $venta->items;
+                        
+                        if (is_array($itemsData) || is_object($itemsData)) {
+                            foreach ($itemsData as $item) {
+                                $item = (object) $item;
+                                $items[] = (object) [
+                                    'trabajo' => $item->trabajo ?? $item->trabajo_nombre ?? ($language === 'en' ? 'Unspecified work' : 'Trabajo no especificado'),
+                                    'descripcion' => $item->descripcion ?? null,
+                                    'productos' => isset($item->productos) ? array_map(function($p) use ($language) {
+                                        $p = (object) $p;
+                                        return (object) [
+                                            'nombre_producto' => $p->nombre_producto ?? ($language === 'en' ? 'Unspecified product' : 'Producto no especificado'),
+                                            'cantidad' => $p->cantidad ?? 1
+                                        ];
+                                    }, (array) $item->productos) : []
+                                ];
+                            }
+                        }
+                    }
                     
                     return (object) [
                         'id' => $venta->id,
                         'fecha_h' => $venta->fecha_h,
                         'valor_v' => $venta->valor_v,
                         'total_pagado' => $totalPagadoVenta,
-                        'pagos' => $pagos
+                        'pagos' => $pagos,
+                        'items' => $items
                     ];
                 })
             ];
         })->values();
-    
-        $pdf = PDF::loadView('registro-v.reportecxc', [
+
+        $viewName = $language === 'en' ? 'registro-v.invoicecxc' : 'registro-v.reportecxc';
+
+        $pdf = PDF::loadView($viewName, [
             'data' => $data,
             'fechaDesde' => $fechaDesde,
             'fechaHasta' => $fechaHasta,
             'totalSaldo' => $data->sum('saldo_pendiente'),
-            'tiposDePago' => TiposDePago::all()
+            'tiposDePago' => TiposDePago::all(),
+            'language' => $language
         ]);
-    
-        return $pdf->stream('reporte-cxc-resumen.pdf');
+
+        $filename = $language === 'en' ? 'accounts-receivable-report.pdf' : 'reporte-cxc-detallado.pdf';
+
+        return $pdf->stream($filename);
     }
 }

@@ -11,14 +11,14 @@
     <div class="card-body">
         <form id="filtroForm">
             <div class="row align-items-end">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <div class="form-group">
                         <label for="fecha_desde">Fecha Desde</label>
                         <input type="date" name="fecha_desde" id="fecha_desde" class="form-control" 
                                value="{{ request('fecha_desde') ?? date('Y-m-01') }}" required>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <div class="form-group">
                         <label for="fecha_hasta">Fecha Hasta</label>
                         <input type="date" name="fecha_hasta" id="fecha_hasta" class="form-control" 
@@ -39,7 +39,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <div class="form-group">
                         <label for="estatus">Estatus</label>
                         <select name="estatus" id="estatus" class="form-control">
@@ -47,6 +47,16 @@
                             <option value="pendiente" {{ request('estatus') == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
                             <option value="parcialemente pagado" {{ request('estatus') == 'parcialemente pagado' ? 'selected' : '' }}>Parcialmente Pagado</option>
                             <option value="pagado" {{ request('estatus') == 'pagado' ? 'selected' : '' }}>Pagado</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="language">Lenguaje</label>
+                        <select name="language" id="language" class="form-control">
+                            <option value="">Seleccionar lenguaje</option>
+                            <option value="en" {{ request('language') == 'en' ? 'selected' : '' }}>Inglés</option>
+                            <option value="es" {{ request('language') == 'es' ? 'selected' : '' }}>Español</option>
                         </select>
                     </div>
                 </div>
@@ -239,31 +249,24 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/i18n/es.js"></script>
 
 <script>
-$(document).ready(function() {
-    $('#cliente_id').select2({
-        theme: 'bootstrap',
-        language: 'es',
-        placeholder: 'Seleccione un cliente',
-        width: '100%'
-    });
-
     $('#filtroForm').on('submit', function(e) {
         e.preventDefault();
         const fechaDesde = $('#fecha_desde').val();
         const fechaHasta = $('#fecha_hasta').val();
+        const language = $('#language').val();
         
         if(!fechaDesde || !fechaHasta) {
-            Swal.fire('Error', 'Seleccione ambas fechas', 'error');
+            Swal.fire('Error', language === 'es' ? 'Seleccione ambas fechas' : 'Select both dates', 'error');
             return;
         }
 
         $('#loading-resumen').show();
         $('#contenido-resumen').hide();
 
-        cargarResumenClientes(fechaDesde, fechaHasta, $('#cliente_id').val(), $('#estatus').val());
+        cargarResumenClientes(fechaDesde, fechaHasta, $('#cliente_id').val(), $('#estatus').val(), language);
     });
 
-    function cargarResumenClientes(fechaDesde, fechaHasta, clienteId = '', estatus = '') {
+    function cargarResumenClientes(fechaDesde, fechaHasta, clienteId = '', estatus = '', language = 'es') {
         $.ajax({
             url: "{{ route('reportes.cxc') }}",
             type: 'GET',
@@ -272,6 +275,7 @@ $(document).ready(function() {
                 fecha_hasta: fechaHasta, 
                 cliente_id: clienteId,
                 estatus: estatus,
+                language: language,
                 tipo: 'resumen' 
             },
             success: function(response) {
@@ -280,7 +284,8 @@ $(document).ready(function() {
                 $('#contenido-resumen').show();
             },
             error: function() {
-                Swal.fire('Error', 'Error al cargar el resumen por cliente', 'error');
+                const errorMsg = language === 'es' ? 'Error al cargar el resumen por cliente' : 'Error loading client summary';
+                Swal.fire('Error', errorMsg, 'error');
                 $('#loading-resumen').hide();
                 $('#contenido-resumen').show();
             }
@@ -293,16 +298,15 @@ $(document).ready(function() {
         const fechaHasta = $(this).data('fecha-hasta');
         const clienteId = $(this).data('cliente-id');
         const estatus = $(this).data('estatus');
+        const language = $('#language').val();
         
         let url = "{{ url('reportes/cxc/generar-pdf') }}";
-        url += `?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&tipo=${tipo}`;
+        url += `?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&tipo=${tipo}&language=${language}`;
         
         if(clienteId) url += `&cliente_id=${clienteId}`;
         if(estatus) url += `&estatus=${estatus}`;
         
         window.open(url, '_blank');
     });
-
-});
 </script>
 @stop
