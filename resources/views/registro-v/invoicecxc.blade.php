@@ -23,14 +23,23 @@
             padding-bottom: 3mm;
             border-bottom: 1px dashed #ccc;
         }
+        .header-logo {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #ccc;
+            display: block;
+            margin: 0 auto 8px auto;
+        }
         .header h1 {
-            font-size: 14px;
+            font-size: 18px;
             margin: 2mm 0;
             color: #000;
         }
         .header p {
             margin: 1mm 0;
-            font-size: 10px;
+            font-size: 12px;
         }
         .info-table {
             width: 100%;
@@ -155,11 +164,10 @@
 <body>
     <div class="recibo-container">
         <div class="header">
-            <div class="divider"></div>
+            <img src="{{ public_path('/images/AutoFondo.jpeg') }}" alt="Logo" class="header-logo">
             <h1>RECEIPT</h1>
             <p>Generated on: {{ date('d/m/Y') }}</p>
         </div>
-
         <div class="periodo-info">
             <p>Period: {{ \Carbon\Carbon::parse($fechaDesde)->format('d/m/Y') }} to {{ \Carbon\Carbon::parse($fechaHasta)->format('d/m/Y') }}</p>
         </div>
