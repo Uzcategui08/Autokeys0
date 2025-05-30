@@ -546,6 +546,50 @@
     </div>
 </div>
 
+<div class="card mt-4">
+    <div class="card-header">
+        <h3 class="card-title">Descargas Manuales</h3>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="info-box bg-costos">
+                    <span class="info-box-icon"><i class="fas fa-arrow-down"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Total Descargas</span>
+                        <span class="info-box-number">{{ $totalDescargas }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th class="text-center">Usuario</th>
+                        <th class="text-center">Producto</th>
+                        <th class="text-center">Motivo</th>
+                        <th class="text-center">Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($cargasDescargas as $movimiento)
+                        @if(!$movimiento['es_carga'])
+                        <tr>
+                            <td class="text-center">{{ $movimiento['usuario'] }}</td>
+                            <td class="text-center">{{ $movimiento['producto'] }} (ID: {{ $movimiento['id_producto'] }})</td>
+                            <td class="text-center">{{ $movimiento['motivo'] }}</td>
+                            <td class="text-center">{{ $movimiento['fecha'] }}</td>
+                        </tr>
+                        @endif
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <div class="card mb-4 shadow-soft">
     <div class="card-header bg-light">
         <h3 class="card-title text-gray-800">Ventas por Lugar de Venta</h3>

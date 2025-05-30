@@ -9,6 +9,7 @@ use App\Models\Costo;
 use App\Models\Gasto;
 use App\Models\Almacene;
 use App\Models\Producto;
+use App\Models\AjusteInventario;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -164,6 +165,7 @@ class CierreVentasSemanalController extends Controller
         $ventasPorTrabajo = $this->getVentasPorTrabajo($startOfWeek, $endOfWeek, $metodosPago);
         $resumenTrabajos = $this->getResumenTrabajos($startOfWeek, $endOfWeek);
         $ventasPorLugarVenta = $this->getVentasPorLugarVenta($startOfWeek, $endOfWeek);
+        $cargasDescargas = $this->getCargasDescargas($startOfWeek, $endOfWeek);
 
         $totales = $this->calcularTotales(
             $reporteVentas, 
@@ -204,7 +206,10 @@ class CierreVentasSemanalController extends Controller
                 'totalGeneralValorLlaves' => $llavesPorTecnico->sum('total_valor'),
                 'ventasDetalladasPorTecnico' => $ventasDetalladasPorTecnico,
                 'tiposDePago' => $tiposDePago,
-                'empleados' => $empleados
+                'empleados' => $empleados,
+                'cargasDescargas' => $cargasDescargas,
+                'totalCargas' => $cargasDescargas->where('es_carga', true)->sum('cantidad'),
+                'totalDescargas' => $cargasDescargas->where('es_carga', false)->sum('cantidad')
             ],
             $totales
         ));
@@ -708,6 +713,29 @@ class CierreVentasSemanalController extends Controller
             'totalGeneralLlaves' => $llavesData->sum('total_llaves'),
             'totalGeneralValorLlaves' => $llavesData->sum('total_valor')
         ];
+    }
+
+    private function getCargasDescargas($startDate, $endDate)
+    {
+        return AjusteInventario::with(['producto', 'almacene', 'user'])
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function($ajuste) {
+                return [
+                    'usuario' => $ajuste->user->name,
+                    'id_producto' => $ajuste->producto->id_producto,
+                    'producto' => $ajuste->producto->item,
+                    'almacen' => $ajuste->almacene->nombre,
+                    'tipo' => $ajuste->tipo_ajuste,
+                    'cantidad' => $ajuste->diferencia,
+                    'cantidad_anterior' => $ajuste->cantidad_anterior,
+                    'cantidad_nueva' => $ajuste->cantidad_nueva,
+                    'motivo' => $ajuste->descripcion,
+                    'fecha' => $ajuste->created_at->format('m/d/Y'),
+                    'es_carga' => in_array($ajuste->tipo_ajuste, ['compra', 'ajuste'])
+                ];
+            });
     }
 
     private function formatearSubcategoria($subcategoria)
