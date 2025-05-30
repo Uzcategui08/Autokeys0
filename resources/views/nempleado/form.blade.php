@@ -80,7 +80,7 @@
 
                 <div class="form-group" id="horas-trabajadas-group" style="display: none;">
                     <label for="horas_trabajadas" class="form-label">Horas Trabajadas</label>
-                    <input type="number" step="0.1" class="form-control" id="horas_trabajadas" name="horas_trabajadas" value="0">
+                    <input type="number" step="0.01" class="form-control" id="horas_trabajadas" name="horas_trabajadas" value="0.00">
                 </div>
             </div>
         </div>
