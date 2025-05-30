@@ -6,19 +6,19 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label for="fecha_desde" class="form-label">Fecha Desde</label>
                             <input type="date" class="form-control" id="fecha_desde" name="fecha_desde" required>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label for="fecha_hasta" class="form-label">Fecha Hasta</label>
                             <input type="date" class="form-control" id="fecha_hasta" name="fecha_hasta" required>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group mb-3">
                             <label for="id_empleado" class="form-label fw-bold">{{ __('Empleado') }}</label>
                             <select name="id_empleado" class="form-control select2" id="id_empleado" required>
@@ -27,6 +27,12 @@
                                     <option value="{{ $emp->id_empleado }}">{{ $emp->nombre }} - {{ $emp->cedula }}</option>
                                 @endforeach
                             </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group mb-3">
+                            <label for="fecha_pago" class="form-label fw-bold">{{ __('Fecha Pago') }}</label>
+                            <input type="date" class="form-control" id="fecha_pago" name="fecha_pago" required>
                         </div>
                     </div>
                 </div>
@@ -74,7 +80,7 @@
 
                 <div class="form-group" id="horas-trabajadas-group" style="display: none;">
                     <label for="horas_trabajadas" class="form-label">Horas Trabajadas</label>
-                    <input type="number" step="0.1" class="form-control" id="horas_trabajadas" name="horas_trabajadas" value="0">
+                    <input type="number" step="0.01" class="form-control" id="horas_trabajadas" name="horas_trabajadas" value="0.00">
                 </div>
             </div>
         </div>

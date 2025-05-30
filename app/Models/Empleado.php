@@ -75,4 +75,8 @@ class Empleado extends Model
         return $this->hasMany(Gasto::class, 'id_tecnico', 'id_empleado');
     }
 
+    public function pagosEmpleados()
+    {
+        return $this->hasMany(Nempleado::class, 'id_empleado');
+    }
 }

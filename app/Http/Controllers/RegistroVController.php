@@ -213,7 +213,8 @@ class RegistroVController extends Controller
                             [
                                 'monto' => (float)($costoData['monto'] ?? 0),
                                 'metodo_pago' => $costoData['metodo_pago'] ?? 'efectivo',
-                                'fecha' => $validatedData['fecha_h'] ?? now()->format('Y-m-d')
+                                'fecha' => $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
+                                'cobrador_id' => $costoData['metodo_pago'] ? $request->input('id_empleado') : null
                             ]
                         ];
 
@@ -244,7 +245,8 @@ class RegistroVController extends Controller
                             [
                                 'monto' => (float)($gastoData['monto'] ?? 0),
                                 'metodo_pago' => $gastoData['metodo_pago'] ?? 'efectivo',
-                                'fecha' => $validatedData['fecha_h'] ?? now()->format('Y-m-d')
+                                'fecha' => $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
+                                'cobrador_id' => $gastoData['metodo_pago'] ? $request->input('id_empleado') : null
                             ]
                         ];
 
@@ -285,6 +287,7 @@ class RegistroVController extends Controller
                             'monto' => (float) $pago['monto'],
                             'metodo_pago' => $pago['metodo_pago'] ?? 'efectivo',
                             'fecha' => $pago['fecha'] ?? now()->format('Y-m-d'),
+                            'cobrador_id' => $pago['cobrador_id'] ?? $request->input('id_empleado')
                         ];
 
                         $totalPagado += (float) $pago['monto'];
@@ -353,6 +356,7 @@ class RegistroVController extends Controller
         $tiposDePago = TiposDePago::all();
         $trabajos = Trabajo::all();
         $categorias = Categoria::all();
+        $empleados = Empleado::all();
 
         $items = json_decode($registroV->items, true) ?? [];
 
@@ -453,6 +457,7 @@ class RegistroVController extends Controller
                         'monto' => $pago['monto'] ?? 0,
                         'metodo_pago' => $pago['metodo_pago'] ?? 'Desconocido',
                         'fecha' => $pago['fecha'] ?? $registroV->fecha_h,
+                        'cobrador_id' => $pago['cobrador_id'] ?? null,
                         'referencia' => $pago['referencia'] ?? null
                     ];
                 }
@@ -468,7 +473,8 @@ class RegistroVController extends Controller
             'gastos' => $gastos,
             'pagos' => $pagos,
             'trabajos' => $trabajos,
-            'categorias' => $categorias
+            'categorias' => $categorias,
+            'empleados' => $empleados
         ]);
     }
 
@@ -1053,6 +1059,7 @@ class RegistroVController extends Controller
                                 'monto' => (float) $pago['monto'],
                                 'metodo_pago' => $pago['metodo_pago'] ?? 'efectivo',
                                 'fecha' => $pago['fecha'] ?? now()->format('Y-m-d'),
+                                'cobrador_id' => $pago['cobrador_id'] ?? null
                             ];
 
                             $totalPagado += (float) $pago['monto'];

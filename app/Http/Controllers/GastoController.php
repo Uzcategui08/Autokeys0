@@ -15,10 +15,8 @@ class GastoController extends Controller
 {
     public function index(Request $request): View
     {
-        $gastos = Gasto::orderBy('created_at', 'desc')->paginate(10);
-        
-        return view('gasto.index', compact('gastos'))
-            ->with('i', ($request->input('page', 1) - 1) * $gastos->perPage());
+        $gastos = Gasto::all();
+        return view('gasto.index', compact('gastos'));
     }
 
     public function create(): View
@@ -29,7 +27,7 @@ class GastoController extends Controller
         $gasto->estatus = 'pendiente';
         $metodos = TiposDePago::all();
         $categorias = Categoria::all();
-        return view('gasto.create', compact('gasto', 'empleado' , 'metodos', 'categorias'));
+        return view('gasto.create', compact('gasto', 'empleado', 'metodos', 'categorias'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -70,7 +68,6 @@ class GastoController extends Controller
 
             return Redirect::route('gastos.index')
                 ->with('success', 'Gasto creado satisfactoriamente.');
-
         } catch (\Exception $e) {
             return back()
                 ->withInput()
@@ -115,7 +112,7 @@ class GastoController extends Controller
 
             $pagosJson = trim($validated['pagos'], '"\'');
             $pagos = json_decode($pagosJson, true);
-            
+
             if (json_last_error() !== JSON_ERROR_NONE || !is_array($pagos)) {
                 throw new \Exception("Formato de pagos inválido: " . json_last_error_msg());
             }
@@ -136,7 +133,6 @@ class GastoController extends Controller
 
             return Redirect::route('gastos.index')
                 ->with('success', 'Gasto actualizado satisfactoriamente.');
-
         } catch (\Exception $e) {
             return back()->withInput()->withErrors(['error' => $e->getMessage()]);
         }
@@ -151,7 +147,7 @@ class GastoController extends Controller
     private function determinarEstatus(float $valor, array $pagos): string
     {
         $totalPagado = $this->calcularTotalPagado($pagos);
-        
+
         if (abs($totalPagado - $valor) < 0.01) {
             return 'pagado';
         } elseif ($totalPagado > 0) {

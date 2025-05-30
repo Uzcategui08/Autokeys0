@@ -338,6 +338,7 @@
                                                     <th>#</th>
                                                     <th>Fecha</th>
                                                     <th>Método</th>
+                                                    <th>Cobrador</th>
                                                     <th class="text-right">Monto</th>
                                                 </tr>
                                             </thead>
@@ -351,6 +352,12 @@
                                                                 $metodoPago = collect($tiposDePago)->firstWhere('id', $pago['metodo_pago'] ?? null);
                                                             @endphp
                                                             {{ $metodoPago->name ?? ($pago['metodo_pago'] ?? 'N/A') }}
+                                                        </td>
+                                                        <td>
+                                                            @php
+                                                                $cobrador = collect($empleados)->firstWhere('id_empleado', $pago['cobrador_id'] ?? null);
+                                                            @endphp
+                                                            {{ $cobrador->nombre ?? 'N/A' }}
                                                         </td>
                                                         <td class="text-right">${{ number_format($pago['monto'] ?? 0, 2) }}</td>
                                                     </tr>

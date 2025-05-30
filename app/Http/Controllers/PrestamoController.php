@@ -18,7 +18,7 @@ class PrestamoController extends Controller
      */
     public function index(Request $request): View
     {
-        $prestamos = Prestamo::with('empleado', 'subcategoria')->paginate(10);
+        $prestamos = Prestamo::with('empleado', 'subcategoria')->all();
         $categorias = Categoria::all();
 
         return view('prestamo.index', compact('prestamos', 'categorias'))

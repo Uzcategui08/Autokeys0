@@ -58,6 +58,7 @@ class NempleadoController extends Controller
                 'sueldo_base' => $empleado->tipo_pago === 'sueldo' ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
                 'precio_hora_normal' => $empleado->tipo_pago === 'horas' ? 'required|numeric|min:0' : 'nullable',
                 'precio_hora_extra' => $empleado->tipo_pago === 'horas' ? 'required|numeric|min:0' : 'nullable',
+                'fecha_pago' => 'required|date',
             ];
 
             $validator = Validator::make($request->all(), $reglasValidacion, [
@@ -120,7 +121,8 @@ class NempleadoController extends Controller
                 'fecha_hasta' => $request->fecha_hasta,
                 'horas_trabajadas' => ($empleado->tipo_pago === 'horas') ? $request->horas_trabajadas : null,
                 'detalle_pago' => $detallePago,
-                'tipo_pago_empleado' => $empleado->tipo_pago
+                'tipo_pago_empleado' => $empleado->tipo_pago,
+                'fecha_pago' => $request->fecha_pago
             ];
 
             $nempleado = Nempleado::create($nempleadoData);

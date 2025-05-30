@@ -116,6 +116,283 @@
 
 <div class="card mb-4 shadow-soft">
     <div class="card-header bg-light">
+        <h3 class="card-title text-gray-800">Ventas Detalladas por Técnico</h3>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th>ID Venta</th>
+                        <th>Técnico</th>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th class="text-right">Valor</th>
+                        <th>Tipo</th>
+                        <th>Estatus</th>
+                        <th>Métodos Pago</th>
+                        <th class="text-right">Pagado</th>
+                        <th class="text-right">Ganancia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($ventasDetalladasPorTecnico as $tecnico)
+                        @foreach($tecnico['ventas'] as $venta)
+                        <tr data-toggle="collapse" data-target="#details-{{ $loop->parent->index }}-{{ $loop->index }}" class="clickable-row">
+                            <td class="font-weight-bold">#{{ $venta['id'] }}</td>
+                            <td class="font-weight-bold">{{ $tecnico['tecnico'] }}</td>
+                            <td>{{ \Carbon\Carbon::parse($venta['fecha'])->format('d/m/Y') }}</td>
+                            <td>{{ $venta['cliente'] }}</td>
+                            <td class="text-right">${{ number_format($venta['valor_total'], 2) }}</td>
+                            <td>
+                                <span class="badge badge-pill {{ $venta['tipo_venta'] === 'contado' ? 'bg-success' : 'bg-primary' }}">
+                                    {{ ucfirst($venta['tipo_venta']) }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge badge-pill 
+                                    {{ $venta['estatus'] === 'pagado' ? 'bg-success' : 
+                                       ($venta['estatus'] === 'pendiente' ? 'bg-danger' : 'bg-warning') }}">
+                                    {{ ucfirst($venta['estatus']) }}
+                                </span>
+                            </td>
+                            <td>
+                                @if(isset($venta['pagos']) && count($venta['pagos']) > 0)
+                                    @php
+                                        $paymentMethods = [];
+                                        foreach($venta['pagos'] as $pago) {
+                                            foreach($tiposDePago as $tipo) {
+                                                if($tipo->id == ($pago['metodo_pago'] ?? null)) {
+                                                    $paymentMethods[] = $tipo->name;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    @endphp
+                                    {{ implode(', ', array_unique($paymentMethods)) }}
+                                @else
+                                    Sin pagos
+                                @endif
+                            </td>
+                            <td class="text-right">${{ number_format($venta['total_pagado'] ?? 0, 2) }}</td>
+                            <td class="text-right font-weight-bold {{ ($venta['ganancia_bruta'] ?? 0) >= 0 ? 'text-success' : 'text-danger' }}">
+                                ${{ number_format($venta['ganancia_bruta'] ?? 0, 2) }}
+                            </td>
+                        </tr>
+
+                        <tr id="details-{{ $loop->parent->index }}-{{ $loop->index }}" class="collapse">
+                            <td colspan="10" class="p-0">
+                                <div class="p-3">
+                                    <div class="mb-3">
+                                        <h6 class="font-weight-bold mb-2">Trabajos realizados:</h6>
+                                        <div class="pl-3">
+                                            @foreach($venta['trabajos'] as $trabajo)
+                                            <div class="mb-2 border-bottom pb-2">
+                                                <div class="d-flex justify-content-between">
+                                                    <span class="font-weight-bold">{{ $trabajo['trabajo'] }}</span>
+                                                    <span>${{ number_format($trabajo['precio_trabajo'], 2) }}</span>
+                                                </div>
+                                                @if($trabajo['descripcion'])
+                                                    <div class="text-muted small mt-1">{{ $trabajo['descripcion'] }}</div>
+                                                @endif
+                                                @if(count($trabajo['productos']) > 0)
+                                                    <div class="mt-2">
+                                                        <span class="small font-weight-bold">Productos utilizados:</span>
+                                                        <div class="table-responsive">
+                                                            <table class="table table-sm table-borderless mb-0">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>ID Producto</th>
+                                                                        <th>Producto</th>
+                                                                        <th class="text-right">Cantidad</th>
+                                                                        <th class="text-right">Precio Unitario</th>
+                                                                        <th class="text-right">Total</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    @foreach($trabajo['productos'] as $producto)
+                                                                    <tr>
+                                                                        <td>{{ $producto['producto'] ?? 'N/A' }}</td>
+                                                                        <td>{{ $producto['nombre'] }}</td>
+                                                                        <td class="text-right">{{ $producto['cantidad'] }}</td>
+                                                                        <td class="text-right">${{ number_format($producto['precio'], 2) }}</td>
+                                                                        <td class="text-right">${{ number_format($producto['cantidad'] * $producto['precio'], 2) }}</td>
+                                                                    </tr>
+                                                                    @endforeach
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        @if(count($venta['costos']) > 0)
+                                        <div class="col-md-6">
+                                            <div class="card border-0 shadow-sm">
+                                                <div class="card-header bg-light py-2">
+                                                    <h6 class="mb-0 font-weight-bold">Costos asociados</h6>
+                                                </div>
+                                                <div class="card-body p-0">
+                                                    <table class="table table-sm mb-0">
+                                                        <thead>
+                                                            <tr class="bg-gray-100">
+                                                                <th>ID</th>
+                                                                <th>Descripción</th>
+                                                                <th>Método Pago</th>
+                                                                <th class="text-right">Monto</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach($venta['costos'] as $costo)
+                                                            <tr>
+                                                                <td>#{{ $costo['id'] }}</td>
+                                                                <td>{{ $costo['descripcion'] }} <small class="text-muted">({{ $costo['subcategoria'] }})</small></td>
+                                                                <td>
+                                                                    @foreach($tiposDePago as $tipo)
+                                                                        @if($tipo->id == ($costo['metodo_pago_id'] ?? null))
+                                                                            {{ $tipo->name }}
+                                                                            @break
+                                                                        @endif
+                                                                    @endforeach
+                                                                </td>
+                                                                <td class="text-right text-danger">${{ number_format($costo['valor'], 2) }}</td>
+                                                            </tr>
+                                                            @endforeach
+                                                            <tr class="font-weight-bold bg-gray-100">
+                                                                <td colspan="3">Total costos</td>
+                                                                <td class="text-right">${{ number_format($venta['total_costos'], 2) }}</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @endif
+                                        
+                                        @if(count($venta['gastos']) > 0)
+                                        <div class="col-md-6">
+                                            <div class="card border-0 shadow-sm">
+                                                <div class="card-header bg-light py-2">
+                                                    <h6 class="mb-0 font-weight-bold">Gastos asociados</h6>
+                                                </div>
+                                                <div class="card-body p-0">
+                                                    <table class="table table-sm mb-0">
+                                                        <thead>
+                                                            <tr class="bg-gray-100">
+                                                                <th>ID</th>
+                                                                <th>Descripción</th>
+                                                                <th>Método Pago</th>
+                                                                <th class="text-right">Monto</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach($venta['gastos'] as $gasto)
+                                                            <tr>
+                                                                <td>#{{ $gasto['id'] }}</td>
+                                                                <td>{{ $gasto['descripcion'] }} <small class="text-muted">({{ $gasto['subcategoria'] }})</small></td>
+                                                                <td>
+                                                                    @foreach($tiposDePago as $tipo)
+                                                                        @if($tipo->id == ($gasto['metodo_pago_id'] ?? null))
+                                                                            {{ $tipo->name }}
+                                                                            @break
+                                                                        @endif
+                                                                    @endforeach
+                                                                </td>
+                                                                <td class="text-right text-warning">${{ number_format($gasto['valor'], 2) }}</td>
+                                                            </tr>
+                                                            @endforeach
+                                                            <tr class="font-weight-bold bg-gray-100">
+                                                                <td colspan="3">Total gastos</td>
+                                                                <td class="text-right">${{ number_format($venta['total_gastos'], 2) }}</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @endif
+                                    </div>
+
+                                    <div class="mt-3">
+                                        <div class="card border-0 shadow-sm">
+                                            <div class="card-header bg-light py-2">
+                                                <h6 class="mb-0 font-weight-bold">Detalle de Pagos</h6>
+                                            </div>
+                                            <div class="card-body p-0">
+                                                <table class="table table-sm mb-0">
+                                                    <thead>
+                                                        <tr class="bg-gray-100">
+                                                            <th>Fecha</th>
+                                                            <th>Método Pago</th>
+                                                            <th>Cobró</th>
+                                                            <th class="text-right">Monto</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @if(isset($venta['pagos']) && count($venta['pagos']) > 0)
+                                                            @foreach($venta['pagos'] as $pago)
+                                                            <tr>
+                                                                <td>{{ \Carbon\Carbon::parse($pago['fecha'] ?? now())->format('d/m/Y') }}</td>
+                                                                <td>
+                                                                    @foreach($tiposDePago as $tipo)
+                                                                        @if($tipo->id == ($pago['metodo_pago'] ?? null))
+                                                                            {{ $tipo->name }}
+                                                                            @break
+                                                                        @endif
+                                                                    @endforeach
+                                                                </td>
+                                                                <td>
+                                                                    @if(isset($pago['cobrador_id']))
+                                                                        {{ App\Models\Empleado::find($pago['cobrador_id'])->nombre ?? 'Desconocido' }}
+                                                                    @else
+                                                                        Desconocido
+                                                                    @endif
+                                                                </td>
+                                                                <td class="text-right">${{ number_format($pago['monto'] ?? 0, 2) }}</td>
+                                                            </tr>
+                                                            @endforeach
+                                                            <tr class="font-weight-bold bg-gray-100">
+                                                                <td colspan="3">Total pagado</td>
+                                                                <td class="text-right">${{ number_format($venta['total_pagado'] ?? 0, 2) }}</td>
+                                                            </tr>
+                                                        @else
+                                                            <tr>
+                                                                <td colspan="3" class="text-center text-muted">No hay registros de pagos</td>
+                                                            </tr>
+                                                        @endif
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+
+                        <tr class="font-weight-bold bg-gray-200">
+                            <td colspan="4">Total {{ $tecnico['tecnico'] }}</td>
+                            <td class="text-right">${{ number_format($tecnico['total_ventas'], 2) }}</td>
+                            <td colspan="2"></td>
+                            <td></td>
+                            <td class="text-right">${{ number_format($tecnico['ventas']->sum('total_pagado'), 2) }}</td>
+                            <td class="text-right {{ $tecnico['ganancia_total'] >= 0 ? 'text-success' : 'text-danger' }}">
+                                ${{ number_format($tecnico['ganancia_total'], 2) }}
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4 shadow-soft">
+    <div class="card-header bg-light">
         <h3 class="card-title text-gray-800">Detalle de Costos y Gastos</h3>
     </div>
     <div class="card-body p-0">
@@ -139,13 +416,17 @@
                 <tbody>
                     @foreach($reporteCostosGastos as $item)
                         @php
-                            $maxRows = max(count($item['costos']), count($item['gastos']));
+                            $costosCount = count($item['costos'] ?? []);
+                            $gastosCount = count($item['gastos'] ?? []);
+                            $maxRows = max($costosCount, $gastosCount);
                         @endphp
                         
                         @for($i = 0; $i < $maxRows; $i++)
                         <tr>
                             @if($i === 0)
-                                <td rowspan="{{ $maxRows }}" class="align-middle font-weight-bold">{{ $item['tecnico'] }}</td>
+                                <td rowspan="{{ $maxRows }}" class="align-middle font-weight-bold">
+                                    {{ $item['tecnico'] }}
+                                </td>
                             @endif
                             
                             @if(isset($item['costos'][$i]))
@@ -637,6 +918,16 @@
     .h-100 {
         height: 100%;
     }
+
+    .clickable-row {
+        cursor: pointer;
+    }
+    .clickable-row:hover {
+        background-color: rgba(0,0,0,0.03);
+    }
+    .collapse-row.collapse:not(.show) {
+        display: none;
+    }
 </style>
 @stop
 
@@ -793,6 +1084,12 @@
         });
     });
 
+    $(document).ready(function() {
+        $('.clickable-row').click(function() {
+            var target = $(this).data('target');
+            $(target).collapse('toggle');
+        });
+    });
 </script>
 @stop
 
