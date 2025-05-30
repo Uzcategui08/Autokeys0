@@ -162,10 +162,12 @@
                             <td class="info-label">Phone:</td>
                             <td class="info-value">{{ $registroV->telefono }}</td>
                         </tr>
+                        @if($registroV->marca || $registroV->modelo || $registroV->año)
                         <tr>
                             <td class="info-label">Vehicle:</td>
-                            <td class="info-value">{{ $registroV->marca }} {{ $registroV->modelo }} ({{ $registroV->año }})</td>
+                            <td class="info-value">{{ $registroV->marca }} {{ $registroV->modelo }}@if($registroV->año) ({{ $registroV->año }})@endif</td>
                         </tr>
+                        @endif
                     </table>
                 </td>
 

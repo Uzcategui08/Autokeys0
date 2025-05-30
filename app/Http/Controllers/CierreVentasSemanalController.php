@@ -64,10 +64,13 @@ class CierreVentasSemanalController extends Controller
 
         $availableYears = $this->getAvailableYears();
         $metodosPago = TiposDePago::pluck('name', 'id');
+        $tiposDePago = TiposDePago::all();
+        $empleados = Empleado::all()->pluck('nombre', 'id_empleado');
 
         $reporteVentas = $this->getVentasPorTecnico($startOfWeek, $endOfWeek);
         $reporteCostosGastos = $this->getCostosGastosPorTecnico($startOfWeek, $endOfWeek, $metodosPago);
         $ingresosRecibidos = $this->getIngresosRecibidos($startOfWeek, $endOfWeek, $metodosPago);
+        $ventasDetalladasPorTecnico = $this->getVentasDetalladasPorTecnico($startOfWeek, $endOfWeek);
 
         $llavesPorTecnico = Empleado::with(['ventas' => function($query) use ($startOfWeek, $endOfWeek) {
             $query->whereBetween('fecha_h', [$startOfWeek, $endOfWeek]);
@@ -90,6 +93,7 @@ class CierreVentasSemanalController extends Controller
                             if (isset($producto['almacen'], $producto['cantidad'], $producto['precio'])) {
                                 $almacenId = $producto['almacen'];
                                 $llaveNombre = $producto['nombre_producto'] ?? 'Llave sin nombre';
+                                $llaveId = $producto['producto'] ?? null;
                                 $cantidad = (int)$producto['cantidad'];
                                 $precio = (float)$producto['precio'];
 
@@ -197,7 +201,10 @@ class CierreVentasSemanalController extends Controller
                 'totalTrabajos' => $resumenTrabajos->sum('cantidad'),
                 'ventasPorLugarVenta' => $ventasPorLugarVenta,
                 'totalGeneralLlaves' => $llavesPorTecnico->sum('total_llaves'),
-                'totalGeneralValorLlaves' => $llavesPorTecnico->sum('total_valor')
+                'totalGeneralValorLlaves' => $llavesPorTecnico->sum('total_valor'),
+                'ventasDetalladasPorTecnico' => $ventasDetalladasPorTecnico,
+                'tiposDePago' => $tiposDePago,
+                'empleados' => $empleados
             ],
             $totales
         ));
@@ -267,6 +274,9 @@ class CierreVentasSemanalController extends Controller
                 },
                 'gastos' => function($query) use ($startDate, $endDate) {
                     $query->whereBetween('f_gastos', [$startDate, $endDate]);
+                },
+                'pagosEmpleados' => function($query) use ($startDate, $endDate) {
+                    $query->whereBetween('fecha_pago', [$startDate, $endDate]);
                 }
             ])
             ->where(function($query) use ($startDate, $endDate) {
@@ -275,14 +285,140 @@ class CierreVentasSemanalController extends Controller
                 })
                 ->orWhereHas('gastos', function($q) use ($startDate, $endDate) {
                     $q->whereBetween('f_gastos', [$startDate, $endDate]);
+                })
+                ->orWhereHas('pagosEmpleados', function($q) use ($startDate, $endDate) {
+                    $q->whereBetween('fecha_pago', [$startDate, $endDate]);
                 });
             })
             ->get()
             ->map(function($tecnico) use ($metodosPago) {
+                $pagosEmpleado = $tecnico->pagosEmpleados->map(function($pago) use ($tecnico) {
+                    $metodoPagoArray = is_string($pago->metodo_pago) ? json_decode($pago->metodo_pago, true) : $pago->metodo_pago;
+                    $metodoPagoNombre = is_array($metodoPagoArray) && isset($metodoPagoArray[0]['nombre']) ? $metodoPagoArray[0]['nombre'] : null;
+
+                    return [
+                        'valor' => $pago->total_pagado,
+                        'metodo_pago' => $metodoPagoNombre,
+                        'fecha' => $pago->fecha_pago,
+                        'tipo' => $tecnico->tipo
+                    ];
+                })->toArray();
+
+                $costosEmpleado = array_filter($pagosEmpleado, fn($pago) => $pago['tipo'] == 1);
+                $gastosEmpleado = array_filter($pagosEmpleado, fn($pago) => $pago['tipo'] == 2);
+
+                $costosCombinados = $tecnico->costos->toArray();
+                $gastosCombinados = $tecnico->gastos->toArray();
+                
+                if (!empty($costosEmpleado)) {
+                    $costosCombinados = array_merge($costosCombinados, $costosEmpleado);
+                }
+                
+                if (!empty($gastosEmpleado)) {
+                    $gastosCombinados = array_merge($gastosCombinados, $gastosEmpleado);
+                }
+                
                 return [
                     'tecnico' => $tecnico->nombre,
-                    'costos' => $this->procesarTransacciones($tecnico->costos, $metodosPago),
-                    'gastos' => $this->procesarTransacciones($tecnico->gastos, $metodosPago)
+                    'costos' => $this->procesarTransacciones($costosCombinados, $metodosPago),
+                    'gastos' => $this->procesarTransacciones($gastosCombinados, $metodosPago)
+                ];
+            });
+    }
+
+    private function getVentasDetalladasPorTecnico($startDate, $endDate)
+    {
+        return Empleado::with(['ventas' => function($query) use ($startDate, $endDate) {
+                $query->whereBetween('fecha_h', [$startDate, $endDate])
+                    ->with(['costosAsociados', 'gastosAsociados']);
+            }])
+            ->whereHas('ventas', function($query) use ($startDate, $endDate) {
+                $query->whereBetween('fecha_h', [$startDate, $endDate]);
+            })
+            ->get()
+            ->map(function($tecnico) {
+                return [
+                    'tecnico' => $tecnico->nombre,
+                    'ventas' => $tecnico->ventas->map(function($venta) {
+                        $items = json_decode($venta->items, true) ?? [];
+                        $pagos = $this->parsePagos($venta->pagos ?? '[]'); 
+
+                        $trabajos = collect($items)->map(function($item) {
+                            return [
+                                'trabajo' => $this->formatosTrabajo[$item['trabajo'] ?? 'Sin especificar'] ?? ($item['trabajo'] ?? 'Sin especificar'),
+                                'precio_trabajo' => $item['precio_trabajo'] ?? 0,
+                                'descripcion' => $item['descripcion'] ?? null,
+                                'productos' => isset($item['productos']) ? array_map(function($producto) {
+                                    return [
+                                        'producto' => $producto['producto'] ?? null,
+                                        'nombre' => $producto['nombre_producto'] ?? 'Producto sin nombre',
+                                        'cantidad' => $producto['cantidad'] ?? 0,
+                                        'precio' => $producto['precio'] ?? 0,
+                                        'almacen' => $producto['almacen'] ?? null
+                                    ];
+                                }, $item['productos']) : []
+                            ];
+                        });
+
+                        $costos = $venta->costosAsociados->map(function($costo) {
+                            $pagosCosto = $this->parsePagos($costo->pagos ?? '[]');
+                            return [
+                                'id' => $costo->id_costos,
+                                'descripcion' => $costo->descripcion,
+                                'subcategoria' => $this->formatearSubcategoria($costo->subcategoria),
+                                'valor' => $costo->valor,
+                                'metodo_pago_id' => $pagosCosto[0]['metodo_pago'] ?? null,
+                                'metodos_pago' => collect($pagosCosto)->pluck('metodo_pago')->unique()->implode(', '),
+                                'fecha' => $costo->f_costos
+                            ];
+                        });
+
+                        $gastos = $venta->gastosAsociados->map(function($gasto) {
+                            $pagosGasto = $this->parsePagos($gasto->pagos ?? '[]');
+                            return [
+                                'id' => $gasto->id_gastos,
+                                'descripcion' => $gasto->descripcion,
+                                'subcategoria' => $this->formatearSubcategoria($gasto->subcategoria),
+                                'valor' => $gasto->valor,
+                                'metodo_pago_id' => $pagosGasto[0]['metodo_pago'] ?? null,
+                                'metodos_pago' => collect($pagosGasto)->pluck('metodo_pago')->unique()->implode(', '),
+                                'fecha' => $gasto->f_gastos
+                            ];
+                        });
+
+                        $metodosPago = collect($pagos)->pluck('metodo_pago')->unique()->implode(', ');
+                        $totalPagado = collect($pagos)->sum('monto');
+                        
+                        return [
+                            'id' => $venta->id,
+                            'fecha' => $venta->fecha_h,
+                            'cliente' => $venta->cliente,
+                            'valor_total' => $venta->valor_v,
+                            'tipo_venta' => $venta->tipo_venta,
+                            'estatus' => $venta->estatus,
+                            'pagos' => $pagos,
+                            'metodos_pago' => $metodosPago,
+                            'total_pagado' => $totalPagado,
+                            'trabajos' => $trabajos,
+                            'costos' => $costos,
+                            'total_costos' => $costos->sum('valor'),
+                            'gastos' => $gastos,
+                            'total_gastos' => $gastos->sum('valor'),
+                            'ganancia_bruta' => $venta->valor_v - $costos->sum('valor') - $gastos->sum('valor')
+                        ];
+                    }),
+                    'total_ventas' => $tecnico->ventas->sum('valor_v'),
+                    'total_costos' => $tecnico->ventas->sum(function($venta) {
+                        return $venta->costosAsociados->sum('valor');
+                    }),
+                    'total_gastos' => $tecnico->ventas->sum(function($venta) {
+                        return $venta->gastosAsociados->sum('valor');
+                    }),
+                    'ganancia_total' => $tecnico->ventas->sum('valor_v') - 
+                                    $tecnico->ventas->sum(function($venta) {
+                                        return $venta->costosAsociados->sum('valor') + 
+                                                $venta->gastosAsociados->sum('valor');
+                                    })
                 ];
             });
     }
@@ -494,34 +630,71 @@ class CierreVentasSemanalController extends Controller
 
     private function procesarTransacciones($transacciones, $metodosPago)
     {
-        return $transacciones
-            ->flatMap(function($transaccion) use ($metodosPago) {
-                $pagos = is_array($transaccion->pagos) 
-                       ? $transaccion->pagos 
-                       : json_decode($transaccion->pagos, true) ?? [];
-                
-                return collect($pagos)->map(function($pago) use ($transaccion, $metodosPago) {
-                    return [
-                        'subcategoria' => $this->formatearSubcategoria($transaccion->subcategoria),
-                        'descripcion' => $transaccion->descripcion,
-                        'metodo_pago' => $metodosPago[$pago['metodo_pago']] ?? 'Desconocido',
-                        'total' => $pago['monto'],
+        if (!is_array($transacciones)) {
+            $transacciones = $transacciones->toArray();
+        }
+
+        $resultados = [];
+        
+        foreach ($transacciones as $transaccion) {
+            if (is_array($transaccion) && isset($transaccion['tipo'])) {
+                $metodoPagoKey = $transaccion['metodo_pago'] ?? null;
+                $resultados[] = [
+                    'subcategoria' => $transaccion['tipo'] == 1 ? 'Salario Cerrajero' : 'Gastos Personal',
+                    'descripcion' => 'Pago a empleado',
+                    'metodo_pago' => $metodosPago[$metodoPagoKey] ?? ucfirst($metodoPagoKey) ?? 'Desconocido',
+                    'total' => $transaccion['valor'],
+                    'fecha_pago' => $transaccion['fecha']
+                ];
+            } elseif (is_array($transaccion)) {
+                $pagos = isset($transaccion['pagos']) ? 
+                    (is_array($transaccion['pagos']) ? $transaccion['pagos'] : json_decode($transaccion['pagos'], true) ?? []) 
+                    : [];
+                foreach ($pagos as $pago) {
+                    $metodoPagoKey = $pago['metodo_pago'] ?? null;
+                    $resultados[] = [
+                        'subcategoria' => $this->formatearSubcategoria($transaccion['subcategoria'] ?? ''),
+                        'descripcion' => $transaccion['descripcion'] ?? '',
+                        'metodo_pago' => $metodosPago[$metodoPagoKey] ?? ucfirst($metodoPagoKey) ?? 'Desconocido',
+                        'total' => $pago['monto'] ?? 0,
                         'fecha_pago' => $pago['fecha'] ?? null
                     ];
-                });
-            })
-            ->groupBy(['subcategoria', 'metodo_pago'])
-            ->map(function($group) {
-                return [
-                    'subcategoria' => $group->first()->first()['subcategoria'],
-                    'descripcion' => $group->first()->first()['descripcion'],
-                    'metodo_pago' => $group->first()->first()['metodo_pago'],
-                    'total' => $group->flatten(1)->sum('total'),
-                    'fecha_pago' => $group->first()->first()['fecha_pago']
+                }
+            }
+        }
+
+        $agrupados = [];
+        foreach ($resultados as $item) {
+            $key = $item['subcategoria'].'|'.$item['descripcion'];
+            
+            if (!isset($agrupados[$key])) {
+                $agrupados[$key] = [
+                    'subcategoria' => $item['subcategoria'],
+                    'descripcion' => $item['descripcion'],
+                    'metodos_pago' => [],
+                    'total' => 0,
+                    'fecha_pago' => $item['fecha_pago']
                 ];
-            })
-            ->values()
-            ->sortBy('subcategoria');
+            }
+            
+            if (!in_array($item['metodo_pago'], $agrupados[$key]['metodos_pago'])) {
+                $agrupados[$key]['metodos_pago'][] = $item['metodo_pago'];
+            }
+            
+            $agrupados[$key]['total'] += $item['total'];
+        }
+
+        foreach ($agrupados as &$item) {
+            $item['metodo_pago'] = implode(', ', $item['metodos_pago']);
+            unset($item['metodos_pago']);
+        }
+        unset($item);
+
+        usort($agrupados, function($a, $b) {
+            return strcmp($a['subcategoria'], $b['subcategoria']);
+        });
+
+        return array_values($agrupados);
     }
 
     private function calcularTotales($reporteVentas, $reporteCostosGastos, $ingresosRecibidos, $llavesData)

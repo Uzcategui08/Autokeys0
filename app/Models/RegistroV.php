@@ -96,4 +96,14 @@ class RegistroV extends Model
     {
         return $this->belongsTo(Categoria::class, 'subcategoria', 'id_categoria');
     }
+
+    public function costosAsociados()
+    {
+        return $this->hasMany(Costo::class, 'id_costos');
+    }
+
+    public function gastosAsociados()
+    {
+        return $this->hasMany(Gasto::class, 'id_gastos');
+    }
 }

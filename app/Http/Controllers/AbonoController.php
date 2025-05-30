@@ -17,10 +17,9 @@ class AbonoController extends Controller
      */
     public function index(Request $request): View
     {
-        $abonos = Abono::paginate();
+        $abonos = Abono::all();
 
-        return view('abono.index', compact('abonos'))
-            ->with('i', ($request->input('page', 1) - 1) * $abonos->perPage());
+        return view('abono.index', compact('abonos'));
     }
 
     /**

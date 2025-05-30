@@ -31,6 +31,7 @@
                                 <thead class="thead">
                                     <tr>
                                         <th>ID Nómina</th>
+                                        <th>Fecha de Pago</th>
                                         <th>ID Empleado</th>
                                         <th>Total Descuentos</th>
                                         <th>Total Abonos</th>
@@ -42,6 +43,7 @@
                                     @foreach ($nempleados as $nempleado)
                                         <tr>
                                             <td>{{ $nempleado->id_nempleado }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($nempleado->fecha_pago)->format('d/m/Y') }}</td>
                                             <td>{{ $nempleado->empleado->nombre ?? 'N/A' }}</td>
                                             <td>${{ number_format($nempleado->total_descuentos, 2) }}</td>
                                             <td>${{ number_format($nempleado->total_abonos, 2) }}</td>

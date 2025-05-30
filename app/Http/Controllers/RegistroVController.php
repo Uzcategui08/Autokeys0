@@ -151,11 +151,11 @@ class RegistroVController extends Controller
     {
         DB::beginTransaction();
         Log::info('Iniciando transacción para crear registro de venta');
-    
+
         try {
             Log::info('Validando datos del request');
             $validatedData = $request->validated();
-    
+
             $trabajos = [];
             Log::info('Procesando items de trabajos');
             if ($request->has('items')) {
@@ -164,14 +164,14 @@ class RegistroVController extends Controller
                     $trabajoId = $item['trabajo_id'] ?? null;
                     $descripcionTrabajo = $item['trabajo_nombre'] ?? $item['trabajo'] ?? null;
                     $precioTrabajo = $item['precio_trabajo'] ?? 0; 
-    
+
                     if ($trabajoId && empty($descripcionTrabajo)) {
                         Log::debug("Buscando trabajo con ID {$trabajoId}");
                         $trabajo = Trabajo::find($trabajoId);
                         $descripcionTrabajo = $trabajo ? $trabajo->nombre : 'Trabajo no especificado';
                         $precioTrabajo = $precioTrabajo ?: ($trabajo ? $trabajo->precio : 0);
                     }
-    
+
                     if (!empty($descripcionTrabajo)) {
                         $productos = [];
                         if (isset($item['productos'])) {
@@ -204,7 +204,7 @@ class RegistroVController extends Controller
             }
             $validatedData['items'] = json_encode($trabajos);
             Log::debug('Items procesados', ['items' => $trabajos]);
-    
+
             $costosIds = [];
             Log::info('Procesando costos extras');
             if ($request->has('costos_extras')) {
@@ -215,10 +215,11 @@ class RegistroVController extends Controller
                             [
                                 'monto' => (float)($costoData['monto'] ?? 0),
                                 'metodo_pago' => $costoData['metodo_pago'] ?? 'efectivo',
-                                'fecha' => $validatedData['fecha_h'] ?? now()->format('Y-m-d')
+                                'fecha' => $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
+                                'cobrador_id' => $costoData['metodo_pago'] ? $request->input('id_empleado') : null
                             ]
                         ];
-    
+
                         $costo = Costo::create([
                             'f_costos' => $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
                             'id_tecnico' => $request->input('id_empleado'),
@@ -235,7 +236,7 @@ class RegistroVController extends Controller
             }
             $validatedData['costos'] = $costosIds;
             Log::debug('Costos extras procesados', ['costos' => $costosIds]);
-    
+
             $gastosIds = [];
             Log::info('Procesando gastos');
             if ($request->has('gastos')) {
@@ -246,10 +247,11 @@ class RegistroVController extends Controller
                             [
                                 'monto' => (float)($gastoData['monto'] ?? 0),
                                 'metodo_pago' => $gastoData['metodo_pago'] ?? 'efectivo',
-                                'fecha' => $validatedData['fecha_h'] ?? now()->format('Y-m-d')
+                                'fecha' => $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
+                                'cobrador_id' => $gastoData['metodo_pago'] ? $request->input('id_empleado') : null
                             ]
                         ];
-    
+
                         $gasto = Gasto::create([
                             'f_gastos' => $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
                             'id_tecnico' => $request->input('id_empleado'),
@@ -266,7 +268,7 @@ class RegistroVController extends Controller
             }
             $validatedData['gastos'] = $gastosIds;
             Log::debug('Gastos procesados', ['gastos' => $gastosIds]);
-    
+
             $pagosValidados = [];
             $totalPagado = 0;
             Log::info('Procesando pagos');
@@ -287,6 +289,7 @@ class RegistroVController extends Controller
                             'monto' => (float) $pago['monto'],
                             'metodo_pago' => $pago['metodo_pago'] ?? 'efectivo',
                             'fecha' => $pago['fecha'] ?? now()->format('Y-m-d'),
+                            'cobrador_id' => $pago['cobrador_id'] ?? $request->input('id_empleado')
                         ];
                         
                         $totalPagado += (float) $pago['monto'];
@@ -294,7 +297,7 @@ class RegistroVController extends Controller
                     
                     $validatedData['pagos'] = json_encode($pagosValidados);
                     Log::debug('Pagos validados', ['pagos' => $pagosValidados]);
-    
+
                     $valorTotal = (float) ($validatedData['valor_v'] ?? 0);
                     Log::debug('Calculando estado del pago', ['total_pagado' => $totalPagado, 'valor_total' => $valorTotal]);
                     
@@ -314,11 +317,11 @@ class RegistroVController extends Controller
                 Log::info('No se recibieron pagos');
                 $validatedData['pagos'] = json_encode([]);
             }
-    
+
             Log::info('Creando registro de venta');
             $registroV = RegistroV::create($validatedData);
             Log::debug('Registro de venta creado', ['registro_id' => $registroV->id]);
-    
+
             Log::info('Creando abono asociado');
             $abono = Abono::create([
                 'a_fecha' => $registroV->fecha_h,
@@ -330,13 +333,13 @@ class RegistroVController extends Controller
             $registroV->id_abono = $abono->id_abonos;
             $registroV->save();
             Log::debug('Abono creado y asociado', ['abono_id' => $abono->id_abonos]);
-    
+
             DB::commit();
             Log::info('Transacción completada exitosamente');
-    
+
             return Redirect::route('registro-vs.index')
                 ->with('success', 'Registro creado satisfactoriamente.');
-    
+
         } catch (\Exception $e) {
             Log::error('Error en transacción', [
                 'error' => $e->getMessage(),
@@ -357,6 +360,7 @@ class RegistroVController extends Controller
         $tiposDePago = TiposDePago::all();
         $trabajos = Trabajo::all();
         $categorias = Categoria::all();
+        $empleados = Empleado::all();
     
         $items = json_decode($registroV->items, true) ?? [];
         
@@ -457,6 +461,7 @@ class RegistroVController extends Controller
                         'monto' => $pago['monto'] ?? 0,
                         'metodo_pago' => $pago['metodo_pago'] ?? 'Desconocido',
                         'fecha' => $pago['fecha'] ?? $registroV->fecha_h,
+                        'cobrador_id' => $pago['cobrador_id'] ?? null,
                         'referencia' => $pago['referencia'] ?? null
                     ];
                 }
@@ -472,7 +477,8 @@ class RegistroVController extends Controller
             'gastos' => $gastos,
             'pagos' => $pagos,
             'trabajos' => $trabajos,
-            'categorias' => $categorias
+            'categorias' => $categorias,
+            'empleados' => $empleados
         ]);
     }
 
@@ -1059,6 +1065,7 @@ class RegistroVController extends Controller
                                 'monto' => (float) $pago['monto'],
                                 'metodo_pago' => $pago['metodo_pago'] ?? 'efectivo',
                                 'fecha' => $pago['fecha'] ?? now()->format('Y-m-d'),
+                                'cobrador_id' => $pago['cobrador_id'] ?? null
                             ];
                             
                             $totalPagado += (float) $pago['monto'];

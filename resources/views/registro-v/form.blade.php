@@ -306,12 +306,12 @@
                         </div>
 
                         <div class="row g-3 mb-4">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label">Monto</label>
                                 <input type="number" step="0.01" id="pago_monto" class="form-control" placeholder="0.00">
                                 <small class="text-muted">Monto máximo: <span id="maximo-pago">${{ number_format($registroV->valor_v ?? 0, 2) }}</span></small>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label">Método de Pago</label>
                                 <select id="pago_metodo" name="pago_metodo" class="form-control">
                                     <option value="">Seleccione método de pago</option>
@@ -320,7 +320,16 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
+                                <label class="form-label">Quién Cobró</label>
+                                <select id="pago_cobrador" class="form-control">
+                                    <option value="">Seleccionar técnico</option>
+                                    @foreach($empleados as $empleado)
+                                        <option value="{{ $empleado->id_empleado }}">{{ $empleado->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
                                 <label class="form-label">Fecha</label>
                                 <input type="date" id="pago_fecha" class="form-control" value="{{ date('Y-m-d') }}">
                             </div>
@@ -340,6 +349,12 @@
                                                 <span class="fw-bold">${{ number_format($pago['monto'], 2) }}</span>
                                                 <span class="text-muted ms-2">({{ $pago['metodo_pago'] }})</span>
                                                 <small class="text-muted ms-2">{{ $pago['fecha'] }}</small>
+                                                @if(isset($pago['cobrador_id']))
+                                                    @php
+                                                        $cobrador = $empleados->firstWhere('id_empleado', $pago['cobrador_id']);
+                                                    @endphp
+                                                    <small class="text-muted ms-2">Cobró: {{ $cobrador->nombre ?? 'Desconocido' }}</small>
+                                                @endif
                                             </div>
                                             <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-pago" data-index="{{ $index }}">
                                                 <i class="fas fa-trash-alt"></i>
@@ -436,6 +451,7 @@ $(document).ready(function() {
     let saldoPendiente = valorTotal;
 
     const metodosPago = @json($tiposDePago ?? []);
+    const empleados = @json($empleados ?? []);
 
     actualizarResumen();
 
@@ -456,10 +472,13 @@ $(document).ready(function() {
     });
 
     function agregarPagoCompleto() {
+        const cobradorId = $('#select_empleado').val();
+        
         const pagosJson = JSON.stringify([{
             monto: valorTotal,
             metodo_pago: 'completo',
-            fecha: new Date().toISOString().split('T')[0]
+            fecha: new Date().toISOString().split('T')[0],
+            cobrador_id: cobradorId
         }]);
         
         $('#pagos_json').val(pagosJson);
@@ -507,6 +526,7 @@ $(document).ready(function() {
     $('#btn-agregar-pago').click(function() {
         const monto = parseFloat($('#pago_monto').val());
         const metodoId = $('#pago_metodo').val();
+        const cobradorId = $('#pago_cobrador').val();
         const fecha = $('#pago_fecha').val();
         
         if (!monto || monto <= 0) {
@@ -547,6 +567,19 @@ $(document).ready(function() {
             });
             return;
         }
+
+        if (!cobradorId) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Técnico requerido',
+                html: 'Por favor seleccione <b>quien cobró</b> este pago',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Entendido'
+            }).then(() => {
+                $('#pago_cobrador').focus();
+            });
+            return;
+        }
         
         const pagosJson = $('#pagos_json').val() || '[]';
         let pagos = [];
@@ -561,7 +594,8 @@ $(document).ready(function() {
         pagos.push({
             monto: monto,
             metodo_pago: metodoId,
-            fecha: fecha
+            fecha: fecha,
+            cobrador_id: cobradorId
         });
         
         $('#pagos_json').val(JSON.stringify(pagos));
@@ -569,8 +603,9 @@ $(document).ready(function() {
         actualizarListaPagos();
         actualizarResumen();
         actualizarMaximoPago();
-        
-        $('#pago_monto').val('').focus();
+
+        $('#pago_monto').val('');
+        $('#pago_cobrador').val('').trigger('change');
     });
 
     function actualizarListaPagos() {
@@ -589,6 +624,9 @@ $(document).ready(function() {
                 const metodo = metodosPago.find(m => m.id == pago.metodo_pago);
                 const nombreMetodo = metodo ? metodo.name : pago.metodo_pago;
                 
+                const cobrador = empleados.find(e => e.id_empleado == pago.cobrador_id);
+                const nombreCobrador = cobrador ? cobrador.nombre : 'Desconocido';
+                
                 $('#lista-pagos').append(`
                     <div class="pago-item card mb-2">
                         <div class="card-body py-2">
@@ -597,6 +635,7 @@ $(document).ready(function() {
                                     <span class="fw-bold">$${parseFloat(pago.monto).toFixed(2)}</span>
                                     <span class="text-muted ms-2">(${nombreMetodo})</span>
                                     <small class="text-muted ms-2">${pago.fecha}</small>
+                                    <small class="text-muted ms-2">Cobró: ${nombreCobrador}</small>
                                 </div>
                                 <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-pago" data-index="${index}">
                                     <i class="fas fa-trash-alt"></i>
