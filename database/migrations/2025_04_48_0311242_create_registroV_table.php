@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('titular_c');
             $table->json('pagos')->nullable();
             $table->string('descripcion_ce')->nullable();
-            $table->string('lugarventa'); 
+            $table->string('lugarventa');
             $table->decimal('monto_ce')->nullable();
             $table->string('cobro')->nullable();
             $table->string('porcentaje_c');
@@ -35,7 +35,7 @@ return new class extends Migration
             $table->json('costos')->nullable();
             $table->json('gastos')->nullable();
             $table->integer('id_abono')->nullable();
-            $table->integer('cargado')->default(0);
+            $table->decimal('cargado')->default(0)->nullable();
         });
     }
 

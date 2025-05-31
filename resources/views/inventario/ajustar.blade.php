@@ -80,6 +80,7 @@
                                 <option value="compra" {{ old('tipo_ajuste') == 'compra' ? 'selected' : '' }}>Compra (sumar)</option>
                                 <option value="resta" {{ old('tipo_ajuste') == 'resta' ? 'selected' : '' }}>Ajuste (disminuir)</option>
                                 <option value="ajuste" {{ old('tipo_ajuste') == 'ajuste' ? 'selected' : '' }}>Ajuste (sumar)</option>
+                                <option value="ajuste2" {{ old('tipo_ajuste') == 'ajuste2' ? 'selected' : '' }}>Salida (resta)</option>
                             </select>
                         </div>
 

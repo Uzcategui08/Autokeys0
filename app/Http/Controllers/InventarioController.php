@@ -160,6 +160,7 @@ class InventarioController extends Controller
                 $nuevaCantidad = $cantidadAnterior + $cantidadAjuste;
                 break;
             case 'resta':
+            case 'ajuste2':
                 $nuevaCantidad = $cantidadAnterior - $cantidadAjuste;
                 if ($nuevaCantidad < 0) {
                     return back()->withErrors(['cantidad_ajuste' => 'La cantidad resultante no puede ser negativa']);

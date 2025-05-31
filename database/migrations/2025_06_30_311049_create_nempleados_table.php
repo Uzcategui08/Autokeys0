@@ -26,10 +26,10 @@ return new class extends Migration
             $table->json('metodo_pago');
             $table->date('fecha_desde');
             $table->date('fecha_hasta');
-            $table->decimal('horas_trabajadas', 8, 2)->nullable(); 
-            $table->string('tipo_pago_empleado', 20)->nullable(); 
+            $table->decimal('horas_trabajadas', 8, 2)->nullable();
+            $table->string('tipo_pago_empleado', 20)->nullable();
             $table->text('detalle_pago')->nullable();
-            $table->date('fecha_pago');
+            $table->date('fecha_pago')->nullable();
             $table->timestamps();
         });
     }
