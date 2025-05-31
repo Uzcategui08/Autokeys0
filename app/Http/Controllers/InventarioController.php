@@ -144,7 +144,7 @@ class InventarioController extends Controller
     public function actualizarConAjustes(Request $request, $id_inventario)
     {
         $request->validate([
-            'tipo_ajuste' => 'required|in:compra,resta,ajuste',
+            'tipo_ajuste' => 'required|in:compra,resta,ajuste,ajuste2',
             'cantidad_ajuste' => 'required|integer|min:1',
             'descripcion' => 'nullable|string|max:500',
         ]);
