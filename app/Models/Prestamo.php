@@ -55,7 +55,7 @@ class Prestamo extends Model
     }
 
 
-    public function subcategoria()
+    public function categoria()
     {
         return $this->belongsTo(\App\Models\Categoria::class, 'subcategoria', 'id_categoria');
     }

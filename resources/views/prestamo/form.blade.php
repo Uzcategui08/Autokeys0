@@ -56,10 +56,10 @@
                             <select name="subcategoria" class="form-control select2" id="subcategoria" required>
                                 <option value="" disabled>{{ __('Seleccionar Subcategoría') }}</option>
                                 @foreach($categorias as $categoria)
-                                    <option value="{{ $categoria->id_categoria }}"
-                                        {{ (old('subcategoria', $prestamo?->subcategoria ?? null)) == $categoria->id_categoria ? 'selected' : '' }}>
-                                        {{ $categoria->nombre }}
-                                    </option>
+<option value="{{ $categoria->id_categoria }}"
+    {{ (old('subcategoria', $prestamo->subcategoria ?? null)) == $categoria->id_categoria ? 'selected' : '' }}>
+    {{ $categoria->nombre }}
+</option>
                                 @endforeach
                             </select>
                             @error('subcategoria')
