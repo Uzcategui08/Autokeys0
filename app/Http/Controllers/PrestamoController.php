@@ -21,8 +21,7 @@ class PrestamoController extends Controller
         $prestamos = Prestamo::with('empleado', 'subcategoria')->all();
         $categorias = Categoria::all();
 
-        return view('prestamo.index', compact('prestamos', 'categorias'))
-            ->with('i', ($request->input('page', 1) - 1) * $prestamos->perPage());
+        return view('prestamo.index', compact('prestamos', 'categorias'));
     }
 
     /**
@@ -79,7 +78,6 @@ class PrestamoController extends Controller
 
             return Redirect::route('prestamos.index')
                 ->with('success', 'Prestamo creado satisfactoriamente.');
-
         } catch (\Exception $e) {
             return back()
                 ->withInput()
@@ -94,11 +92,11 @@ class PrestamoController extends Controller
     {
         $prestamo = Prestamo::with('empleado')->findOrFail($id);
         $categorias = \App\Models\Categoria::all();
-        
+
         $pagos = is_string($prestamo->pagos) ? json_decode($prestamo->pagos, true) : ($prestamo->pagos ?? []);
 
         $metodos = \App\Models\TiposDePago::all()->pluck('name', 'id');
-        
+
         return view('prestamo.show', [
             'prestamo' => $prestamo,
             'metodos' => $metodos,
@@ -137,7 +135,7 @@ class PrestamoController extends Controller
 
             $pagosJson = trim($validated['pagos'], '"\'');
             $pagos = json_decode($pagosJson, true);
-            
+
             if (json_last_error() !== JSON_ERROR_NONE || !is_array($pagos)) {
                 throw new \Exception("Formato de pagos inválido: " . json_last_error_msg());
             }
@@ -158,7 +156,6 @@ class PrestamoController extends Controller
 
             return Redirect::route('prestamos.index')
                 ->with('success', 'Prestamo actualizado satisfactoriamente.');
-
         } catch (\Exception $e) {
             return back()->withInput()->withErrors(['error' => $e->getMessage()]);
         }
@@ -173,7 +170,7 @@ class PrestamoController extends Controller
     private function determinarEstatus(float $valor, array $pagos): string
     {
         $totalPagado = $this->calcularTotalPagado($pagos);
-        
+
         if (abs($totalPagado - $valor) < 0.01) {
             return 'pagado';
         } elseif ($totalPagado > 0) {

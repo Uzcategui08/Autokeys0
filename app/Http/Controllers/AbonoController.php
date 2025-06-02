@@ -78,7 +78,8 @@ class AbonoController extends Controller
 
     public function destroy($id): RedirectResponse
     {
-        Abono::find($id)->delete();
+        $abono = Abono::findOrFail($id);
+        $abono->delete();
 
         return Redirect::route('abonos.index')
             ->with('success', 'Abono eliminado satisfactoriamente.');
