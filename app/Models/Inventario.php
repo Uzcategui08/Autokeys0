@@ -24,8 +24,8 @@ class Inventario extends Model
 
     protected $perPage = 20;
     protected $primaryKey = 'id_inventario';
-    public $incrementing = true;  
-    
+    public $incrementing = true;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -48,5 +48,9 @@ class Inventario extends Model
     public function producto()
     {
         return $this->belongsTo(\App\Models\Producto::class, 'id_producto', 'id_producto');
+    }
+    public function user()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'user_id', 'id');
     }
 }

@@ -31,7 +31,7 @@
                                 <thead class="thead">
                                     <tr>
                                         <th>ID Nómina</th>
-                                        <th>Fecha de Pago</th>
+                                        <th>Periodo</th>
                                         <th>ID Empleado</th>
                                         <th>Total Descuentos</th>
                                         <th>Total Abonos</th>
@@ -43,13 +43,21 @@
                                     @foreach ($nempleados as $nempleado)
                                         <tr>
                                             <td>{{ $nempleado->id_nempleado }}</td>
-                                            <td>{{ \Carbon\Carbon::parse($nempleado->fecha_pago)->format('d/m/Y') }}</td>
+                                            <td>
+                                                <span class="badge bg-light text-dark border border-secondary px-2 py-1 mb-1">
+                                                    {{ \Carbon\Carbon::parse($nempleado->fecha_desde)->format('d/m/Y') }}
+                                                    <i class="fas fa-arrow-right mx-1"></i>
+                                                    {{ \Carbon\Carbon::parse($nempleado->fecha_hasta)->format('d/m/Y') }}
+                                                </span>
+                                                <br>
+                                                <small class="text-muted">{{ \Carbon\Carbon::parse($nempleado->fecha_pago)->format('d/m/Y') }}</small>
+                                            </td>
                                             <td>{{ $nempleado->empleado->nombre ?? 'N/A' }}</td>
                                             <td>${{ number_format($nempleado->total_descuentos, 2) }}</td>
                                             <td>${{ number_format($nempleado->total_abonos, 2) }}</td>
                                             <td>${{ number_format($nempleado->total_pagado, 2) }}</td>
                                             <td>
-                                                <form onsubmit="return confirmDelete(this)" action="{{ route('nempleados.destroy', $nempleado->id_nempleado) }}" method="POST" class="delete-form" style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
+                                                <form onsubmit="return confirmDelete(this)" action="{{ route('nempleados.destroy', $nempleado->id_nempleado) }}" method="POST" class="delete-form d-inline" style="display: inline-block;">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-danger btn-sm">
