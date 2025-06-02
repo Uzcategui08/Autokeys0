@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Prestamo extends Model
 {
-    
+
     protected $perPage = 20;
     protected $primaryKey = 'id_prestamo';
 
@@ -31,14 +31,14 @@ class Prestamo extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = [ 
-    'f_prestamo',
-    'id_empleado',
-    'descripcion',
-    'subcategoria',
-    'valor',
-    'estatus',
-    'pagos'
+    protected $fillable = [
+        'f_prestamo',
+        'id_empleado',
+        'descripcion',
+        'subcategoria',
+        'valor',
+        'estatus',
+        'pagos'
     ];
 
     protected $casts = [
@@ -54,16 +54,16 @@ class Prestamo extends Model
         return $this->belongsTo(\App\Models\Empleado::class, 'id_empleado', 'id_empleado');
     }
 
-    
+
     public function subcategoria()
     {
-        return $this->belongsTo(\App\Models\Categoria::class, 'subcategoria', 'id');
+        return $this->belongsTo(\App\Models\Categoria::class, 'subcategoria', 'id_categoria');
     }
 
     public function generarCuotas()
     {
         $valorPorCuota = $this->valor / $this->cuotas;
-        
+
         for ($i = 1; $i <= $this->cuotas; $i++) {
             $this->cuotas()->create([
                 'valor' => $valorPorCuota,
@@ -85,11 +85,12 @@ class Prestamo extends Model
     public function actualizarCuotaActual()
     {
         $this->cuota_actual = min($this->cuota_actual + 1, $this->cuotas);
-        if ($this->cuota_actual >= $this->cuotas && 
-        $this->cuotas()->where('pagada', false)->doesntExist()) {
-        $this->activo = 0;
+        if (
+            $this->cuota_actual >= $this->cuotas &&
+            $this->cuotas()->where('pagada', false)->doesntExist()
+        ) {
+            $this->activo = 0;
         }
         $this->save();
     }
-    
 }
