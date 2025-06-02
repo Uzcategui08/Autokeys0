@@ -19,8 +19,7 @@ class DescuentoController extends Controller
     {
         $descuentos = Descuento::all();
 
-        return view('descuento.index', compact('descuentos'))
-            ->with('i', ($request->input('page', 1) - 1) * $descuentos->perPage());
+        return view('descuento.index', compact('descuentos'));
     }
 
     /**
