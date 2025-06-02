@@ -57,7 +57,7 @@ class Prestamo extends Model
     
     public function subcategoria()
     {
-        return $this->belongsTo(Categoria::class, 'subcategoria', 'id_categoria');
+        return $this->belongsTo(\App\Models\Categoria::class, 'subcategoria', 'id');
     }
 
     public function generarCuotas()
