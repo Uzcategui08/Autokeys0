@@ -45,9 +45,12 @@
                                             <td >{{ $orden->id_orden }}</td>
                                             <td >{{ $orden->f_orden }}</td>
                                             <td>
-                                                @if(is_array($orden->items) && count($orden->items) > 0)
+                                                @php
+                                                    $items = is_array($orden->items) ? $orden->items : (is_string($orden->items) ? json_decode($orden->items, true) : []);
+                                                @endphp
+                                                @if(is_array($items) && count($items) > 0)
                                                     <ul class="mb-0 pl-3">
-                                                        @foreach ($orden->items as $item)
+                                                        @foreach ($items as $item)
                                                             <li>{{ $item['descripcion'] ?? 'Descripción no disponible' }}</li>
                                                         @endforeach
                                                     </ul>
