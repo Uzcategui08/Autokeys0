@@ -103,8 +103,8 @@
                                             <div>
                                                 <h6 class="mb-0 text-muted small">PERÍODO</h6>
                                                 <h5 class="mb-0">
-                                                    {{ \Carbon\Carbon::parse(request('fecha_desde', date('Y-m-01')))->format('d/m/Y') }} - 
-                                                    {{ \Carbon\Carbon::parse(request('fecha_hasta', date('Y-m-t')))->format('d/m/Y') }}
+                                                    {{ \Carbon\Carbon::parse(request('fecha_desde', date('Y-m-01')))->format('m/d/Y') }} - 
+                                                    {{ \Carbon\Carbon::parse(request('fecha_hasta', date('Y-m-t')))->format('m/d/Y') }}
                                                 </h5>
                                             </div>
                                         </div>

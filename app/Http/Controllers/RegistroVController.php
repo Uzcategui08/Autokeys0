@@ -77,15 +77,27 @@ class RegistroVController extends Controller
         return view('registro-v.cxc', compact('registroVs'));
     }
 
+
     public function toggleCargado(RegistroV $registroV)
     {
-        $registroV->cargado = !$registroV->cargado;
-        $registroV->save();
+        try {
+            $registroV->cargado = !$registroV->cargado;
+            $registroV->save();
 
-        return response()->json([
-            'success' => true,
-            'cargado' => $registroV->cargado
-        ]);
+            // Refresca el modelo para obtener el valor real de la base de datos
+            $registroV->refresh();
+
+            return response()->json([
+                'success' => true,
+                'cargado' => $registroV->cargado
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo actualizar el estado',
+                'cargado' => $registroV->cargado ?? null
+            ], 500);
+        }
     }
 
     /**

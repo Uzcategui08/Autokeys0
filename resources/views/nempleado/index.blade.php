@@ -45,9 +45,9 @@
                                             <td>{{ $nempleado->id_nempleado }}</td>
                                             <td>
                                                 <span class="badge bg-light text-dark border border-secondary px-2 py-1 mb-1">
-                                                    {{ \Carbon\Carbon::parse($nempleado->fecha_desde)->format('d/m/Y') }}
+                                                    {{ \Carbon\Carbon::parse($nempleado->fecha_desde)->format('m/d/Y') }}
                                                     <i class="fas fa-arrow-right mx-1"></i>
-                                                    {{ \Carbon\Carbon::parse($nempleado->fecha_hasta)->format('d/m/Y') }}
+                                                    {{ \Carbon\Carbon::parse($nempleado->fecha_hasta)->format('m/d/Y') }}
                                                 </span>
                                                 <br>
                                                 <small class="text-muted">{{ \Carbon\Carbon::parse($nempleado->fecha_pago)->format('d/m/Y') }}</small>

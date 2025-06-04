@@ -166,10 +166,10 @@
         <div class="header">
             <img src="{{ public_path('/images/AutoFondo.jpeg') }}" alt="Logo" class="header-logo">
             <h1>RECEIPT</h1>
-            <p>Generated on: {{ date('d/m/Y') }}</p>
+            <p>Generated on: {{ date('m/d/Y') }}</p>
         </div>
         <div class="periodo-info">
-            <p>Period: {{ \Carbon\Carbon::parse($fechaDesde)->format('d/m/Y') }} to {{ \Carbon\Carbon::parse($fechaHasta)->format('d/m/Y') }}</p>
+            <p>Period: {{ \Carbon\Carbon::parse($fechaDesde)->format('m/d/Y') }} to {{ \Carbon\Carbon::parse($fechaHasta)->format('m/d/Y') }}</p>
         </div>
 
         @foreach($data as $item)
@@ -193,7 +193,7 @@
                 <tbody>
                     <tr>
                         <td></td>
-                        <td>{{ \Carbon\Carbon::parse($venta->fecha_h)->format('d/m/Y') }}</td>
+                        <td>{{ \Carbon\Carbon::parse($venta->fecha_h)->format('m/d/Y') }}</td>
                         <td class="text-right">${{ number_format($venta->valor_v, 2) }}</td>
                         <td class="text-right">${{ number_format($venta->total_pagado, 2) }}</td>
                         <td class="text-right">${{ number_format($venta->valor_v - $venta->total_pagado, 2) }}</td>

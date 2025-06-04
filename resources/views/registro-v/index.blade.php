@@ -296,22 +296,32 @@
                     data: form.serialize(),
                     success: function(response) {
                         if (response.success) {
-                            if (newValue) {
+                            // Usar el valor real retornado por el backend
+                            const cargadoReal = response.cargado == 1 || response.cargado === true;
+                            if (cargadoReal) {
                                 button.removeClass('bg-secondary').addClass('bg-success');
                                 button.find('i').removeClass('fa-times-circle').addClass('fa-check-circle');
                                 button.html('<i class="fas fa-check-circle"></i> Sí');
                                 row.addClass('table-success').attr('data-cargado', '1');
+                                button.data('cargado', 1);
                             } else {
                                 button.removeClass('bg-success').addClass('bg-secondary');
                                 button.find('i').removeClass('fa-check-circle').addClass('fa-times-circle');
                                 button.html('<i class="fas fa-times-circle"></i> No');
                                 row.removeClass('table-success').attr('data-cargado', '0');
+                                button.data('cargado', 0);
                             }
 
                             Swal.fire(
                                 '¡Actualizado!',
                                 'El estado ha sido cambiado.',
                                 'success'
+                            );
+                        } else {
+                            Swal.fire(
+                                'Error',
+                                response.message || 'No se pudo actualizar el estado',
+                                'error'
                             );
                         }
                     },
@@ -327,6 +337,7 @@
             }
 
             $('.toggle-cargado-btn').click(function() {
+                // Usar el valor actual del botón, no el invertido
                 const currentValue = $(this).data('cargado') == 1;
                 showToggleAlert($(this), !currentValue);
             });

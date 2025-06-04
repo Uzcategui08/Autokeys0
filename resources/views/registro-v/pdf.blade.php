@@ -147,7 +147,7 @@
             <div class="divider"></div>
             <h2>RECIBO DE VENTA</h2>
             <p>N° {{ $registroV->id }}</p>
-            <p>Fecha: {{ \Carbon\Carbon::parse($registroV->fecha_h)->format('d/m/Y') }}</p>
+            <p>Fecha: {{ \Carbon\Carbon::parse($registroV->fecha_h)->format('m/d/Y') }}</p>
         </div>
 
         <table class="info-table">
@@ -254,7 +254,7 @@
                 <tbody>
                     @foreach($registroV->pagos as $pago)
                         <tr>
-                            <td>{{ \Carbon\Carbon::parse($pago['fecha'])->format('d/m/Y') }}</td>
+                            <td>{{ \Carbon\Carbon::parse($pago['fecha'])->format('m/d/Y') }}</td>
                             <td>
                                 @php
                                     $metodoPago = collect($tiposDePago)->firstWhere('id', $pago['metodo_pago'] ?? null);

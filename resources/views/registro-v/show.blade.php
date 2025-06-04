@@ -21,7 +21,7 @@
                     <div class="col-12">
                         <h4>
                             <i class="fas fa-store"></i> {{ $registroV->lugarventa }}
-                            <small class="float-right">Fecha: {{ \Carbon\Carbon::parse($registroV->fecha_h)->format('d/m/Y') }}</small>
+                            <small class="float-right">Fecha: {{ \Carbon\Carbon::parse($registroV->fecha_h)->format('m/d/Y') }}</small>
                         </h4>
                     </div>
                 </div>
