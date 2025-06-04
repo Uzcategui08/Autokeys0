@@ -81,21 +81,15 @@ class RegistroVController extends Controller
     public function toggleCargado(RegistroV $registroV)
     {
         try {
-            $registroV->cargado = !$registroV->cargado;
+            $registroV->cargado = $registroV->cargado ? 0 : 1; // fuerza 0 o 1
             $registroV->save();
-
-            // Refresca el modelo para obtener el valor real de la base de datos
             $registroV->refresh();
-
             return response()->json([
-                'success' => true,
-                'cargado' => $registroV->cargado
+                'cargado' => (int)$registroV->cargado // fuerza entero
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false,
-                'message' => 'No se pudo actualizar el estado',
-                'cargado' => $registroV->cargado ?? null
+                'cargado' => isset($registroV->cargado) ? (int)$registroV->cargado : null
             ], 500);
         }
     }

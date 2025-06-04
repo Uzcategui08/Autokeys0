@@ -43,13 +43,14 @@ class RegistroV extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['fecha_h', 'trabajo', 'id_empleado', 'cliente', 'telefono', 'valor_v', 'estatus', 'metodo_p', 'titular_c', 'pagos', 'descripcion_ce', 'monto_ce', 'cobro', 'porcentaje_c', 'marca', 'modelo', 'año', 'items','lugarventa', 'id_cliente', 'metodo_pce', 'costos', 'gastos', 'id_abono', 'tipo_venta', 'cargado'];
+    protected $fillable = ['fecha_h', 'trabajo', 'id_empleado', 'cliente', 'telefono', 'valor_v', 'estatus', 'metodo_p', 'titular_c', 'pagos', 'descripcion_ce', 'monto_ce', 'cobro', 'porcentaje_c', 'marca', 'modelo', 'año', 'items', 'lugarventa', 'id_cliente', 'metodo_pce', 'costos', 'gastos', 'id_abono', 'tipo_venta', 'cargado'];
 
     protected $casts = [
         'pagos' => 'array',
         'fecha_h' => 'datetime',
         'costos' => 'array',
-        'gastos' => 'array'
+        'gastos' => 'array',
+        'cargado' => 'integer', // casteo forzado
     ];
 
     public function setPagosAttribute($value)

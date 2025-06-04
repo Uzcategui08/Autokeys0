@@ -81,10 +81,10 @@
                                                 }
                                             }
 
-                                            $cargado = $registroV->cargado ?? 0;
-                                            $cargadoClass = $cargado ? 'bg-success' : 'bg-secondary';
-                                            $cargadoIcon = $cargado ? 'fa-check-circle' : 'fa-times-circle';
-                                            $cargadoText = $cargado ? 'Sí' : 'No';
+                                            $cargado = (int)($registroV->cargado ?? 0);
+                                            $cargadoClass = $cargado === 1 ? 'bg-success' : 'bg-secondary';
+                                            $cargadoIcon = $cargado === 1 ? 'fa-check-circle' : 'fa-times-circle';
+                                            $cargadoText = $cargado === 1 ? 'Sí' : 'No';
 
                                             $estadosStyles = [
                                                 'pagado' => ['class' => 'badge-success', 'icon' => 'fa-check-circle'],
@@ -93,7 +93,7 @@
                                             ];
                                             $estado = $estadosStyles[strtolower($registroV->estatus)] ?? ['class' => 'badge-secondary', 'icon' => 'fa-question'];
                                         @endphp
-                                        <tr class="{{ $cargado ? 'table-success' : '' }}" data-cargado="{{ $cargado }}">
+                                        <tr class="{{ $cargado === 1 ? 'table-success' : '' }}" data-cargado="{{ $cargado }}">
                                             <td class="font-weight-bold">{{ $registroV->id }}</td>
                                             <td>
                                                 <span class="text-nowrap">
@@ -289,29 +289,25 @@
             function toggleCargado(button, newValue) {
                 const form = button.closest('form');
                 const row = button.closest('tr');
-                
+                // Enviar PATCH correctamente
                 $.ajax({
                     url: form.attr('action'),
                     type: 'POST',
-                    data: form.serialize(),
+                    data: form.serialize() + '&_method=PATCH',
                     success: function(response) {
-                        if (response.success) {
-                            // Usar el valor real retornado por el backend
+                        if (typeof response.cargado !== 'undefined') {
                             const cargadoReal = response.cargado == 1 || response.cargado === true;
                             if (cargadoReal) {
                                 button.removeClass('bg-secondary').addClass('bg-success');
-                                button.find('i').removeClass('fa-times-circle').addClass('fa-check-circle');
                                 button.html('<i class="fas fa-check-circle"></i> Sí');
                                 row.addClass('table-success').attr('data-cargado', '1');
                                 button.data('cargado', 1);
                             } else {
                                 button.removeClass('bg-success').addClass('bg-secondary');
-                                button.find('i').removeClass('fa-check-circle').addClass('fa-times-circle');
                                 button.html('<i class="fas fa-times-circle"></i> No');
                                 row.removeClass('table-success').attr('data-cargado', '0');
                                 button.data('cargado', 0);
                             }
-
                             Swal.fire(
                                 '¡Actualizado!',
                                 'El estado ha sido cambiado.',
@@ -320,7 +316,7 @@
                         } else {
                             Swal.fire(
                                 'Error',
-                                response.message || 'No se pudo actualizar el estado',
+                                'No se pudo actualizar el estado',
                                 'error'
                             );
                         }
@@ -336,10 +332,11 @@
                 });
             }
 
-            $('.toggle-cargado-btn').click(function() {
-                // Usar el valor actual del botón, no el invertido
-                const currentValue = $(this).data('cargado') == 1;
-                showToggleAlert($(this), !currentValue);
+            $(document).on('click', '.toggle-cargado-btn', function(e) {
+                e.preventDefault(); // Evita el submit del form
+                const button = $(this);
+                const currentValue = button.data('cargado') == 1;
+                showToggleAlert(button, !currentValue);
             });
 
         });
