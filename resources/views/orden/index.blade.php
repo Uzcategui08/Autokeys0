@@ -44,7 +44,17 @@
                                         <tr>
                                             <td >{{ $orden->id_orden }}</td>
                                             <td >{{ $orden->f_orden }}</td>
-                                            <td >{{ $orden->descripcion }}</td>
+                                            <td>
+                                                @if(is_array($orden->items) && count($orden->items) > 0)
+                                                    <ul class="mb-0 pl-3">
+                                                        @foreach ($orden->items as $item)
+                                                            <li>{{ $item['descripcion'] ?? 'Descripción no disponible' }}</li>
+                                                        @endforeach
+                                                    </ul>
+                                                @else
+                                                    <span class="text-muted">Sin descripciones</span>
+                                                @endif
+                                            </td>
                                             <td >{{ $orden->empleado->nombre }}</td>
                                             <td> 
                                                 <span class="badge badge-lg fs-6 p-2
