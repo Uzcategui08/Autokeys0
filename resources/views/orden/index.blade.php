@@ -33,7 +33,7 @@
                                     <tr> 
 									<th >ID Orden</th>
 									<th >Fecha</th>
-									<th >Dirección</th>
+									<th >Descripción</th>
 									<th >Técnico</th>
                                     <th >Estado</th>
                                     <th >Acciones</th>
@@ -44,7 +44,7 @@
                                         <tr>
                                             <td >{{ $orden->id_orden }}</td>
                                             <td >{{ $orden->f_orden }}</td>
-                                            <td >{{ $orden->direccion }}</td>
+                                            <td >{{ $orden->descripcion }}</td>
                                             <td >{{ $orden->empleado->nombre }}</td>
                                             <td> 
                                                 <span class="badge badge-lg fs-6 p-2
