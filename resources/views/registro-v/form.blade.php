@@ -446,9 +446,42 @@ $(document).ready(function() {
     /**************************************
      * SECCIÓN DE PAGOS PARCIALES
      **************************************/
-    let valorTotal = parseFloat($('#valor_v').val()) || 0;
+    // Inicializar variables globales
+    let valorTotal = 0;
     let totalPagado = 0;
-    let saldoPendiente = valorTotal;
+    let saldoPendiente = 0;
+
+    function inicializarValorTotal() {
+        const valorInicial = parseFloat($('#valor_v').val()) || 0;
+        if (!isNaN(valorInicial)) {
+            valorTotal = valorInicial;
+            actualizarResumen();
+        }
+    }
+
+    inicializarValorTotal();
+
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList' || mutation.type === 'attributes') {
+                inicializarValorTotal();
+            }
+        });
+    });
+
+    observer.observe($('#valor_v')[0], {
+        childList: true,
+        attributes: true,
+        characterData: true,
+        subtree: true
+    });
+
+    $('#valor_v').on('change', function() {
+        valorTotal = parseFloat($(this).val()) || 0;
+        actualizarResumen();
+        actualizarMaximoPago();
+        calcularPorcentajeCerrajero();
+    });
 
     const metodosPago = @json($tiposDePago ?? []);
     const empleados = @json($empleados ?? []);
@@ -459,9 +492,21 @@ $(document).ready(function() {
         valorTotal = parseFloat($(this).val()) || 0;
         actualizarResumen();
         actualizarMaximoPago();
-        calcularPorcentajesCostos();
         calcularPorcentajeCerrajero();
     });
+
+    function calcularPorcentajesCostos() {
+
+        const totalCostos = calcularTotalCostos();
+        
+        $('.costo-group').each(function() {
+            const monto = parseFloat($(this).find('.monto-ce').val()) || 0;
+            if (monto > 0 && totalCostos > 0) {
+                const porcentaje = (monto / totalCostos) * 100;
+                $(this).find('.porcentaje-ce').text(porcentaje.toFixed(2) + '%');
+            }
+        });
+    }
 
     $('#estatus').on('change', function() {
         if(totalPagado === 0) {
@@ -487,6 +532,7 @@ $(document).ready(function() {
     }
 
     function actualizarResumen() {
+
         totalPagado = calcularTotalPagado();
         saldoPendiente = valorTotal - totalPagado;
         
@@ -495,6 +541,8 @@ $(document).ready(function() {
         $('#saldo-pendiente').text('$' + (saldoPendiente > 0 ? saldoPendiente.toFixed(2) : '0.00'));
 
         actualizarEstatus();
+
+        $('#valor_v').val(valorTotal.toFixed(2));
     }
 
     function actualizarMaximoPago() {
@@ -514,6 +562,7 @@ $(document).ready(function() {
     }
 
     function actualizarEstatus() {
+
         if (saldoPendiente <= 0.01) { 
             $('#estatus').val('pagado');
         } else if (totalPagado > 0) {
@@ -726,16 +775,16 @@ $(document).ready(function() {
                             <input type="text" name="costos_extras[${currentIndex}][descripcion]" 
                                 class="form-control descripcion-ce" 
                                 value="${isExisting ? (costoData.descripcion || '') : ''}">
-                        </div>
                     </div>
-                    
+                </div>
+                
                     <div class="col-md-2">
-                        <div class="form-group mb-3">
-                            <label class="form-label">Monto</label>
-                            <input type="number" step="0.01" name="costos_extras[${currentIndex}][monto]" 
-                                class="form-control monto-ce" 
-                                value="${isExisting ? (costoData.monto || '0.00') : '0.00'}">
-                        </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label">Monto</label>
+                        <input type="number" step="0.01" name="costos_extras[${currentIndex}][monto]" 
+                            class="form-control monto-ce" 
+                            value="${isExisting ? (costoData.monto || '0.00') : '0.00'}">
+                    </div>
                     </div>
 
                     <div class="col-md-2">
@@ -760,14 +809,12 @@ $(document).ready(function() {
                     
                     <div class="col-md-2">
                         <div class="form-group mb-3">
-                            <label class="form-label">Estado</label>
-                            <select name="costos_extras[${currentIndex}][cobro]" class="form-control">
-                                <option value="pendiente" ${isExisting && costoData.cobro == 'pendiente' ? 'selected' : ''}>Pendiente</option>
-                                <option value="pagado" ${isExisting && costoData.cobro == 'pagado' ? 'selected' : ''}>Pagado</option>
-                            </select>
+                            <label class="form-label">Fecha del Costo</label>
+                            <input type="date" name="costos_extras[${currentIndex}][f_costos]" 
+                                class="form-control" 
+                                value="${isExisting ? (costoData.f_costos || '') : ''}">
                         </div>
                     </div>
-                    
                     <div class="col-md-1">
                         <button type="button" class="btn btn-danger btn-remove-costo mt-4">
                             <i class="fa fa-times-circle"></i>
@@ -801,22 +848,6 @@ $(document).ready(function() {
         return total;
     }
 
-    function calcularPorcentajeCerrajero() {
-        const valorVenta = parseFloat($('#valor_v').val()) || 0;
-        const totalCostos = calcularTotalCostos(); 
-        const totalGastos = calcularTotalGastos(); 
-
-        console.log("Debug:", {
-            valorVenta,
-            totalCostos,
-            totalGastos,
-            formula: (valorVenta - totalCostos - totalGastos) * 0.36
-        });
-
-        const porcentaje = (valorVenta - totalCostos - totalGastos) * 0.36;
-        $('#porcentaje_c').val(Math.max(0, porcentaje).toFixed(2));
-    }
-
     $(document).on('click', '.btn-add-costo', function() {
         addNewCostoGroup();
     });
@@ -827,7 +858,10 @@ $(document).ready(function() {
     });
 
     $(document).on('input', '.monto-ce, #valor_v', function() {
-        calcularPorcentajeCerrajero();
+        const valorVenta = parseFloat($('#valor_v').val()) || 0;
+        if (!isNaN(valorVenta)) {
+            calcularPorcentajeCerrajero();
+        }
     });
 
     $(document).ready(function() {
@@ -839,7 +873,7 @@ $(document).ready(function() {
                     monto: costo.monto,
                     metodo_pago: costo.metodo_pago,
                     cobro: costo.cobro,
-                    fecha: costo.fecha,
+                    f_costos: costo.f_costos,
                     subcategoria: costo.subcategoria || costo.id_categoria
                 };
                 addNewCostoGroup(formattedCosto);
@@ -894,8 +928,7 @@ $(document).ready(function() {
                     </div>
 
                     <div class="col-md-2">
-                        <div class="form-group mb-3">
-                            <label class="form-label">Subcategoría</label>
+                        <div class="form-group mb-3">                            <label class="form-label">Subcategoría</label>
                             <select name="gastos[${currentIndex}][subcategoria]" 
                                     class="form-control select2-subcategoria">
                                 ${subcategoriaOptions}
@@ -915,11 +948,10 @@ $(document).ready(function() {
                     
                     <div class="col-md-2">
                         <div class="form-group mb-3">
-                            <label class="form-label">Estado</label>
-                            <select name="gastos[${currentIndex}][estatus]" class="form-control">
-                                <option value="pendiente" ${isExisting && gastoData.estatus == 'pendiente' ? 'selected' : ''}>Pendiente</option>
-                                <option value="pagado" ${isExisting && gastoData.estatus == 'pagado' ? 'selected' : ''}>Pagado</option>
-                            </select>
+                            <label class="form-label">Fecha del Gasto</label>
+                            <input type="date" name="gastos[${currentIndex}][f_gastos]" 
+                                class="form-control" 
+                                value="${isExisting ? (gastoData.f_gastos || '') : ''}">
                         </div>
                     </div>
                     
@@ -944,8 +976,6 @@ $(document).ready(function() {
             width: '100%',
             dropdownAutoWidth: true
         });
-
-        newGastoGroup.find('.monto-gasto').trigger('input');
         
         gastoIndex++;
     }
@@ -969,7 +999,10 @@ $(document).ready(function() {
     });
 
     $(document).on('input', '.monto-gasto, #valor_v', function() {
-        calcularPorcentajeCerrajero();
+        const valorVenta = parseFloat($('#valor_v').val()) || 0;
+        if (!isNaN(valorVenta)) {
+            calcularPorcentajeCerrajero();
+        }
     });
 
     $(document).ready(function() {
@@ -982,7 +1015,7 @@ $(document).ready(function() {
                     monto: gasto.monto || gasto.valor,
                     metodo_pago: gasto.metodo_pago,
                     estatus: gasto.estatus,
-                    fecha: gasto.fecha,
+                    f_gastos: gasto.f_gastos,
                     subcategoria: gasto.subcategoria || gasto.id_categoria 
                 };
                 addNewGastoGroup(formattedGasto);
@@ -997,7 +1030,6 @@ $(document).ready(function() {
         calcularPorcentajeCerrajero();
         }, 500);
     });
-
 
     /**************************************
      * SECCIÓN DE ITEMS DE TRABAJO 
@@ -1171,10 +1203,21 @@ $(document).ready(function() {
             dataType: 'json'
         }).then(function(response) {
             let options = '<option value="">{{ __("Seleccionar Trabajo") }}</option>';
-
+                
             response.forEach(trabajo => {
                 const selected = trabajoSeleccionado == trabajo.id_trabajo ? 'selected' : '';
-                options += `<option value="${trabajo.id_trabajo}" ${selected} data-precio="${trabajo.precio || 0}">${trabajo.nombre}</option>`;
+                
+                let nombreIngles = '';
+                try {
+                    const traducciones = JSON.parse(trabajo.traducciones || '{}');
+                    nombreIngles = traducciones.en || '';
+                } catch (e) {
+                    console.error('Error al parsear las traducciones:', e);
+                }
+
+                const textoOpcion = nombreIngles ? `${trabajo.nombre} - ${nombreIngles}` : trabajo.nombre;
+                
+                options += `<option value="${trabajo.id_trabajo}" ${selected} data-precio="${trabajo.precio || 0}">${textoOpcion}</option>`;
             });
             
             $select.html(options);
@@ -1190,24 +1233,66 @@ $(document).ready(function() {
     }
 
     function calcularTotalTrabajos() {
-        totalTrabajos = 0;
+        let totalTrabajos = 0;
         
         $('.precio-trabajo').each(function() {
             const precio = parseFloat($(this).val()) || 0;
-            totalTrabajos += precio;
+            if (!isNaN(precio)) {
+                totalTrabajos += precio;
+            }
         });
         
         $('#total-trabajos').val('$' + totalTrabajos.toFixed(2));
-        actualizarValorVenta();
-        calcularPorcentajeCerrajero(); 
+        
+        const $valorV = $('#valor_v');
+        $valorV.val(totalTrabajos.toFixed(2));
+        $valorV.trigger('change');
+        
+        calcularPorcentajeCerrajero();
+        
+        return totalTrabajos;
+    }
+
+    function calcularPorcentajeCerrajero() {
+        const valorVenta = parseFloat($('#valor_v').val()) || 0;
+        const totalCostos = calcularTotalCostos();
+        const totalGastos = calcularTotalGastos();
+        if (isNaN(valorVenta) || isNaN(totalCostos) || isNaN(totalGastos)) {
+            console.error('Error en cálculo: algún valor es NaN');
+            $('#porcentaje_c').val('0.00');
+            return;
+        }
+
+        const totalNeto = valorVenta - totalCostos - totalGastos;
+
+        const porcentaje = totalNeto * 0.36;
+
+        const porcentajeFinal = Math.max(0, porcentaje);
+
+        $('#porcentaje_c').val(porcentajeFinal.toFixed(2));
+
+        console.log('Cálculo porcentaje cerrajero:', {
+            valorVenta,
+            totalCostos,
+            totalGastos,
+            totalNeto,
+            porcentajeFinal
+        });
     }
 
     function actualizarValorVenta() {
+        const totalTrabajos = calcularTotalTrabajos();
+
         const totalCostos = calcularTotalCostos();
         const totalGastos = calcularTotalGastos();
-        const valorVenta = totalTrabajos;
 
-        $('#valor_v').val(valorVenta.toFixed(2)).trigger('change');
+        const valorVenta = totalTrabajos - totalCostos - totalGastos;
+
+        const $valorV = $('#valor_v');
+        $valorV.val(valorVenta.toFixed(2));
+        $valorV.trigger('change');
+
+        actualizarResumen();
 
         calcularPorcentajeCerrajero();
     }

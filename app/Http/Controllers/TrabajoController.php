@@ -36,7 +36,15 @@ class TrabajoController extends Controller
      */
     public function store(TrabajoRequest $request): RedirectResponse
     {
-        Trabajo::create($request->validated());
+        $data = $request->validated();
+
+        $data['traducciones'] = is_array($data['traducciones'] ?? null) ? $data['traducciones'] : [];
+
+        $data['traducciones']['es'] = $data['nombre'];
+
+        $data['traducciones'] = json_encode($data['traducciones']);
+        
+        Trabajo::create($data);
 
         return Redirect::route('trabajos.index')
             ->with('success', 'Trabajo creado satisfactoriamente.');
@@ -67,7 +75,15 @@ class TrabajoController extends Controller
      */
     public function update(TrabajoRequest $request, Trabajo $trabajo): RedirectResponse
     {
-        $trabajo->update($request->validated());
+        $data = $request->validated();
+
+        $data['traducciones'] = is_array($data['traducciones'] ?? null) ? $data['traducciones'] : [];
+
+        $data['traducciones']['es'] = $data['nombre'];
+
+        $data['traducciones'] = json_encode($data['traducciones']);
+        
+        $trabajo->update($data);
 
         return Redirect::route('trabajos.index')
             ->with('success', 'Trabajo actualizado satisfactoriamente.');

@@ -39,12 +39,15 @@ class Costo extends Model
         'subcategoria',
         'valor',
         'estatus',
-        'pagos'
+        'pagos',
+        'metodo_pago',
+        'id_categoria'
     ];
     
     protected $casts = [
         'pagos' => 'array',
         'fecha' => 'date',
+        'metodo_pago' => 'array'
     ];
 
     public function empleado()

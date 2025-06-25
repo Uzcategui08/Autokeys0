@@ -33,6 +33,7 @@
                                     <tr>
                                     <th>ID</th>
 									<th >Nombre</th>
+                                    <th>Nombre en Inglés</th>
                                     <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -41,6 +42,8 @@
                                         <tr>
 										<td >{{ $trabajo->id_trabajo }}</td>
 										<td >{{ $trabajo->nombre }}</td>
+                                        
+                                        <td>{{ $trabajo->getNombreEnIdioma('en') }}</td>
                                         <td>
                                             <form onsubmit="return confirmDelete(this)" action="{{ route('trabajos.destroy', $trabajo->id_trabajo) }}" method="POST" class="delete-form" style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
                                                 <a class="btn btn-sm btn-primary " href="{{ route('trabajos.show', $trabajo->id_trabajo) }}"><i class="fa fa-fw fa-eye"></i></a>

@@ -22,7 +22,8 @@ class TrabajoRequest extends FormRequest
     public function rules(): array
     {
         return [
-			'nombre' => 'required|string',
+            'nombre' => 'required|string',
+            'traducciones.en' => 'nullable|string',
         ];
     }
 }

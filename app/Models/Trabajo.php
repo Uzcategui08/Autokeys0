@@ -26,7 +26,35 @@ class Trabajo extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['id_trabajo', 'nombre'];
+    protected $fillable = ['id_trabajo', 'nombre', 'traducciones'];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'traducciones' => 'array'
+    ];
+
+    /**
+     * @param string $idioma 'es' o 'en'
+     * @return string
+     */
+    public function getNombreEnIdioma(string $idioma = 'es')
+    {
+        if (is_string($this->traducciones)) {
+            $traducciones = json_decode($this->traducciones, true);
+        } else {
+            $traducciones = $this->traducciones ?? [];
+        }
+
+        if (isset($traducciones[$idioma])) {
+            return $traducciones[$idioma];
+        }
+
+        return $idioma === 'en' ? $this->nombre . ' (No English Translation)' : $this->nombre;
+    }
 
 
 }
