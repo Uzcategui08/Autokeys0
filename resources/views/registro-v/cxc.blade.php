@@ -50,13 +50,14 @@
                                             foreach ($pagos as $pago) {
                                                 $metodo = $pago['metodo_pago'] ?? '';
                                                 $monto = isset($pago['monto']) ? number_format($pago['monto'], 2) : '0.00';
+                                                $cobrador = isset($pago['cobrador_id']) ? \App\Models\Empleado::find($pago['cobrador_id'])->nombre ?? 'Desconocido' : 'Desconocido';
                                                 
                                                 if (is_numeric($metodo)) {
                                                     $metodoObj = \App\Models\TiposDePago::find($metodo);
                                                     $nombreMetodo = $metodoObj ? $metodoObj->name : $metodo;
-                                                    $metodosPago[] = "$nombreMetodo (\$$monto)";
+                                                    $metodosPago[] = "$nombreMetodo (\$$monto) - Cobrado por: $cobrador";
                                                 } else {
-                                                    $metodosPago[] = "$metodo (\$$monto)";
+                                                    $metodosPago[] = "$metodo (\$$monto) - Cobrado por: $cobrador";
                                                 }
                                             }
 
@@ -108,7 +109,9 @@
                                                 @if(!empty($trabajos))
                                                     <div class="d-flex flex-wrap gap-1">
                                                         @foreach(array_slice($trabajos, 0, 2) as $trabajo)
-                                                            <span class="badge bg-info text-white">{{ $trabajo }}</span>
+                                                            <span class="badge bg-info text-white">
+                                                                {{ explode(' - ', $trabajo)[0] }}
+                                                            </span>
                                                         @endforeach
                                                         @if(count($trabajos) > 2)
                                                             <span class="badge bg-light text-dark">+{{ count($trabajos) - 2 }}</span>
@@ -121,15 +124,12 @@
                                             <td>
                                                 @if(!empty($metodosPago))
                                                     <div class="d-flex flex-column">
-                                                        @foreach(array_slice($metodosPago, 0, 2) as $metodo)
+                                                        @foreach($metodosPago as $metodo)
                                                             <small class="text-nowrap">
                                                                 <i class="fas fa-credit-card mr-1 text-primary"></i>
                                                                 {{ $metodo }}
                                                             </small>
                                                         @endforeach
-                                                        @if(count($metodosPago) > 2)
-                                                            <small class="text-muted">+{{ count($metodosPago) - 2 }} más</small>
-                                                        @endif
                                                     </div>
                                                 @else
                                                     <span class="badge bg-light text-muted">N/A</span>

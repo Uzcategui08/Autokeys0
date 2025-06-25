@@ -209,7 +209,7 @@ class CierreVentasSemanalController extends Controller
                 'empleados' => $empleados,
                 'cargasDescargas' => $cargasDescargas,
                 'totalCargas' => $cargasDescargas->where('es_carga', true)->sum('cantidad'),
-                'totalDescargas' => $cargasDescargas->where('es_carga', false)->sum('cantidad')
+                'totalDescargas' => $cargasDescargas->where('es_carga', true)->sum('cantidad')
             ],
             $totales
         ));
@@ -645,7 +645,7 @@ class CierreVentasSemanalController extends Controller
                 $metodoPagoKey = $transaccion['metodo_pago'] ?? null;
                 $resultados[] = [
                     'subcategoria' => $transaccion['tipo'] == 1 ? 'Salario Cerrajero' : 'Gastos Personal',
-                    'descripcion' => 'Pago a empleado',
+                    'descripcion' => 'Pago a empleado (Nómina)',
                     'metodo_pago' => $metodosPago[$metodoPagoKey] ?? ucfirst($metodoPagoKey) ?? 'Desconocido',
                     'total' => $transaccion['valor'],
                     'fecha_pago' => $transaccion['fecha']
@@ -733,7 +733,7 @@ class CierreVentasSemanalController extends Controller
                     'cantidad_nueva' => $ajuste->cantidad_nueva,
                     'motivo' => $ajuste->descripcion,
                     'fecha' => $ajuste->created_at->format('m/d/Y'),
-                    'es_carga' => in_array($ajuste->tipo_ajuste, ['compra', 'ajuste'])
+                    'es_carga' => in_array($ajuste->tipo_ajuste, ['ajuste2'])
                 ];
             });
     }

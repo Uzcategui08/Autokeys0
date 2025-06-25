@@ -116,7 +116,7 @@ class RegistroVController extends Controller
     {
         try {
             $trabajos = Trabajo::orderBy('nombre', 'asc')
-                ->get(['id_trabajo', 'nombre']);
+                ->get(['id_trabajo', 'nombre', 'traducciones']);
 
             return response()->json($trabajos);
         } catch (\Exception $e) {
@@ -226,7 +226,7 @@ class RegistroVController extends Controller
                         ];
 
                         $costo = Costo::create([
-                            'f_costos' => $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
+                            'f_costos' => $costoData['f_costos'],
                             'id_tecnico' => $request->input('id_empleado'),
                             'descripcion' => $costoData['descripcion'],
                             'subcategoria' => $costoData['subcategoria'],
@@ -258,7 +258,7 @@ class RegistroVController extends Controller
                         ];
 
                         $gasto = Gasto::create([
-                            'f_gastos' => $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
+                            'f_gastos' => $gastoData['f_gastos'],
                             'id_tecnico' => $request->input('id_empleado'),
                             'descripcion' => $gastoData['descripcion'],
                             'subcategoria' => $gastoData['subcategoria'],
@@ -590,7 +590,7 @@ class RegistroVController extends Controller
                         'subcategoria' => $costo->subcategoria,
                         'metodo_pago' => $pagosData[0]['metodo_pago'] ?? null,
                         'cobro' => $costo->estatus,
-                        'fecha' => $costo->f_costos
+                        'f_costos' => $costo->f_costos
                     ];
                 }
             }
@@ -621,7 +621,7 @@ class RegistroVController extends Controller
                         'subcategoria' => $gasto->subcategoria,
                         'metodo_pago' => $pagosData[0]['metodo_pago'] ?? null,
                         'estatus' => $gasto->estatus,
-                        'fecha' => $gasto->fecha
+                        'f_gastos' => $gasto->f_gastos
                     ];
                 }
             }
@@ -970,7 +970,8 @@ class RegistroVController extends Controller
                                         'subcategoria' => $costoData['subcategoria'],
                                         'estatus' => 'pagado',
                                         'pagos' => $pagoCosto,
-                                        'id_tecnico' => $request->input('id_empleado')
+                                        'id_tecnico' => $request->input('id_empleado'),
+                                        'f_costos' => $costoData['f_costos'],
                                     ]);
                                     $costosIds[] = $costo->id_costos;
                                     Log::debug("Costo actualizado", ['id_costo' => $costo->id_costos]);
@@ -980,7 +981,7 @@ class RegistroVController extends Controller
 
                             Log::debug("Creando nuevo costo");
                             $nuevoCosto = Costo::create([
-                                'f_costos' => $costoData['fecha'] ?? now()->format('Y-m-d'),
+                                'f_costos' => $costoData['f_costos'],
                                 'id_tecnico' => $request->input('id_empleado'),
                                 'descripcion' => $costoData['descripcion'],
                                 'subcategoria' => $costoData['subcategoria'],
@@ -1028,6 +1029,7 @@ class RegistroVController extends Controller
                                         'estatus' => 'pagado',
                                         'subcategoria' => $gastoData['subcategoria'],
                                         'pagos' => $pagoGasto,
+                                        'f_gastos' => $gastoData['f_gastos'],
                                         'id_empleado' => $request->input('id_empleado'),
                                         'id_registro_v' => $registroV->id
                                     ]);
@@ -1039,7 +1041,7 @@ class RegistroVController extends Controller
 
                             Log::debug("Creando nuevo gasto");
                             $nuevoGasto = Gasto::create([
-                                'f_gastos' => $gastoData['fecha'] ?? now()->format('Y-m-d'),
+                                'f_gastos' => $gastoData['f_gastos'],
                                 'id_tecnico' => $request->input('id_empleado'),
                                 'descripcion' => $gastoData['descripcion'],
                                 'subcategoria' => $gastoData['subcategoria'],
@@ -1223,6 +1225,13 @@ class RegistroVController extends Controller
         }
 
         foreach ($items as &$itemGroup) {
+            if (isset($itemGroup['trabajo_id'])) {
+                $trabajo = Trabajo::find($itemGroup['trabajo_id']);
+                if ($trabajo) {
+                    $itemGroup['trabajo'] = $trabajo->getNombreEnIdioma('es');
+                }
+            }
+
             if (!isset($itemGroup['productos']) || !is_array($itemGroup['productos'])) {
                 $itemGroup['productos'] = [];
             }
@@ -1283,6 +1292,17 @@ class RegistroVController extends Controller
         }
 
         foreach ($items as &$itemGroup) {
+
+            if (isset($itemGroup['trabajo_id'])) {
+                $trabajo = Trabajo::find($itemGroup['trabajo_id']);
+                if ($trabajo) {
+                    $nombreEnIngles = $trabajo->getNombreEnIdioma('en');
+                    \Log::info('Nombre del trabajo en inglés: ' . $nombreEnIngles);
+                    $itemGroup['trabajo'] = $nombreEnIngles;
+                }
+            }
+
+
             if (!isset($itemGroup['productos']) || !is_array($itemGroup['productos'])) {
                 $itemGroup['productos'] = [];
             }

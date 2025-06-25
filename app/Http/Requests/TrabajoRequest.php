@@ -23,7 +23,7 @@ class TrabajoRequest extends FormRequest
     {
         return [
             'nombre' => 'required|string',
-            'job' => 'nullable|string',
+            'traducciones.en' => 'nullable|string',
         ];
     }
 }
