@@ -12,20 +12,12 @@ use Carbon\Carbon;
         <div class="col-md-6">
             <form method="GET" class="form-inline">
                 <div class="form-group mr-2">
-                    <select name="month" class="form-control">
-                        @for($i=1; $i<=12; $i++)
-                            <option value="{{ $i }}" {{ $i == $monthSelected ? 'selected' : '' }}>
-                                {{ Carbon::create()->month($i)->monthName }}
-                            </option>
-                        @endfor
-                    </select>
+                    <label for="start_date" class="mr-2">Desde</label>
+                    <input type="date" name="start_date" id="start_date" class="form-control" value="{{ request('start_date', isset($startDate) ? $startDate : '') }}">
                 </div>
                 <div class="form-group mr-2">
-                    <select name="year" class="form-control">
-                        @for($i=date('Y'); $i>=date('Y')-5; $i--)
-                            <option value="{{ $i }}" {{ $i == $yearSelected ? 'selected' : '' }}>{{ $i }}</option>
-                        @endfor
-                    </select>
+                    <label for="end_date" class="mr-2">Hasta</label>
+                    <input type="date" name="end_date" id="end_date" class="form-control" value="{{ request('end_date', isset($endDate) ? $endDate : '') }}">
                 </div>
                 <button type="submit" class="btn btn-primary">Filtrar</button>
             </form>
@@ -49,12 +41,20 @@ use Carbon\Carbon;
                                 ${{ number_format($totales['utilidadGrande'], 2) }}
                             </span>
                         </span>
-                        <span class="badge badge-light" 
+                        <span class="badge badge-light mr-2" 
                               data-toggle="tooltip" 
                               title="Utilidad {{ $vanPequena }}">
                             {{ $vanPequena }}: 
                             <span class="text-{{ $totales['utilidadPequena'] >= 0 ? 'success' : 'danger' }}">
                                 ${{ number_format($totales['utilidadPequena'], 2) }}
+                            </span>
+                        </span>
+                        <span class="badge badge-light mr-2" 
+                              data-toggle="tooltip" 
+                              title="Suma de utilidades">
+                            Total: 
+                            <span class="text-{{ ($totales['utilidadGrande'] + $totales['utilidadPequena']) >= 0 ? 'success' : 'danger' }}">
+                                ${{ number_format($totales['utilidadGrande'] + $totales['utilidadPequena'], 2) }}
                             </span>
                         </span>
                     </div>

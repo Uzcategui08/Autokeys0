@@ -47,6 +47,8 @@
                                     <td class="text-center align-middle">
                                     @if($ajuste->tipo_ajuste == 'compra' || $ajuste->tipo_ajuste == 'ajuste')
                                             <span class="badge bg-success">Carga</span>
+                                        @elseif($ajuste->descripcion == 'Llave de venta')
+                                            <span class="badge bg-info">Llave de venta</span>
                                         @else
                                             <span class="badge bg-danger">Descarga</span>
                                         @endif

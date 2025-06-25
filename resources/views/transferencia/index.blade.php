@@ -32,6 +32,7 @@
                                     <tr>
 									<th >ID Transferencia</th>
 									<th >Producto</th>
+                                    <th >SKU</th>
 									<th >Almacen Origen</th>
 									<th >Almacen Destino</th>
 									<th >Cantidad</th>
@@ -44,7 +45,8 @@
                                     @foreach ($transferencias as $transferencia)
                                         <tr>
 										<td >{{ $transferencia->id_transferencia }}</td>
-										<td >{{ $transferencia->producto->item }}</td>
+										<td >{{ $transferencia->producto->id_producto }}</td>
+                                        <td >{{ $transferencia->producto->sku }}</td>
 										<td >{{ $transferencia->almacenOrigen->nombre }}</td>
 										<td >{{ $transferencia->almacenDestino->nombre }}</td>
 										<td >{{ $transferencia->cantidad }}</td>
@@ -52,7 +54,7 @@
 										<td >{{ $transferencia->observaciones }}</td>
 
                                             <td>
-                                                <form onsubmit="return confirmDelete(this)" action="{{ route('transferencias.destroy', $transferencia->id_transferencia) }}" method="POST" class="delete-form" style="display: flex; flex-direction: column; gap: 5px;">
+                                                <form onsubmit="return confirmDelete(this)" action="{{ route('transferencias.destroy', $transferencia->id_transferencia) }}" method="POST" class="delete-form" style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-danger btn-sm"> 

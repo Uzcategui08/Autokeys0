@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('trabajos', function (Blueprint $table) {
             $table->id('id_trabajo');
             $table->string('nombre');
+            $table->string('job')->nullable();
             $table->timestamps();
         });
     }

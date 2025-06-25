@@ -32,7 +32,7 @@
                                         <th>Métodos de Pago</th>
                                         <th>Titular</th>
                                         <th>Productos</th>
-                                        <th>Valor</th>
+                                        <th>Deuda</th>
                                         <th>Comisión</th>
                                         <th>Estado</th>
                                         <th>Acciones</th>
@@ -161,7 +161,13 @@
                                             </td>
                                             <td class="font-weight-bold text-success">
                                                 <i class="fas fa-dollar-sign mr-1"></i>
-                                                {{ number_format($registroV->valor_v, 2) }}
+                                                @php
+                                                    $totalPagado = collect($pagos)->sum(function($pago) {
+                                                        return isset($pago['monto']) ? floatval($pago['monto']) : 0;
+                                                    });
+                                                    $saldoPendiente = floatval($registroV->valor_v) - $totalPagado;
+                                                @endphp
+                                                {{ number_format($saldoPendiente, 2) }}
                                             </td>
                                             <td class="font-weight-bold text-primary">
                                                 <i class="fas fa-percentage mr-1"></i>

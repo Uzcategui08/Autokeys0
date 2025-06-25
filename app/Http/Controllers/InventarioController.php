@@ -31,6 +31,10 @@ class InventarioController extends Controller
             $query->where('id_almacen', $request->almacen_id);
         }
 
+        // Ordenar de menor a mayor, los ceros al final
+        $query->orderByRaw('CASE WHEN cantidad = 0 THEN 1 ELSE 0 END ASC')
+              ->orderBy('cantidad', 'ASC');
+
         $inventarios = $query->get();
 
         return response()->json([
@@ -40,8 +44,9 @@ class InventarioController extends Controller
 
     public function index(Request $request): View
     {
+        // Ordenar primero por cantidad = 0 al final, luego por cantidad ascendente
         $inventarios1 = Inventario::with(['producto', 'almacene'])
-            ->orderByRaw('CAST(cantidad AS NUMERIC) ASC')
+            ->orderByRaw('CASE WHEN cantidad::integer = 0 THEN 1 ELSE 0 END ASC, cantidad::integer ASC')
             ->get();
 
         $almacenes = Almacene::all();
@@ -91,9 +96,10 @@ class InventarioController extends Controller
         $query = AjusteInventario::with(['producto', 'almacene', 'user'])
             ->orderBy('created_at', 'desc');
 
-        // Si el usuario es limited_user, filtrar solo sus cargas
-        if (auth()->user()->hasRole('limited')) {
-            $query->where('user_id', auth()->id());
+        // Si el usuario está autenticado y es limited_user, filtrar solo sus cargas
+        $user = auth()->user();
+        if ($user && method_exists($user, 'hasRole') && $user->hasRole('limited')) {
+            $query->where('user_id', $user->id);
         }
 
         // Obtener todos los registros sin paginación
@@ -202,12 +208,37 @@ class InventarioController extends Controller
     }
 
     /**
-     * Elimina un ajuste de inventario (carga/descarga) por id
+     * Elimina un ajuste de inventario (carga/descarga) por id y revierte el cambio en el inventario
      */
     public function destroyAjuste($id)
     {
-        \App\Models\AjusteInventario::findOrFail($id)->delete();
+        $ajuste = \App\Models\AjusteInventario::findOrFail($id);
+        $inventario = \App\Models\Inventario::where('id_producto', $ajuste->id_producto)
+            ->where('id_almacen', $ajuste->id_almacen)
+            ->first();
+
+        if ($inventario) {
+            // Revertir el ajuste según el tipo
+            switch ($ajuste->tipo_ajuste) {
+                case 'compra':
+                case 'ajuste':
+                    // Si fue una suma, ahora restamos
+                    $inventario->cantidad = max(0, $inventario->cantidad - $ajuste->diferencia);
+                    break;
+                case 'resta':
+                case 'ajuste2':
+                    // Si fue una resta, ahora sumamos
+                    $inventario->cantidad = $inventario->cantidad + $ajuste->diferencia;
+                    break;
+                default:
+                    // Si hay otros tipos de ajuste en el futuro, no hacer nada
+                    break;
+            }
+            $inventario->save();
+        }
+
+        $ajuste->delete();
         return redirect()->route('inventario.cargas')
-            ->with('success', 'Ajuste de inventario eliminado correctamente.');
+            ->with('success', 'Ajuste de inventario eliminado correctamente y cantidad revertida.');
     }
 }

@@ -155,10 +155,12 @@ class RegistroVController extends Controller
     {
         DB::beginTransaction();
         Log::info('Iniciando transacción para crear registro de venta');
+        Log::debug('Datos recibidos en request', ['request' => $request->all()]);
 
         try {
             Log::info('Validando datos del request');
             $validatedData = $request->validated();
+            Log::debug('Datos validados', ['validatedData' => $validatedData]);
 
             $trabajos = [];
             Log::info('Procesando items de trabajos');
@@ -183,8 +185,7 @@ class RegistroVController extends Controller
                             foreach ($item['productos'] as $productoIndex => $producto) {
                                 if (!empty($producto['producto'])) {
                                     Log::debug("Restando inventario para producto {$productoIndex}", ['producto' => $producto]);
-                                    $this->restarInventario($producto['producto'], $producto['cantidad'], $producto['almacen']);
-
+                                    $this->restarInventario($producto['producto'], $producto['cantidad'], $producto['almacen'], $validatedData['fecha_h'] ?? now()->format('Y-m-d'));
                                     $productos[] = [
                                         'producto' => $producto['producto'],
                                         'cantidad' => $producto['cantidad'],
@@ -323,7 +324,11 @@ class RegistroVController extends Controller
 
             Log::info('Creando registro de venta');
             $registroV = RegistroV::create($validatedData);
-            Log::debug('Registro de venta creado', ['registro_id' => $registroV->id]);
+            Log::debug('Registro de venta creado', ['registro_id' => $registroV->id, 'registro' => $registroV]);
+            if (!$registroV || !$registroV->id) {
+                Log::error('No se pudo crear el registro de venta.');
+                throw new \Exception('No se pudo crear el registro de venta.');
+            }
 
             Log::info('Creando abono asociado');
             $abono = Abono::create([
@@ -822,7 +827,7 @@ class RegistroVController extends Controller
         }
     }
 
-    private function restarInventario($productoId, $cantidad, $almacenId = null)
+    private function restarInventario($productoId, $cantidad, $almacenId = null, $fecha = null)
     {
         $query = Inventario::where('id_producto', $productoId);
         if ($almacenId) {
@@ -831,11 +836,23 @@ class RegistroVController extends Controller
         $inventario = $query->first();
 
         if ($inventario) {
-            $nuevaCantidad = $inventario->cantidad - $cantidad;
+            $cantidadAnterior = $inventario->cantidad;
+            $nuevaCantidad = $cantidadAnterior - $cantidad;
             if ($nuevaCantidad < 0) {
                 throw new \Exception("No hay suficiente stock para el producto $productoId");
             }
             $inventario->update(['cantidad' => $nuevaCantidad]);
+
+            // Registrar ajuste de inventario tipo "Llave de venta"
+            \App\Models\AjusteInventario::create([
+                'id_producto' => $productoId,
+                'id_almacen' => $almacenId ?? $inventario->id_almacen,
+                'tipo_ajuste' => 'resta',
+                'cantidad_anterior' => $cantidadAnterior,
+                'cantidad_nueva' => $nuevaCantidad,
+                'descripcion' => $fecha,
+                'user_id' => Auth::id(),
+            ]);
         } else {
             throw new \Exception("El producto $productoId no existe en el inventario" . ($almacenId ? " para el almacén $almacenId" : ""));
         }
@@ -1398,7 +1415,7 @@ class RegistroVController extends Controller
                 }
                 return [
                     'id' => $venta->id,
-                    'fecha' => $venta->fecha_h->format('d/m/Y'),
+                    'fecha' => \Carbon\Carbon::parse($venta->fecha_h)->format('d/m/Y'),
                     'total_venta' => (float) $venta->valor_v,
                     'total_pagado' => (float) $totalPagado,
                     'saldo_pendiente' => (float) ($venta->valor_v - $totalPagado),

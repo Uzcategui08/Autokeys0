@@ -16,17 +16,24 @@ class VanesController extends Controller
 
     public function index(Request $request)
     {
-        // Definir los lugares de venta
         $vanGrande = 'Van Grande-Pulga';
         $vanPequena = 'Van Pequeña-Pulga';
 
-        // Obtener mes y año seleccionados (si existen)
-        $monthSelected = $request->input('month', Carbon::now()->month);
-        $yearSelected = $request->input('year', Carbon::now()->year);
+        // Obtener fechas de filtro
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
 
-        // Procesar ventas por van con filtro de fecha
-        $ventasVanGrande = $this->procesarVentasPorVan($vanGrande, $monthSelected, $yearSelected);
-        $ventasVanPequena = $this->procesarVentasPorVan($vanPequena, $monthSelected, $yearSelected);
+        // Si no hay fechas, usar mes/año actual como fallback
+        if (!$startDate || !$endDate) {
+            $monthSelected = $request->input('month', Carbon::now()->month);
+            $yearSelected = $request->input('year', Carbon::now()->year);
+            $startDate = Carbon::create($yearSelected, $monthSelected, 1)->format('Y-m-d');
+            $endDate = Carbon::create($yearSelected, $monthSelected, 1)->endOfMonth()->format('Y-m-d');
+        }
+
+        // Procesar ventas por van con filtro de fechas
+        $ventasVanGrande = $this->procesarVentasPorVan($vanGrande, $startDate, $endDate);
+        $ventasVanPequena = $this->procesarVentasPorVan($vanPequena, $startDate, $endDate);
 
         // Obtener IDs de gastos y costos asociados a cada van
         $gastoIdsGrande = $ventasVanGrande['ventas']->flatMap(function ($venta) {
@@ -72,8 +79,8 @@ class VanesController extends Controller
         $porcentajeCerrajeroPequena = $ventasVanPequena['ventas']->sum('porcentaje_c');
 
         $llavesPorTecnico = $this->procesarLlavesPorTecnico(
-            $monthSelected,
-            $yearSelected,
+            $startDate,
+            $endDate,
             [$vanGrande, $vanPequena]
         );
 
@@ -122,19 +129,19 @@ class VanesController extends Controller
             'porcentajeCerrajeroGrande',
             'porcentajeCerrajeroPequena',
             'totales',
-            'monthSelected',
-            'yearSelected'
+            'startDate',
+            'endDate'
         ));
     }
 
-    private function procesarVentasPorVan($van, $month = null, $year = null)
+    private function procesarVentasPorVan($van, $startDate = null, $endDate = null)
     {
         $query = RegistroV::with('empleado')
             ->where('lugarventa', $van);
 
-        if ($month && $year) {
-            $query->whereMonth('fecha_h', $month)
-                ->whereYear('fecha_h', $year);
+        if ($startDate && $endDate) {
+            $query->whereDate('fecha_h', '>=', $startDate)
+                ->whereDate('fecha_h', '<=', $endDate);
         }
 
         $ventas = $query->orderBy('fecha_h', 'desc')->get();
@@ -221,18 +228,22 @@ class VanesController extends Controller
         return $query->orderBy('f_costos', 'desc')->get();
     }
 
-    private function procesarLlavesPorTecnico($month, $year, $lugaresVenta = [])
+    private function procesarLlavesPorTecnico($startDate, $endDate, $lugaresVenta = [])
     {
-        return Empleado::with(['ventas' => function ($query) use ($month, $year, $lugaresVenta) {
-            $query->whereMonth('fecha_h', $month)
-                ->whereYear('fecha_h', $year);
+        return Empleado::with(['ventas' => function ($query) use ($startDate, $endDate, $lugaresVenta) {
+            if ($startDate && $endDate) {
+                $query->whereDate('fecha_h', '>=', $startDate)
+                    ->whereDate('fecha_h', '<=', $endDate);
+            }
             if (!empty($lugaresVenta)) {
                 $query->whereIn('lugarventa', $lugaresVenta);
             }
         }])
-            ->whereHas('ventas', function ($query) use ($month, $year, $lugaresVenta) {
-                $query->whereMonth('fecha_h', $month)
-                    ->whereYear('fecha_h', $year);
+            ->whereHas('ventas', function ($query) use ($startDate, $endDate, $lugaresVenta) {
+                if ($startDate && $endDate) {
+                    $query->whereDate('fecha_h', '>=', $startDate)
+                        ->whereDate('fecha_h', '<=', $endDate);
+                }
                 if (!empty($lugaresVenta)) {
                     $query->whereIn('lugarventa', $lugaresVenta);
                 }

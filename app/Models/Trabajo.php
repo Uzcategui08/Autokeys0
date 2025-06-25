@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Trabajo extends Model
 {
-    
+
     protected $perPage = 20;
     protected $primaryKey = 'id_trabajo';
 
@@ -26,7 +26,5 @@ class Trabajo extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['id_trabajo', 'nombre'];
-
-
+    protected $fillable = ['id_trabajo', 'nombre', 'job'];
 }

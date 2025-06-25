@@ -264,6 +264,7 @@ $(document).ready(function() {
                     dataTable = $('#inventario-table').DataTable({
                         responsive: true,
                         autoWidth: false,
+                        ordering: false,
                         order: [[3, 'asc']],
                         language: {
                             url: '//cdn.datatables.net/plug-ins/1.10.20/i18n/Spanish.json'

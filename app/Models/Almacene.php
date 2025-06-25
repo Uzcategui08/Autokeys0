@@ -32,4 +32,10 @@ class Almacene extends Model
      * @var array<int, string>
      */
     protected $fillable = ['nombre'];
+
+
+    public function inventarios()
+    {
+        return $this->hasMany(Inventario::class, 'id_almacen', 'id_almacen');
+    }
 }

@@ -32,6 +32,15 @@
             margin: 1mm 0;
             font-size: 10px;
         }
+        .header-logo {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #ccc;
+            display: block;
+            margin: 0 auto 8px auto;
+        }
         .info-table {
             width: 100%;
             border-collapse: collapse;
@@ -144,7 +153,7 @@
 <body>
     <div class="recibo-container">
         <div class="header">
-            <div class="divider"></div>
+            <img src="{{ public_path('/images/AutoFondo.jpeg') }}" alt="Logo" class="header-logo" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #ccc;display:block;margin:0 auto 8px auto;">
             <h2>RECIBO DE VENTA</h2>
             <p>N° {{ $registroV->id }}</p>
             <p>Fecha: {{ \Carbon\Carbon::parse($registroV->fecha_h)->format('m/d/Y') }}</p>

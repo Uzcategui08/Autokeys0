@@ -144,6 +144,7 @@
 <body>
     <div class="recibo-container">
         <div class="header">
+            <img src="{{ public_path('/images/AutoFondo.jpeg') }}" alt="Logo" class="header-logo" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #ccc;display:block;margin:0 auto 8px auto;">
             <div class="divider"></div>
             <h2>SALES RECEIPT</h2>
             <p>No. {{ $registroV->id }}</p>
@@ -200,9 +201,9 @@
         </table>
 
         @foreach($items as $itemGroup)
-            @if(isset($itemGroup['trabajo']) && isset($itemGroup['productos']))
-                <div class="titulo-trabajo" style="margin-top: 15px; margin-bottom: 5px;">
-                    <strong>{{ $itemGroup['trabajo'] }}</strong>
+            @if((isset($itemGroup['job']) || isset($itemGroup['trabajo']) || isset($itemGroup['trabajo_nombre'])) && isset($itemGroup['productos']))
+                <div class="titulo-job" style="margin-top: 15px; margin-bottom: 5px;">
+                    <strong>{{ $itemGroup['job'] ?? $itemGroup['trabajo'] ?? $itemGroup['trabajo_nombre'] ?? '' }}</strong>
                 </div>
 
                 @if(isset($itemGroup['descripcion']) && $itemGroup['descripcion'])
