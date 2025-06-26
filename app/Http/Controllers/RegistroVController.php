@@ -1438,7 +1438,6 @@ class RegistroVController extends Controller
         $language = $request->language ?? 'es';
 
         $query = RegistroV::whereBetween('fecha_h', [$fechaDesde, $fechaHasta])
-            ->where('tipo_venta', 'credito')
             ->with(['cliente']);
 
         if ($clienteId) {
@@ -1478,7 +1477,17 @@ class RegistroVController extends Controller
                             foreach ($itemsData as $item) {
                                 $item = (object) $item;
                                 $items[] = (object) [
-                                    'trabajo' => $item->trabajo ?? $item->trabajo_nombre ?? ($language === 'en' ? 'Unspecified work' : 'Trabajo no especificado'),
+                                    'trabajo' => (function() use ($item, $language) {
+                                        $trabajoNombre = $item->trabajo ?? $item->trabajo_nombre ?? null;
+                                        if (isset($item->trabajo_id)) {
+                                            $trabajoModel = \App\Models\Trabajo::find($item->trabajo_id);
+                                            if ($trabajoModel && method_exists($trabajoModel, 'getNombreEnIdioma')) {
+                                                return $trabajoModel->getNombreEnIdioma($language);
+                                            }
+                                        }
+                                        return $trabajoNombre ?? ($language === 'en' ? 'Unspecified work' : 'Trabajo no especificado');
+                                    })(),
+                                    'precio_trabajo' => $item->precio_trabajo ?? ($language === 'en' ? 'Unspecified price' : 'Precio no especificado'),
                                     'descripcion' => $item->descripcion ?? null,
                                     'productos' => isset($item->productos) ? array_map(function ($p) use ($language) {
                                         $p = (object) $p;
@@ -1494,6 +1503,7 @@ class RegistroVController extends Controller
 
                     return (object) [
                         'id' => $venta->id,
+                        'id_empleado' => $venta->id_empleado,
                         'fecha_h' => $venta->fecha_h,
                         'valor_v' => $venta->valor_v,
                         'total_pagado' => $totalPagadoVenta,
