@@ -91,10 +91,27 @@ class EstadisticasVentasController extends Controller
 
     protected function evolucionFacturacion()
     {
-        $currentMonthFact = $this->facturacionDelMes();
+        // Mes actual: suma de trabajos (items)
+        $registros_mes_actual = RegistroV::whereYear('fecha_h', $this->year)
+            ->whereMonth('fecha_h', $this->month)
+            ->get()
+            ->sum(function ($registro) {
+                $items = is_array($registro->items) ? $registro->items : (json_decode($registro->items, true) ?? []);
+                return is_array($items) ? count($items) : 0;
+            });
+        // Mes anterior: conteo de registros
         $lastMonth = Carbon::create($this->year, $this->month, 1)->subMonth();
-        $lastMonthFact = (new self($lastMonth->month, $lastMonth->year))->facturacionDelMes();
-        return $lastMonthFact == 0 ? 0 : ($currentMonthFact / $lastMonthFact) * 100;
+        $registros_mes_anterior = RegistroV::whereYear('fecha_h', $lastMonth->year)
+            ->whereMonth('fecha_h', $lastMonth->month)
+            ->count();
+        // Diferencia porcentual
+        $diferencia = 0;
+        if ($registros_mes_anterior > 0) {
+            $diferencia = (($registros_mes_actual - $registros_mes_anterior) / $registros_mes_anterior) * 100;
+        } elseif ($registros_mes_actual > 0) {
+            $diferencia = 100;
+        }
+        return round($diferencia, 2);
     }
 
     protected function numeroTransacciones()
@@ -199,13 +216,32 @@ class EstadisticasVentasController extends Controller
                 ->whereMonth('f_gastos', $this->month)
                 ->where('subcategoria', $subcategoria)
                 ->sum('valor');
-
+            // Buscar el nombre real de la subcategoría
+            $nombreSubcategoria = \App\Models\Categoria::find($subcategoria)?->nombre ?? $subcategoria;
             $gastosPorSubcategoria[] = [
-                'nombre' => $subcategoria, // Usamos directamente el nombre de la subcategoría
+                'nombre' => $nombreSubcategoria,
                 'total' => $total,
                 'porcentaje' => $this->calcularPorcentaje($total, $facturacion)
             ];
         }
+
+        // Calcular total de trabajos como en getResumenTrabajos
+        $ventas = RegistroV::whereYear('fecha_h', $this->year)
+            ->whereMonth('fecha_h', $this->month)
+            ->get(['items']);
+        $trabajos = collect();
+        foreach ($ventas as $venta) {
+            $items = is_array($venta->items) ? $venta->items : (json_decode($venta->items, true) ?? []);
+            foreach ($items as $item) {
+                $trabajoKey = $item['trabajo'] ?? 'Sin especificar';
+                if (!$trabajos->has($trabajoKey)) {
+                    $trabajos->put($trabajoKey, 0);
+                }
+                $trabajos->put($trabajoKey, $trabajos->get($trabajoKey) + 1);
+            }
+        }
+        $totalTrabajos = $trabajos->sum();
+
         return [
             // Datos básicos
             'month' => $this->month,
@@ -216,7 +252,7 @@ class EstadisticasVentasController extends Controller
                 'cobrado_mes' => $this->cobradoDelMes(),
                 'facturacion' => $facturacion,
                 'evolucion_facturacion' => $this->evolucionFacturacion(),
-                'num_transacciones' => $this->numeroTransacciones(),
+                'num_transacciones' => $totalTrabajos, // Mostrar la suma de trabajos
                 'ticket_promedio' => $this->ticketPromedio(),
             ],
 
