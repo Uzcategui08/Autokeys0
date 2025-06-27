@@ -227,9 +227,7 @@
             <!-- Work details -->
             @foreach($venta->items as $itemGroup)
             <div class="trabajo-info">
-                <div class="trabajo-nombre">
-                    {{ $itemGroup->job ?? $itemGroup->trabajo ?? '' }}
-                </div>
+                <div class="trabajo-nombre">{{ $itemGroup->trabajo }} - ${{ $itemGroup->precio_trabajo }}</div>
                 @if($itemGroup->descripcion)
                 <div class="trabajo-descripcion">{{ $itemGroup->descripcion }}</div>
                 @endif
