@@ -173,8 +173,15 @@
         </div>
 
         @foreach($data as $item)
-        <div class="cliente-header">
-            {{ $item->cliente }}
+        @php
+            $cliente = \App\Models\Cliente::where('nombre', $item->cliente)->first();
+        @endphp
+        <div class="cliente-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>{{ $item->cliente }}</span> -
+            <span style="font-weight: normal; font-size: 11px;">
+                Phone: {{ $item->telefono ?? 'n/a' }} &nbsp; | &nbsp; 
+                Address: {{ $cliente ? $cliente->direccion : 'n/a' }}
+            </span>
         </div>
         
         @foreach($item->ventas as $venta)
@@ -183,6 +190,7 @@
                 <thead>
                     <tr>
                         <th width="15%">Invoice #{{ $venta->id }}</th>
+                        <th width="15%">Technician</th>
                         <th width="15%">Date</th>
                         <th width="20%" class="text-right">Amount</th>
                         <th width="20%" class="text-right">Paid</th>
@@ -193,6 +201,12 @@
                 <tbody>
                     <tr>
                         <td></td>
+                        <td>
+                            {{
+                                optional(\App\Models\Empleado::find($venta->id_empleado))->nombre
+                                ?? 'n/a'
+                            }}
+                        </td>
                         <td>{{ \Carbon\Carbon::parse($venta->fecha_h)->format('m/d/Y') }}</td>
                         <td class="text-right">${{ number_format($venta->valor_v, 2) }}</td>
                         <td class="text-right">${{ number_format($venta->total_pagado, 2) }}</td>
