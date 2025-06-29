@@ -161,11 +161,7 @@
                         </tr>
                         <tr>
                             <td class="info-label">Phone:</td>
-                            <td class="info-value">{{ $registroV->telefono ?? 'N/A' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="info-label">Address:</td>
-                            <td class="info-value">{{ $registroV->direccion ?? 'N/A' }}</td>
+                            <td class="info-value">{{ $registroV->telefono }}</td>
                         </tr>
                         @if($registroV->marca || $registroV->modelo || $registroV->año)
                         <tr>

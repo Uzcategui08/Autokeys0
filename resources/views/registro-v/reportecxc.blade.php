@@ -181,8 +181,8 @@
         <div class="cliente-header" style="display: flex; justify-content: space-between; align-items: center;">
             <span>{{ $item->cliente }}</span> -
             <span style="font-weight: normal; font-size: 11px;">
-                Tel: {{ $item->telefono ?? 'N/A' }} &nbsp; | &nbsp; 
-                Dir: {{ $cliente ? $cliente->direccion : 'N/A' }}
+                Tel: {{ $item->telefono ?? 'n/a' }} &nbsp; | &nbsp; 
+                Dir: {{ $cliente ? $cliente->direccion : 'n/a' }}
             </span>
         </div>
         

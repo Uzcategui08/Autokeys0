@@ -167,7 +167,6 @@
                                     <tr>
                                         <th>Cliente</th>
                                         <th>Teléfono</th>
-                                        <th>Dirección</th>
                                         <th class="text-right">Total Ventas</th>
                                         <th class="text-right">Total Pagado</th>
                                         <th class="text-right">Saldo Pendiente</th>
@@ -178,8 +177,7 @@
                                     @foreach($resumenClientes as $cliente)
                                         <tr>
                                             <td>{{ $cliente->cliente }}</td>
-                                            <td>{{ $cliente->telefono ?? 'N/A' }}</td>
-                                            <td>{{ $cliente->direccion ?? 'N/A' }}</td>
+                                            <td>{{ $cliente->telefono }}</td>
                                             <td class="text-right">${{ number_format($cliente->total_ventas_monto, 2) }}</td>
                                             <td class="text-right">${{ number_format($cliente->total_pagado, 2) }}</td>
                                             <td class="text-right">${{ number_format($cliente->saldo_pendiente, 2) }}</td>
