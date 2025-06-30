@@ -33,7 +33,7 @@ class InventarioController extends Controller
 
         // Ordenar de menor a mayor, los ceros al final
         $query->orderByRaw('CASE WHEN cantidad = 0 THEN 1 ELSE 0 END ASC')
-              ->orderBy('cantidad', 'ASC');
+            ->orderBy('cantidad', 'ASC');
 
         $inventarios = $query->get();
 
@@ -183,7 +183,6 @@ class InventarioController extends Controller
             'id_almacen' => $inventario->id_almacen,
             'tipo_ajuste' => $request->tipo_ajuste,
             'cantidad_anterior' => $cantidadAnterior,
-            'diferencia' => $cantidadAjuste,
             'cantidad_nueva' => $nuevaCantidad,
             'descripcion' => $request->descripcion,
             'user_id' => Auth::id(),
@@ -218,21 +217,10 @@ class InventarioController extends Controller
             ->first();
 
         if ($inventario) {
-            // Revertir el ajuste según el tipo
-            switch ($ajuste->tipo_ajuste) {
-                case 'compra':
-                case 'ajuste':
-                    // Si fue una suma, ahora restamos
-                    $inventario->cantidad = max(0, $inventario->cantidad - $ajuste->diferencia);
-                    break;
-                case 'resta':
-                case 'ajuste2':
-                    // Si fue una resta, ahora sumamos
-                    $inventario->cantidad = $inventario->cantidad + $ajuste->diferencia;
-                    break;
-                default:
-                    // Si hay otros tipos de ajuste en el futuro, no hacer nada
-                    break;
+            // Revertir el ajuste usando la diferencia calculada
+            $inventario->cantidad -= $ajuste->diferencia;
+            if ($inventario->cantidad < 0) {
+                $inventario->cantidad = 0;
             }
             $inventario->save();
         }

@@ -21,10 +21,11 @@ class ClienteRequest extends FormRequest
      */
     public function rules(): array
     {
+
         return [
-			'nombre' => 'required|string',
-			'telefono' => 'required|string',
-			'direccion' => 'required|string',
+            'nombre' => 'required|string',
+            'telefono' => 'nullable|string',
+            'direccion' => 'nullable|string',
         ];
     }
 }

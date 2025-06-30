@@ -22,6 +22,7 @@ use Carbon\Carbon;
                 <button type="submit" class="btn btn-primary">Filtrar</button>
             </form>
         </div>
+
     </div>
 @stop
 
@@ -398,7 +399,7 @@ use Carbon\Carbon;
                                     <tbody>
                                         @forelse($gastosVanGrande as $gasto)
                                         <tr>
-                                            <td>{{ Carbon::parse($gasto->f_gastos)->format('d/m/Y') }}</td>
+                                            <td>{{ Carbon::parse($gasto->f_gastos)->format('m/d/Y') }}</td>
                                             <td>{{ $gasto->descripcion }}</td>
                                             <td>${{ number_format($gasto->valor, 2) }}</td>
                                             <td>
@@ -430,7 +431,7 @@ use Carbon\Carbon;
                                     <tbody>
                                         @forelse($gastosVanPequena as $gasto)
                                         <tr>
-                                            <td>{{ Carbon::parse($gasto->f_gastos)->format('d/m/Y') }}</td>
+                                            <td>{{ Carbon::parse($gasto->f_gastos)->format('m/d/Y') }}</td>
                                             <td>{{ $gasto->descripcion }}</td>
                                             <td>${{ number_format($gasto->valor, 2) }}</td>
                                             <td>
@@ -488,7 +489,7 @@ use Carbon\Carbon;
                                     <tbody>
                                         @forelse($costosVanGrande as $costo)
                                         <tr>
-                                            <td>{{ Carbon::parse($costo->f_costos)->format('d/m/Y') }}</td>
+                                            <td>{{ Carbon::parse($costo->f_costos)->format('m/d/Y') }}</td>
                                             <td>{{ $costo->descripcion }}</td>
                                             <td>${{ number_format($costo->valor, 2) }}</td>
                                         </tr>
@@ -514,7 +515,7 @@ use Carbon\Carbon;
                                     <tbody>
                                         @forelse($costosVanPequena as $costo)
                                         <tr>
-                                            <td>{{ Carbon::parse($costo->f_costos)->format('d/m/Y') }}</td>
+                                            <td>{{ Carbon::parse($costo->f_costos)->format('m/d/Y') }}</td>
                                             <td>{{ $costo->descripcion }}</td>
                                             <td>${{ number_format($costo->valor, 2) }}</td>
                                         </tr>
