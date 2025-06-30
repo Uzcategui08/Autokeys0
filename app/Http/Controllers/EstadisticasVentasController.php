@@ -75,7 +75,16 @@ class EstadisticasVentasController extends Controller
         foreach ($registros as $registro) {
             if ($registro->pagos) {
                 foreach ($registro->pagos as $pago) {
-                    $total += $pago['monto'];
+                    // Filtrar por fecha de pago dentro del mes y año seleccionados
+                    if (isset($pago['fecha_pago'])) {
+                        $fechaPago = Carbon::parse($pago['fecha_pago']);
+                        if ($fechaPago->year == $this->year && $fechaPago->month == $this->month) {
+                            $total += $pago['monto'];
+                        }
+                    } else {
+                        // Si no hay fecha de pago, asumir que corresponde al registro (comportamiento anterior)
+                        $total += $pago['monto'];
+                    }
                 }
             }
         }
@@ -123,8 +132,21 @@ class EstadisticasVentasController extends Controller
 
     protected function ticketPromedio()
     {
-        $transacciones = $this->numeroTransacciones();
-        return $transacciones == 0 ? 0 : $this->facturacionDelMes() / $transacciones;
+        // Solo considerar ventas con items válidos
+        $ventas = RegistroV::whereYear('fecha_h', $this->year)
+            ->whereMonth('fecha_h', $this->month)
+            ->get(['items', 'valor_v']);
+        $totalTrabajos = 0;
+        $totalFacturacion = 0;
+        foreach ($ventas as $venta) {
+            $items = is_array($venta->items) ? $venta->items : (json_decode($venta->items, true) ?? []);
+            $numItems = is_array($items) ? count($items) : 0;
+            if ($numItems > 0) {
+                $totalTrabajos += $numItems;
+                $totalFacturacion += $venta->valor_v;
+            }
+        }
+        return $totalTrabajos == 0 ? 0 : $totalFacturacion / $totalTrabajos;
     }
 
     // Métodos para costos y gastos
@@ -270,9 +292,6 @@ class EstadisticasVentasController extends Controller
                 'total_gastos' => $this->totalGastos(),
                 'porcentaje_gastos' => $this->calcularPorcentaje($this->totalGastos(), $facturacion)
             ],
-
-
-
             // Resultados finales
             'resultados' => [
                 'utilidad_neta' => $utilidadNeta,
