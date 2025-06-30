@@ -322,6 +322,17 @@ class RegistroVController extends Controller
                 $validatedData['pagos'] = json_encode([]);
             }
 
+            // Guardar el id_cliente en el campo id_cliente y opcionalmente el nombre en cliente
+            $validatedData['id_cliente'] = $request->input('cliente');
+            if ($validatedData['id_cliente']) {
+                $clienteObj = Cliente::find($validatedData['id_cliente']);
+                $validatedData['cliente'] = $clienteObj ? $clienteObj->nombre : null;
+                $validatedData['telefono'] = $clienteObj ? $clienteObj->telefono : null;
+            } else {
+                $validatedData['cliente'] = null;
+                $validatedData['telefono'] = null;
+            }
+
             Log::info('Creando registro de venta');
             $registroV = RegistroV::create($validatedData);
             Log::debug('Registro de venta creado', ['registro_id' => $registroV->id, 'registro' => $registroV]);
@@ -1494,7 +1505,7 @@ class RegistroVController extends Controller
                             foreach ($itemsData as $item) {
                                 $item = (object) $item;
                                 $items[] = (object) [
-                                    'trabajo' => (function() use ($item, $language) {
+                                    'trabajo' => (function () use ($item, $language) {
                                         $trabajoNombre = $item->trabajo ?? $item->trabajo_nombre ?? null;
                                         if (isset($item->trabajo_id)) {
                                             $trabajoModel = \App\Models\Trabajo::find($item->trabajo_id);

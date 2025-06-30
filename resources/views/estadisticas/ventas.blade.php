@@ -114,7 +114,7 @@
                                 <small class="text-muted">
                                     {{ number_format($stats['costos']['porcentaje_utilidad_bruta'], 2) }}% de facturación<br>
                                     Costo venta: ${{ number_format($stats['costos']['total_costo_venta'], 2) }}<br>
-                                    ({{ number_format($stats['costos']['porcentaje_costo_venta'], 2) }}%)
+                                    ({{ number_format($stats['costos']['porcentaje_costo_venta'], 2) }})
                                 </small>
                             </p>
                         </div>
