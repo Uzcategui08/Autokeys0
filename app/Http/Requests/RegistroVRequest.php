@@ -24,8 +24,7 @@ class RegistroVRequest extends FormRequest
         return [
             'fecha_h' => 'required',
             'id_empleado' => 'required|exists:empleados,id_empleado',
-            'cliente' => 'required|string',
-            'telefono' => 'required|string',
+            'id_cliente' => 'required|exists:clientes,id_cliente',
             'valor_v' => 'required',
             'estatus' => 'required|string',
             'titular_c' => 'required|string',

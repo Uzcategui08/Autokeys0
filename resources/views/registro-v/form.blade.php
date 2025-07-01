@@ -144,25 +144,18 @@
                             <div class="row">
                                 <div class="col-md-8">
                                     <label for="id_cliente" class="form-label">{{ __('Cliente') }}</label>
-                                    <select name="cliente" id="id_cliente" class="form-control select2 @error('id_cliente') is-invalid @enderror">
+                                    <select name="id_cliente" id="id_cliente" class="form-control select2 @error('id_cliente') is-invalid @enderror">
                                         <option value="">{{ __('Seleccione un cliente') }}</option>
                                         @foreach($clientes as $cliente)
                                         <option value="{{ $cliente->id_cliente }}"
-                                            data-telefono="{{ $cliente->telefono }}"
-                                            {{ old('cliente', $registroV?->cliente) == $cliente->id_cliente ? 'selected' : '' }}>
+                                            {{ old('id_cliente', $registroV?->id_cliente) == $cliente->id_cliente ? 'selected' : '' }}>
                                             {{ $cliente->nombre }} {{ $cliente->apellido ?? '' }}
                                         </option>
                                         @endforeach
                                     </select>
                                     {!! $errors->first('cliente', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                                 </div>
-
-                                <div class="col-md-4">
-                                    <label for="telefono" class="form-label">{{ __('Teléfono') }}</label>
-                                    <input type="text" name="telefono" class="form-control @error('telefono') is-invalid @enderror"
-                                        id="telefono" placeholder="Teléfono" readonly>
-                                    {!! $errors->first('telefono', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
-                                </div>
+                                <!-- Teléfono eliminado -->
                             </div>
                         </div>
                     </div>
@@ -732,17 +725,7 @@ $(document).ready(function() {
         allowClear: true
     });
 
-    const telefonoInput = document.getElementById('telefono');
-
-    $('#id_cliente').on('change', function() {
-        const selectedOption = $(this).find(':selected');
-        telefonoInput.value = selectedOption.data('telefono') || '';
-    });
-
-    if ($('#id_cliente').val()) {
-        const initialOption = $('#id_cliente').find(':selected');
-        telefonoInput.value = initialOption.data('telefono') || '';
-    }
+    // Código relacionado con teléfono eliminado
 
 
     /**************************************

@@ -116,7 +116,7 @@ class RegistroVController extends Controller
     {
         try {
             $trabajos = Trabajo::orderBy('nombre', 'asc')
-                ->get(['id_trabajo', 'nombre', 'traducciones']);
+                ->get(['id_trabajo', 'nombre']);
 
             return response()->json($trabajos);
         } catch (\Exception $e) {
@@ -155,12 +155,10 @@ class RegistroVController extends Controller
     {
         DB::beginTransaction();
         Log::info('Iniciando transacción para crear registro de venta');
-        Log::debug('Datos recibidos en request', ['request' => $request->all()]);
 
         try {
             Log::info('Validando datos del request');
             $validatedData = $request->validated();
-            Log::debug('Datos validados', ['validatedData' => $validatedData]);
 
             $trabajos = [];
             Log::info('Procesando items de trabajos');
@@ -185,7 +183,8 @@ class RegistroVController extends Controller
                             foreach ($item['productos'] as $productoIndex => $producto) {
                                 if (!empty($producto['producto'])) {
                                     Log::debug("Restando inventario para producto {$productoIndex}", ['producto' => $producto]);
-                                    $this->restarInventario($producto['producto'], $producto['cantidad'], $producto['almacen'], $validatedData['fecha_h'] ?? now()->format('Y-m-d'));
+                                    $this->restarInventario($producto['producto'], $producto['cantidad'], $producto['almacen']);
+
                                     $productos[] = [
                                         'producto' => $producto['producto'],
                                         'cantidad' => $producto['cantidad'],
@@ -226,7 +225,7 @@ class RegistroVController extends Controller
                         ];
 
                         $costo = Costo::create([
-                            'f_costos' => $costoData['f_costos'],
+                            'f_costos' => $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
                             'id_tecnico' => $request->input('id_empleado'),
                             'descripcion' => $costoData['descripcion'],
                             'subcategoria' => $costoData['subcategoria'],
@@ -258,7 +257,7 @@ class RegistroVController extends Controller
                         ];
 
                         $gasto = Gasto::create([
-                            'f_gastos' => $gastoData['f_gastos'],
+                            'f_gastos' => $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
                             'id_tecnico' => $request->input('id_empleado'),
                             'descripcion' => $gastoData['descripcion'],
                             'subcategoria' => $gastoData['subcategoria'],
@@ -322,24 +321,13 @@ class RegistroVController extends Controller
                 $validatedData['pagos'] = json_encode([]);
             }
 
-            // Guardar el id_cliente en el campo id_cliente y opcionalmente el nombre en cliente
-            $validatedData['id_cliente'] = $request->input('cliente');
-            if ($validatedData['id_cliente']) {
-                $clienteObj = Cliente::find($validatedData['id_cliente']);
-                $validatedData['cliente'] = $clienteObj ? $clienteObj->nombre : null;
-                $validatedData['telefono'] = $clienteObj ? $clienteObj->telefono : null;
-            } else {
-                $validatedData['cliente'] = null;
-                $validatedData['telefono'] = null;
-            }
-
             Log::info('Creando registro de venta');
-            $registroV = RegistroV::create($validatedData);
-            Log::debug('Registro de venta creado', ['registro_id' => $registroV->id, 'registro' => $registroV]);
-            if (!$registroV || !$registroV->id) {
-                Log::error('No se pudo crear el registro de venta.');
-                throw new \Exception('No se pudo crear el registro de venta.');
+            // Asegurarse de que id_cliente esté presente y correcto
+            if (!isset($validatedData['id_cliente'])) {
+                $validatedData['id_cliente'] = $request->input('id_cliente');
             }
+            $registroV = RegistroV::create($validatedData);
+            Log::debug('Registro de venta creado', ['registro_id' => $registroV->id]);
 
             Log::info('Creando abono asociado');
             $abono = Abono::create([
@@ -601,7 +589,7 @@ class RegistroVController extends Controller
                         'subcategoria' => $costo->subcategoria,
                         'metodo_pago' => $pagosData[0]['metodo_pago'] ?? null,
                         'cobro' => $costo->estatus,
-                        'f_costos' => $costo->f_costos
+                        'fecha' => $costo->f_costos
                     ];
                 }
             }
@@ -632,7 +620,7 @@ class RegistroVController extends Controller
                         'subcategoria' => $gasto->subcategoria,
                         'metodo_pago' => $pagosData[0]['metodo_pago'] ?? null,
                         'estatus' => $gasto->estatus,
-                        'f_gastos' => $gasto->f_gastos
+                        'fecha' => $gasto->fecha
                     ];
                 }
             }
@@ -838,7 +826,7 @@ class RegistroVController extends Controller
         }
     }
 
-    private function restarInventario($productoId, $cantidad, $almacenId = null, $fecha = null)
+    private function restarInventario($productoId, $cantidad, $almacenId = null)
     {
         $query = Inventario::where('id_producto', $productoId);
         if ($almacenId) {
@@ -847,23 +835,11 @@ class RegistroVController extends Controller
         $inventario = $query->first();
 
         if ($inventario) {
-            $cantidadAnterior = $inventario->cantidad;
-            $nuevaCantidad = $cantidadAnterior - $cantidad;
+            $nuevaCantidad = $inventario->cantidad - $cantidad;
             if ($nuevaCantidad < 0) {
                 throw new \Exception("No hay suficiente stock para el producto $productoId");
             }
             $inventario->update(['cantidad' => $nuevaCantidad]);
-
-            // Registrar ajuste de inventario tipo "Llave de venta"
-            \App\Models\AjusteInventario::create([
-                'id_producto' => $productoId,
-                'id_almacen' => $almacenId ?? $inventario->id_almacen,
-                'tipo_ajuste' => 'resta',
-                'cantidad_anterior' => $cantidadAnterior,
-                'cantidad_nueva' => $nuevaCantidad,
-                'descripcion' => $fecha,
-                'user_id' => Auth::id(),
-            ]);
         } else {
             throw new \Exception("El producto $productoId no existe en el inventario" . ($almacenId ? " para el almacén $almacenId" : ""));
         }
@@ -981,8 +957,7 @@ class RegistroVController extends Controller
                                         'subcategoria' => $costoData['subcategoria'],
                                         'estatus' => 'pagado',
                                         'pagos' => $pagoCosto,
-                                        'id_tecnico' => $request->input('id_empleado'),
-                                        'f_costos' => $costoData['f_costos'],
+                                        'id_tecnico' => $request->input('id_empleado')
                                     ]);
                                     $costosIds[] = $costo->id_costos;
                                     Log::debug("Costo actualizado", ['id_costo' => $costo->id_costos]);
@@ -992,7 +967,7 @@ class RegistroVController extends Controller
 
                             Log::debug("Creando nuevo costo");
                             $nuevoCosto = Costo::create([
-                                'f_costos' => $costoData['f_costos'],
+                                'f_costos' => $costoData['fecha'] ?? now()->format('Y-m-d'),
                                 'id_tecnico' => $request->input('id_empleado'),
                                 'descripcion' => $costoData['descripcion'],
                                 'subcategoria' => $costoData['subcategoria'],
@@ -1040,7 +1015,6 @@ class RegistroVController extends Controller
                                         'estatus' => 'pagado',
                                         'subcategoria' => $gastoData['subcategoria'],
                                         'pagos' => $pagoGasto,
-                                        'f_gastos' => $gastoData['f_gastos'],
                                         'id_empleado' => $request->input('id_empleado'),
                                         'id_registro_v' => $registroV->id
                                     ]);
@@ -1052,7 +1026,7 @@ class RegistroVController extends Controller
 
                             Log::debug("Creando nuevo gasto");
                             $nuevoGasto = Gasto::create([
-                                'f_gastos' => $gastoData['f_gastos'],
+                                'f_gastos' => $gastoData['fecha'] ?? now()->format('Y-m-d'),
                                 'id_tecnico' => $request->input('id_empleado'),
                                 'descripcion' => $gastoData['descripcion'],
                                 'subcategoria' => $gastoData['subcategoria'],
@@ -1236,13 +1210,6 @@ class RegistroVController extends Controller
         }
 
         foreach ($items as &$itemGroup) {
-            if (isset($itemGroup['trabajo_id'])) {
-                $trabajo = Trabajo::find($itemGroup['trabajo_id']);
-                if ($trabajo) {
-                    $itemGroup['trabajo'] = $trabajo->getNombreEnIdioma('es');
-                }
-            }
-
             if (!isset($itemGroup['productos']) || !is_array($itemGroup['productos'])) {
                 $itemGroup['productos'] = [];
             }
@@ -1303,17 +1270,6 @@ class RegistroVController extends Controller
         }
 
         foreach ($items as &$itemGroup) {
-
-            if (isset($itemGroup['trabajo_id'])) {
-                $trabajo = Trabajo::find($itemGroup['trabajo_id']);
-                if ($trabajo) {
-                    $nombreEnIngles = $trabajo->getNombreEnIdioma('en');
-                    \Log::info('Nombre del trabajo en inglés: ' . $nombreEnIngles);
-                    $itemGroup['trabajo'] = $nombreEnIngles;
-                }
-            }
-
-
             if (!isset($itemGroup['productos']) || !is_array($itemGroup['productos'])) {
                 $itemGroup['productos'] = [];
             }
@@ -1446,7 +1402,7 @@ class RegistroVController extends Controller
                 }
                 return [
                     'id' => $venta->id,
-                    'fecha' => \Carbon\Carbon::parse($venta->fecha_h)->format('d/m/Y'),
+                    'fecha' => $venta->fecha_h->format('d/m/Y'),
                     'total_venta' => (float) $venta->valor_v,
                     'total_pagado' => (float) $totalPagado,
                     'saldo_pendiente' => (float) ($venta->valor_v - $totalPagado),
@@ -1466,6 +1422,7 @@ class RegistroVController extends Controller
         $language = $request->language ?? 'es';
 
         $query = RegistroV::whereBetween('fecha_h', [$fechaDesde, $fechaHasta])
+            ->where('tipo_venta', 'credito')
             ->with(['cliente']);
 
         if ($clienteId) {
@@ -1505,17 +1462,7 @@ class RegistroVController extends Controller
                             foreach ($itemsData as $item) {
                                 $item = (object) $item;
                                 $items[] = (object) [
-                                    'trabajo' => (function () use ($item, $language) {
-                                        $trabajoNombre = $item->trabajo ?? $item->trabajo_nombre ?? null;
-                                        if (isset($item->trabajo_id)) {
-                                            $trabajoModel = \App\Models\Trabajo::find($item->trabajo_id);
-                                            if ($trabajoModel && method_exists($trabajoModel, 'getNombreEnIdioma')) {
-                                                return $trabajoModel->getNombreEnIdioma($language);
-                                            }
-                                        }
-                                        return $trabajoNombre ?? ($language === 'en' ? 'Unspecified work' : 'Trabajo no especificado');
-                                    })(),
-                                    'precio_trabajo' => $item->precio_trabajo ?? ($language === 'en' ? 'Unspecified price' : 'Precio no especificado'),
+                                    'trabajo' => $item->trabajo ?? $item->trabajo_nombre ?? ($language === 'en' ? 'Unspecified work' : 'Trabajo no especificado'),
                                     'descripcion' => $item->descripcion ?? null,
                                     'productos' => isset($item->productos) ? array_map(function ($p) use ($language) {
                                         $p = (object) $p;
@@ -1531,7 +1478,6 @@ class RegistroVController extends Controller
 
                     return (object) [
                         'id' => $venta->id,
-                        'id_empleado' => $venta->id_empleado,
                         'fecha_h' => $venta->fecha_h,
                         'valor_v' => $venta->valor_v,
                         'total_pagado' => $totalPagadoVenta,
