@@ -147,9 +147,9 @@
                                     <select name="cliente" id="id_cliente" class="form-control select2 @error('id_cliente') is-invalid @enderror">
                                         <option value="">{{ __('Seleccione un cliente') }}</option>
                                         @foreach($clientes as $cliente)
-                                        <option value="{{ $cliente->nombre }}"
+                                        <option value="{{ $cliente->id_cliente }}"
                                             data-telefono="{{ $cliente->telefono }}"
-                                            {{ old('cliente', $registroV?->cliente) == $cliente->nombre ? 'selected' : '' }}>
+                                            {{ old('cliente', $registroV?->cliente) == $cliente->id_cliente ? 'selected' : '' }}>
                                             {{ $cliente->nombre }} {{ $cliente->apellido ?? '' }}
                                         </option>
                                         @endforeach

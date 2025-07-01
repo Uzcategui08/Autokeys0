@@ -112,7 +112,7 @@
                                             <td>
                                                 <span class="text-truncate d-inline-block" style="max-width: 150px;">
                                                     <i class="fas fa-user mr-1 text-secondary"></i>
-                                                    {{ $registroV->cliente }}
+                                                    {{ $registroV->cliente?->nombre ?? $registroV->cliente ?? 'N/A' }}
                                                 </span>
                                             </td>
                                             <td>
@@ -229,6 +229,9 @@
 @stop
 
 @section('css')
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <style>
         .badge {
             font-weight: 500;
@@ -266,6 +269,12 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function() {
+            // Inicializar DataTable
+            $('.dataTable').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+                }
+            });
 
             function showToggleAlert(button, newValue) {
                 const title = newValue ? '¿Marcar como cargado?' : '¿Marcar como no cargado?';
