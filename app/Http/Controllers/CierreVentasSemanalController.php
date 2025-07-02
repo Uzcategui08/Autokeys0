@@ -248,6 +248,8 @@ class CierreVentasSemanalController extends Controller
                 'endDate' => $endDate->format('Y-m-d')
             ]);
 
+            // Logging for database queries
+            Log::info('Consultando métodos de pago');
             $metodosPago = TiposDePago::all();
             Log::info('Métodos de pago encontrados:', [
                 'count' => $metodosPago->count(),
@@ -259,25 +261,40 @@ class CierreVentasSemanalController extends Controller
                 })->toArray()
             ]);
 
-            Log::info('Obteniendo reporte de ventas');
+            Log::info('Consultando reporte de ventas');
             $reporteVentas = $this->getVentasPorTecnico($startDate, $endDate);
-            Log::info('Ventas encontradas:', ['count' => count($reporteVentas)]);
+            Log::info('Ventas encontradas:', [
+                'count' => count($reporteVentas),
+                'first' => $reporteVentas->first() ?? null
+            ]);
 
-            Log::info('Obteniendo costos y gastos');
+            Log::info('Consultando costos y gastos');
             $reporteCostosGastos = $this->getCostosGastosPorTecnico($startDate, $endDate, $metodosPago);
-            Log::info('Costos y gastos encontrados:', ['count' => count($reporteCostosGastos)]);
+            Log::info('Costos y gastos encontrados:', [
+                'count' => count($reporteCostosGastos),
+                'first' => $reporteCostosGastos->first() ?? null
+            ]);
 
-            Log::info('Obteniendo ingresos recibidos');
+            Log::info('Consultando ingresos recibidos');
             $ingresosRecibidos = $this->getIngresosRecibidos($startDate, $endDate, $metodosPago);
-            Log::info('Ingresos encontrados:', ['count' => count($ingresosRecibidos)]);
+            Log::info('Ingresos encontrados:', [
+                'count' => count($ingresosRecibidos),
+                'first' => $ingresosRecibidos->first() ?? null
+            ]);
 
-            Log::info('Obteniendo llaves por técnico');
+            Log::info('Consultando llaves por técnico');
             $llavesPorTecnico = $this->getLlavesPorTecnico($startDate, $endDate);
-            Log::info('Llaves encontradas:', ['count' => count($llavesPorTecnico)]);
+            Log::info('Llaves encontradas:', [
+                'count' => count($llavesPorTecnico),
+                'first' => $llavesPorTecnico->first() ?? null
+            ]);
 
-            Log::info('Obteniendo descargas manuales');
+            Log::info('Consultando descargas manuales');
             $descargasManuales = $this->getCargasDescargas($startDate, $endDate);
-            Log::info('Descargas encontradas:', ['count' => count($descargasManuales)]);
+            Log::info('Descargas encontradas:', [
+                'count' => count($descargasManuales),
+                'first' => $descargasManuales->first() ?? null
+            ]);
 
             Log::info('Calculando totales');
             $totales = $this->calcularTotales(
@@ -288,16 +305,18 @@ class CierreVentasSemanalController extends Controller
             );
             Log::info('Totales calculados:', $totales);
             
+            Log::info('Calculando costos de llaves');
             $totalCostosLlaves = $llavesPorTecnico->sum('total_valor');
             Log::info('Total costos llaves:', ['valor' => $totalCostosLlaves]);
             
+            Log::info('Calculando ganancia');
             $ganancia = ($totales['totalVentas'] ?? 0) 
                       - ($totales['totalCostos'] ?? 0) 
                       - ($totalCostosLlaves ?? 0) 
                       - ($totales['totalGastos'] ?? 0);
             Log::info('Ganancia calculada:', ['valor' => $ganancia]);
 
-            Log::info('Buscando retiro del dueño en nempleados');
+            Log::info('Consultando retiro del dueño');
             $retiroDueño = Nempleado::whereHas('empleado', function($query) {
                 $query->where('cargo', 5); 
             })
@@ -308,8 +327,13 @@ class CierreVentasSemanalController extends Controller
             })
             ->sum('total_pagado');
             
-            Log::info('Retiro del dueño encontrado:', ['valor' => $retiroDueño]);
+            Log::info('Retiro del dueño encontrado:', [
+                'valor' => $retiroDueño,
+                'fecha_inicio' => $startDate->format('Y-m-d'),
+                'fecha_fin' => $endDate->format('Y-m-d')
+            ]);
             
+            Log::info('Calculando ganancia final');
             $gananciaFinal = $ganancia - $retiroDueño;
             Log::info('Ganancia final calculada:', [
                 'ganancia' => $ganancia,
@@ -318,35 +342,42 @@ class CierreVentasSemanalController extends Controller
             ]);
 
             Log::info('Generando PDF');
-            Log::info('Obteniendo ventas detalladas por técnico');
+            Log::info('Consultando ventas detalladas por técnico');
             $ventasDetalladasPorTecnico = $this->getVentasDetalladasPorTecnico($startDate, $endDate);
-            Log::info('Ventas detalladas encontradas:', ['count' => count($ventasDetalladasPorTecnico)]);
+            Log::info('Ventas detalladas encontradas:', [
+                'count' => count($ventasDetalladasPorTecnico),
+                'first' => $ventasDetalladasPorTecnico->first() ?? null
+            ]);
 
-            Log::info('Obteniendo ventas por trabajo');
+            Log::info('Consultando ventas por trabajo');
             $ventasPorTrabajo = $this->getVentasPorTrabajo($startDate, $endDate, $metodosPago);
-            Log::info('Ventas por trabajo obtenidas');
+            Log::info('Ventas por trabajo obtenidas:', [
+                'contado_count' => count($ventasPorTrabajo['contado']),
+                'credito_count' => count($ventasPorTrabajo['credito'])
+            ]);
 
-            Log::info('Obteniendo resumen de trabajos');
+            Log::info('Consultando resumen de trabajos');
             $resumenTrabajos = $this->getResumenTrabajos($startDate, $endDate);
             Log::info('Resumen de trabajos obtenido:', [
                 'count' => count($resumenTrabajos),
-                'first' => $resumenTrabajos->first()
+                'first' => $resumenTrabajos->first() ?? null
             ]);
 
-            Log::info('Obteniendo ventas por lugar de venta');
+            Log::info('Consultando ventas por lugar de venta');
             $ventasPorLugarVenta = $this->getVentasPorLugarVenta($startDate, $endDate);
             Log::info('Ventas por lugar de venta obtenidas:', [
                 'count' => count($ventasPorLugarVenta),
-                'first' => $ventasPorLugarVenta->first()
+                'first' => $ventasPorLugarVenta->first() ?? null
             ]);
 
-            Log::info('Obteniendo ventas por cliente');
+            Log::info('Consultando ventas por cliente');
             $ventasPorCliente = $this->getVentasPorCliente($startDate, $endDate);
             Log::info('Ventas por cliente obtenidas:', [
                 'count' => count($ventasPorCliente),
-                'first' => $ventasPorCliente->first()
+                'first' => $ventasPorCliente->first() ?? null
             ]);
 
+            Log::info('Procesando ventas por trabajo');
             $ventasPorTrabajo['contado'] = collect($ventasPorTrabajo['contado'])->map(function($trabajoData) use ($metodosPago) {
                 $metodos = collect($trabajoData['metodos'])->map(function($metodoData, $metodoId) use ($metodosPago) {
                     $metodoNombre = $metodosPago->where('id', $metodoId)->first()?->name ?? 'Desconocido';
@@ -377,14 +408,17 @@ class CierreVentasSemanalController extends Controller
                 ];
             });
 
-            Log::info('Ventas por trabajo con nombres:', [
-                'contado' => $ventasPorTrabajo['contado']->first(),
-                'credito' => $ventasPorTrabajo['credito']->first()
+            Log::info('Ventas por trabajo procesadas:', [
+                'contado_first' => $ventasPorTrabajo['contado']->first(),
+                'credito_first' => $ventasPorTrabajo['credito']->first()
             ]);
 
+            Log::info('Calculando total de descargas');
             $totalDescargas = $descargasManuales->where('tipo', 'ajuste2')->sum('cantidad');
+            Log::info('Total de descargas:', ['valor' => $totalDescargas]);
             
-            $pdf = PDF::loadView('estadisticas.cierre-semanal-pdf', [
+            Log::info('Generando vista PDF');
+            $data = [
                 'ventasPorCliente' => $ventasPorCliente,
                 'resumenTrabajos' => $resumenTrabajos,
                 'ventasPorLugarVenta' => $ventasPorLugarVenta,
@@ -406,16 +440,32 @@ class CierreVentasSemanalController extends Controller
                 'cargasDescargas' => $descargasManuales,
                 'totalDescargas' => $totalDescargas,
                 'ventasPorTrabajo' => $ventasPorTrabajo
+            ];
+            Log::info('Datos para vista PDF:', [
+                'count' => count($data),
+                'keys' => array_keys($data)
             ]);
 
-            Log::info('PDF generado, iniciando descarga');
-            return $pdf->download('cierre-semanal-' . $startDate->format('Y') . '-' . $startDate->format('W') . '.pdf');
+            Log::info('Cargando vista PDF');
+            $pdf = PDF::loadView('estadisticas.cierre-semanal-pdf', $data);
+            Log::info('Vista PDF cargada');
+
+            Log::info('Generando nombre de archivo');
+            $fileName = 'cierre-semanal-' . $startDate->format('Y') . '-' . $startDate->format('W') . '.pdf';
+            Log::info('Nombre de archivo generado:', ['filename' => $fileName]);
+
+            Log::info('Iniciando descarga de PDF');
+            return $pdf->download($fileName);
         } catch (\Exception $e) {
             Log::error('Error en exportPdf:', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'context' => [
+                    'startDate' => $startDate ? $startDate->format('Y-m-d') : null,
+                    'endDate' => $endDate ? $endDate->format('Y-m-d') : null
+                ]
             ]);
             return back()->with('error', 'Error al generar el PDF: ' . $e->getMessage());
         }
