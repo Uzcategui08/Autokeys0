@@ -90,7 +90,7 @@ $(document).ready(function() {
     document.addEventListener('DOMContentLoaded', function() {
         $('.dataTable').DataTable({
             responsive: true,
-            pageLength: 50,
+            pageLength: 20,
             language: {
                 url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json'
             },
