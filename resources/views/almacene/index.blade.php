@@ -30,6 +30,7 @@
                                         <th>ID Almacén</th>
                                         <th>Nombre</th>
                                         <th>Cantidad de llaves</th>
+                                        <th>Valor total de llaves</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -38,7 +39,12 @@
                                         <tr>
                                             <td>{{ $almacene->id_almacen }}</td>
                                             <td>{{ $almacene->nombre }}</td>
-                                            <td>{{ $almacene->inventarios->count() }}</td>
+                                            <td>
+                                                {{ $almacene->inventarios->sum('cantidad') }}
+                                            </td>
+                                            <td>
+                                                ${{ number_format($almacene->inventarios->sum(function($inv) { return $inv->cantidad * ($inv->producto->precio ?? 0); }), 2) }}
+                                            </td>
                                             <td>
                                                 <form onsubmit="return confirmDelete(this)" action="{{ route('almacenes.destroy', $almacene->id_almacen) }}" method="POST" class="delete-form" style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
                                                     <a class="btn btn-sm btn-success" href="{{ route('almacenes.edit', $almacene->id_almacen) }}"><i class="fa fa-fw fa-edit"></i></a>

@@ -10,6 +10,9 @@ use App\Models\Empleado;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
+use App\Exports\VanesExport;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class VanesController extends Controller
 {
@@ -132,6 +135,119 @@ class VanesController extends Controller
             'startDate',
             'endDate'
         ));
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $data = $this->getReporteData($request);
+        return Excel::download(new VanesExport($data, $data['startDate'], $data['endDate']), 'reporte_vanes.xlsx');
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $data = $this->getReporteData($request);
+        $pdf = Pdf::loadView('estadisticas.vanes_export', [
+            'vanGrande' => $data['vanGrande'],
+            'vanPequena' => $data['vanPequena'],
+            'ventasVanGrande' => $data['ventasVanGrande'],
+            'ventasVanPequena' => $data['ventasVanPequena'],
+            'gastosVanGrande' => $data['gastosVanGrande'],
+            'gastosVanPequena' => $data['gastosVanPequena'],
+            'costosVanGrande' => $data['costosVanGrande'],
+            'costosVanPequena' => $data['costosVanPequena'],
+            'llavesPorTecnico' => $data['llavesPorTecnico'],
+            'porcentajeCerrajeroGrande' => $data['porcentajeCerrajeroGrande'],
+            'porcentajeCerrajeroPequena' => $data['porcentajeCerrajeroPequena'],
+            'totales' => $data['totales'],
+            'startDate' => $data['startDate'],
+            'endDate' => $data['endDate'],
+        ]);
+        return $pdf->download('reporte_vanes.pdf');
+    }
+
+    private function getReporteData(Request $request)
+    {
+        $vanGrande = 'Van Grande-Pulga';
+        $vanPequena = 'Van Pequeña-Pulga';
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        if (!$startDate || !$endDate) {
+            $monthSelected = $request->input('month', Carbon::now()->month);
+            $yearSelected = $request->input('year', Carbon::now()->year);
+            $startDate = Carbon::create($yearSelected, $monthSelected, 1)->format('Y-m-d');
+            $endDate = Carbon::create($yearSelected, $monthSelected, 1)->endOfMonth()->format('Y-m-d');
+        }
+        $ventasVanGrande = $this->procesarVentasPorVan($vanGrande, $startDate, $endDate);
+        $ventasVanPequena = $this->procesarVentasPorVan($vanPequena, $startDate, $endDate);
+        $gastoIdsGrande = $ventasVanGrande['ventas']->flatMap(function ($venta) {
+            $gastos = $venta->gastos;
+            if (is_string($gastos)) {
+                $gastos = json_decode($gastos, true);
+            }
+            return collect($gastos ?: []);
+        })->unique()->values();
+        $gastoIdsPequena = $ventasVanPequena['ventas']->flatMap(function ($venta) {
+            $gastos = $venta->gastos;
+            if (is_string($gastos)) {
+                $gastos = json_decode($gastos, true);
+            }
+            return collect($gastos ?: []);
+        })->unique()->values();
+        $costoIdsGrande = $ventasVanGrande['ventas']->flatMap(function ($venta) {
+            $costos = $venta->costos;
+            if (is_string($costos)) {
+                $costos = json_decode($costos, true);
+            }
+            return collect($costos ?: []);
+        })->unique()->values();
+        $costoIdsPequena = $ventasVanPequena['ventas']->flatMap(function ($venta) {
+            $costos = $venta->costos;
+            if (is_string($costos)) {
+                $costos = json_decode($costos, true);
+            }
+            return collect($costos ?: []);
+        })->unique()->values();
+        $gastosVanGrande = Gasto::whereIn('id_gastos', $gastoIdsGrande)->get();
+        $gastosVanPequena = Gasto::whereIn('id_gastos', $gastoIdsPequena)->get();
+        $costosVanGrande = Costo::whereIn('id_costos', $costoIdsGrande)->get();
+        $costosVanPequena = Costo::whereIn('id_costos', $costoIdsPequena)->get();
+        $porcentajeCerrajeroGrande = $ventasVanGrande['ventas']->sum('porcentaje_c');
+        $porcentajeCerrajeroPequena = $ventasVanPequena['ventas']->sum('porcentaje_c');
+        $llavesPorTecnico = $this->procesarLlavesPorTecnico($startDate, $endDate, [$vanGrande, $vanPequena]);
+        $totales = [
+            'porcentajeCerrajeroGrande' => $porcentajeCerrajeroGrande,
+            'porcentajeCerrajeroPequena' => $porcentajeCerrajeroPequena,
+            'ventasGrande' => $ventasVanGrande['ventas']->sum('valor_v'),
+            'ventasPequena' => $ventasVanPequena['ventas']->sum('valor_v'),
+            'gastosGrande' => $gastosVanGrande->sum('valor'),
+            'gastosPequena' => $gastosVanPequena->sum('valor'),
+            'costosGrande' => $costosVanGrande->sum('valor'),
+            'costosPequena' => $costosVanPequena->sum('valor'),
+            'itemsGrande' => $ventasVanGrande['items']->sum('total_cantidad'),
+            'itemsPequena' => $ventasVanPequena['items']->sum('total_cantidad'),
+            'valorItemsGrande' => $ventasVanGrande['items']->sum('total_valor'),
+            'valorItemsPequena' => $ventasVanPequena['items']->sum('total_valor'),
+            'totalLlaves' => $llavesPorTecnico->sum('total_llaves'),
+            'totalValorLlaves' => $llavesPorTecnico->sum('total_valor'),
+            'utilidadGrande' => $ventasVanGrande['ventas']->sum('valor_v') - $costosVanGrande->sum('valor') - $porcentajeCerrajeroGrande - $gastosVanGrande->sum('valor') - $ventasVanGrande['items']->sum('total_valor'),
+            'utilidadPequena' => $ventasVanPequena['ventas']->sum('valor_v') - $costosVanPequena->sum('valor') - $porcentajeCerrajeroPequena - $gastosVanPequena->sum('valor') - $ventasVanPequena['items']->sum('total_valor'),
+        ];
+        return [
+            'vanGrande' => $vanGrande,
+            'vanPequena' => $vanPequena,
+            'ventasVanGrande' => $ventasVanGrande,
+            'ventasVanPequena' => $ventasVanPequena,
+            'gastosVanGrande' => $gastosVanGrande,
+            'gastosVanPequena' => $gastosVanPequena,
+            'costosVanGrande' => $costosVanGrande,
+            'costosVanPequena' => $costosVanPequena,
+            'llavesPorTecnico' => $llavesPorTecnico,
+            'porcentajeCerrajeroGrande' => $porcentajeCerrajeroGrande,
+            'porcentajeCerrajeroPequena' => $porcentajeCerrajeroPequena,
+            'totales' => $totales,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ];
     }
 
     private function procesarVentasPorVan($van, $startDate = null, $endDate = null)

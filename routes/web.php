@@ -95,6 +95,8 @@ Route::get('/cierre-ventas-semanal', [CierreVentasSemanalController::class, 'ind
 
 Route::get('/estadisticas-vanes', [VanesController::class, 'index'])->name('ventas.reporte');
 Route::get('/estadisticas/vanespdf', [VanesController::class, 'descargarReporteFinDeSemana'])->name('ventas.descargar-reporte');
+Route::get('/estadisticas/vanes/export-excel', [VanesController::class, 'exportExcel'])->name('vanes.exportExcel');
+Route::get('/estadisticas/vanes/export-pdf', [VanesController::class, 'exportPdf'])->name('vanes.exportPdf');
 
 Route::resource('tipos-de-pagos', TiposDePagoController::class);
 

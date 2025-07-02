@@ -67,22 +67,22 @@ class EstadisticasVentasController extends Controller
     // Métodos para estadísticas de ventas
     protected function cobradoDelMes()
     {
+        $total = 0;
         $registros = RegistroV::whereYear('fecha_h', $this->year)
             ->whereMonth('fecha_h', $this->month)
             ->get();
 
-        $total = 0;
         foreach ($registros as $registro) {
-            if ($registro->pagos) {
-                foreach ($registro->pagos as $pago) {
-                    // Filtrar por fecha de pago dentro del mes y año seleccionados
-                    if (isset($pago['fecha_pago'])) {
-                        $fechaPago = Carbon::parse($pago['fecha_pago']);
-                        if ($fechaPago->year == $this->year && $fechaPago->month == $this->month) {
-                            $total += $pago['monto'];
-                        }
-                    } else {
-                        // Si no hay fecha de pago, asumir que corresponde al registro (comportamiento anterior)
+            $pagos = $registro->pagos ?? [];
+            foreach ($pagos as $pago) {
+                if (isset($pago['fecha_pago'])) {
+                    $fechaPago = Carbon::parse($pago['fecha_pago']);
+                    if ($fechaPago->year == $this->year && $fechaPago->month == $this->month) {
+                        $total += $pago['monto'];
+                    }
+                } else {
+                    // Si no hay fecha de pago, solo sumar si la venta es de este mes
+                    if (Carbon::parse($registro->fecha_h)->year == $this->year && Carbon::parse($registro->fecha_h)->month == $this->month) {
                         $total += $pago['monto'];
                     }
                 }
