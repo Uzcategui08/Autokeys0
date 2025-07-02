@@ -5,7 +5,7 @@
 @section('content_header')
 <div class="d-flex justify-content-between align-items-center">
     <h1 class="text-gray-800">Cierre Semanal - Del {{ $startOfWeek->format('d M Y') }} al {{ $endOfWeek->format('d M Y') }}</h1>
-    <form method="GET" action="{{ route('cierre.semanal') }}" class="form-inline">
+    <form method="GET" action="{{ route('cierre.semanal') }}" class="form-inline" id="filterForm">
         <div class="form-group mr-2">
             <div class="input-group">
                 <input type="date" class="form-control form-control-sm" name="start_date" 
@@ -24,6 +24,24 @@
             <i class="fas fa-filter"></i> Filtrar
         </button>
     </form>
+
+    <div class="btn-group">
+        <form action="{{ route('cierre-ventas-semanal.export-pdf') }}" method="GET" class="d-inline">
+            <input type="hidden" name="start_date" value="{{ $startOfWeek->format('Y-m-d') }}">
+            <input type="hidden" name="end_date" value="{{ $endOfWeek->format('Y-m-d') }}">
+            <button type="submit" class="btn btn-primary" title="Exportar a PDF">
+                <i class="fas fa-file-pdf"></i> Exportar PDF
+            </button>
+        </form>
+        <form action="{{ route('cierre-ventas-semanal.export-excel') }}" method="GET" class="d-inline">
+            <input type="hidden" name="start_date" value="{{ $startOfWeek->format('Y-m-d') }}">
+            <input type="hidden" name="end_date" value="{{ $endOfWeek->format('Y-m-d') }}">
+            <button type="submit" class="btn btn-success" title="Exportar a Excel">
+                <i class="fas fa-file-excel"></i> Exportar Excel
+            </button>
+        </form>
+    </div>
+    
 </div>
 @stop
 
@@ -41,7 +59,7 @@
                         <th class="text-center bg-costos">Total Costos</th>
                         <th class="text-center bg-llaves">Costos de Llaves</th>
                         <th class="text-center bg-gastos">Total Gastos</th>
-                        <th class="text-center bg-resumen">Ganancia Neta</th>
+                        <th class="text-center bg-resumen">Ganancia antes del Dueño</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -52,6 +70,38 @@
                         <td class="font-weight-bold bg-gastos">${{ number_format($totalGastos ?? 0, 2) }}</td>
                         <td class="font-weight-bold {{ $ganancia >= 0 ? 'text-ganancia' : 'text-perdida' }} bg-resumen">
                             ${{ number_format($ganancia ?? 0, 2) }}
+                        </td>
+                    </tr>
+                    <tr class="text-center bg-gray-100">
+                        <td class="font-weight-bold text-muted">-</td>
+                        <td class="font-weight-bold text-muted">-</td>
+                        <td class="font-weight-bold text-muted">-</td>
+                        <td class="font-weight-bold text-muted">-</td>
+                        <td class="font-weight-bold bg-retiro">Retiro Dueño</td>
+                    </tr>
+                    <tr class="text-center bg-gray-200">
+                        <td class="font-weight-bold text-muted">-</td>
+                        <td class="font-weight-bold text-muted">-</td>
+                        <td class="font-weight-bold text-muted">-</td>
+                        <td class="font-weight-bold text-muted">-</td>
+                        <td class="font-weight-bold {{ $retiroDueño >= 0 ? 'text-ganancia' : 'text-perdida' }} bg-retiro">
+                            ${{ number_format($retiroDueño ?? 0, 2) }}
+                        </td>
+                    </tr>
+                    <tr class="text-center bg-gray-100">
+                        <td class="font-weight-bold text-muted">-</td>
+                        <td class="font-weight-bold text-muted">-</td>
+                        <td class="font-weight-bold text-muted">-</td>
+                        <td class="font-weight-bold text-muted">-</td>
+                        <td class="font-weight-bold bg-final">Ganancia Total</td>
+                    </tr>
+                    <tr class="text-center bg-gray-200">
+                        <td class="font-weight-bold text-muted">-</td>
+                        <td class="font-weight-bold text-muted">-</td>
+                        <td class="font-weight-bold text-muted">-</td>
+                        <td class="font-weight-bold text-muted">-</td>
+                        <td class="font-weight-bold {{ $gananciaFinal >= 0 ? 'text-ganancia' : 'text-perdida' }} bg-final">
+                            ${{ number_format($gananciaFinal ?? 0, 2) }}
                         </td>
                     </tr>
                 </tbody>
@@ -591,14 +641,12 @@
                 </thead>
                 <tbody>
                     @foreach($cargasDescargas as $movimiento)
-                        @if($movimiento['es_carga'])
                         <tr>
                             <td class="text-center">{{ $movimiento['usuario'] }}</td>
                             <td class="text-center">{{ $movimiento['producto'] }} (ID: {{ $movimiento['id_producto'] }})</td>
                             <td class="text-center">{{ $movimiento['motivo'] }}</td>
                             <td class="text-center">{{ $movimiento['fecha'] }}</td>
                         </tr>
-                        @endif
                     @endforeach
                 </tbody>
             </table>
@@ -857,6 +905,26 @@
     .bg-gray-100 {
         background-color: #f8f9fa;
     }
+    .bg-retiro {
+        background-color: #fff3cd;
+    }
+    .bg-final {
+        background-color: #d4edda;
+    }
+    .bg-gray-200 {
+        background-color: #e9ecef;
+    }
+    .text-ganancia {
+        color: #28a745;
+    }
+    .text-perdida {
+        color: #dc3545;
+    }
+        background-color: #ffeb3b;
+    }
+    .bg-final {
+        background-color: #4caf50;
+    }
     .bg-gray-200 {
         background-color: #e9ecef;
     }
@@ -992,6 +1060,42 @@
 @stop
 
 @section('js')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Manejar el cambio en las fechas
+    document.querySelectorAll('[name="start_date"]').forEach(input => {
+        input.addEventListener('change', function() {
+            // Actualizar las fechas en los formularios de exportación
+            document.querySelectorAll('[name="start_date"]').forEach(exportInput => {
+                exportInput.value = this.value;
+            });
+        });
+    });
+
+    document.querySelectorAll('[name="end_date"]').forEach(input => {
+        input.addEventListener('change', function() {
+            document.querySelectorAll('[name="end_date"]').forEach(exportInput => {
+                exportInput.value = this.value;
+            });
+        });
+    });
+
+    // Manejar el envío del formulario principal
+    document.getElementById('filterForm').addEventListener('submit', function(e) {
+        // Actualizar las fechas en los formularios de exportación antes de enviar
+        const startDate = this.querySelector('[name="start_date"]').value;
+        const endDate = this.querySelector('[name="end_date"]').value;
+        
+        document.querySelectorAll('[name="start_date"]').forEach(input => {
+            input.value = startDate;
+        });
+        
+        document.querySelectorAll('[name="end_date"]').forEach(input => {
+            input.value = endDate;
+        });
+    });
+});
+</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     $(document).ready(function() {

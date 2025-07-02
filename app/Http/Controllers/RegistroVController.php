@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 use App\Models\Trabajo;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class RegistroVController extends Controller
 {
@@ -35,20 +36,40 @@ class RegistroVController extends Controller
     {
         $query = RegistroV::with(['cliente', 'empleado'])
             ->where('estatus', 'pagado')
-            ->select([
-                'registroV.*',
-                DB::raw("jsonb_path_query_array(items::jsonb, '$.trabajo[*]')::text as tipo_trabajo"),
-                DB::raw("jsonb_path_query_array(pagos::jsonb, '$.metodo_pago[*]')::text as metodo_pago"),
-                'titular_c',
-                DB::raw("jsonb_path_query_array(items::jsonb, '$.productos[*].nombre_producto')::text as tipo_llave"),
-                DB::raw("jsonb_path_query_array(items::jsonb, '$.productos[*].cantidad')::text as cantidad_utilizada")
-            ]);
+            ->orderBy('fecha_h', 'desc');
+
+        if ($request->filled('month_start') && $request->filled('year_start') && 
+            $request->filled('month_end') && $request->filled('year_end')) {
+            
+            $startDate = Carbon::create($request->year_start, $request->month_start, 1);
+            $endDate = Carbon::create($request->year_end, $request->month_end, 1)->endOfMonth();
+            
+            $query->whereBetween('fecha_h', [$startDate, $endDate]);
+        }
+
+        elseif ($request->filled('month_start') && $request->filled('year_start')) {
+            $startDate = Carbon::create($request->year_start, $request->month_start, 1);
+            $query->where('fecha_h', '>=', $startDate);
+        }
+
+        elseif ($request->filled('month_end') && $request->filled('year_end')) {
+            $endDate = Carbon::create($request->year_end, $request->month_end, 1)->endOfMonth();
+            $query->where('fecha_h', '<=', $endDate);
+        }
+
+        elseif ($request->filled('month_start')) {
+            $query->whereMonth('fecha_h', $request->month_start);
+        }
+
+        elseif ($request->filled('month_end')) {
+            $query->whereMonth('fecha_h', $request->month_end);
+        }
 
         if (auth()->user()->hasRole('limited')) {
             $query->where('id_empleado', auth()->id());
         }
 
-        $registroVs = $query->get(); // Paginación
+        $registroVs = $query->paginate(15);
         $tiposDePago = TiposDePago::all()->keyBy('id');
         $productos = Producto::all()->keyBy('item');
 
@@ -1280,7 +1301,7 @@ class RegistroVController extends Controller
                 $trabajo = Trabajo::find($itemGroup['trabajo_id']);
                 if ($trabajo) {
                     $nombreEnIngles = $trabajo->getNombreEnIdioma('en');
-                    \Log::info('Nombre del trabajo en inglés: ' . $nombreEnIngles);
+                    Log::info('Nombre del trabajo en inglés: ' . $nombreEnIngles);
                     $itemGroup['trabajo'] = $nombreEnIngles;
                 }
             }

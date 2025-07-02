@@ -40,9 +40,26 @@ class NempleadoController extends Controller
         DB::beginTransaction();
 
         try {
+            Log::info('Inicio de store Nempleado');
+            Log::info('Datos del request:', [
+                'all' => $request->all(),
+                'empleado_id' => $request->id_empleado,
+                'tipo_pago' => $request->tipo_pago ?? 'no especificado'
+            ]);
             $empleado = Empleado::find($request->id_empleado);
+            Log::info('Empleado encontrado:', [
+                'id' => $empleado->id_empleado,
+                'nombre' => $empleado->nombre,
+                'tipo_pago' => $empleado->tipo_pago
+            ]);
+            
             if (!$empleado) {
+                Log::error('Empleado no encontrado con ID: ' . $request->id_empleado);
                 throw new \Exception("Empleado no encontrado");
+            }
+
+            if ($empleado->tipo_pago === 'retiro' && $request->has('sueldo_base_retiro')) {
+                $request->merge(['sueldo_base' => $request->sueldo_base_retiro]);
             }
 
             $reglasValidacion = [
@@ -54,7 +71,7 @@ class NempleadoController extends Controller
                 'id_descuentos_json' => 'nullable|json',
                 'metodo_pago_json' => 'required|json',
                 'horas_trabajadas' => $empleado->tipo_pago === 'horas' ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
-                'sueldo_base' => $empleado->tipo_pago === 'sueldo' ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
+                'sueldo_base' => 'required|numeric|min:0',
                 'precio_hora_normal' => $empleado->tipo_pago === 'horas' ? 'required|numeric|min:0' : 'nullable',
                 'precio_hora_extra' => $empleado->tipo_pago === 'horas' ? 'required|numeric|min:0' : 'nullable',
                 'fecha_pago' => 'required|date',
@@ -66,12 +83,22 @@ class NempleadoController extends Controller
             ]);
 
             if ($validator->fails()) {
+                Log::error('Validación fallida:', [
+                    'errors' => $validator->errors()->toArray(),
+                    'request' => $request->all()
+                ]);
                 return back()->withErrors($validator)->withInput();
             }
 
             $abonosIds = $this->procesarIds($request->id_abonos_json ?? '[]', 'abono');
             $descuentosIds = $this->procesarIds($request->id_descuentos_json ?? '[]', 'descuento');
             $metodosPago = $this->procesarMetodosPago($request->metodo_pago_json);
+
+            Log::info('Procesamiento de datos:', [
+                'abonos_ids' => $abonosIds,
+                'descuentos_ids' => $descuentosIds,
+                'metodos_pago' => $metodosPago
+            ]);
 
             if (empty($metodosPago)) {
                 throw new \Exception("Debe seleccionar al menos un método de pago válido");
@@ -96,9 +123,9 @@ class NempleadoController extends Controller
                 $sueldoCalculado = ($horasNormales * $precioNormal) + ($horasExtras * $precioExtra);
                 $detallePago = "Horas normales: $horasNormales × $precioNormal = " . ($horasNormales * $precioNormal) . " | " .
                     "Horas extras: $horasExtras × $precioExtra = " . ($horasExtras * $precioExtra);
-            } elseif ($empleado->tipo_pago === 'sueldo') {
+            } else {
                 $sueldoCalculado = $request->sueldo_base ?? 0;
-                $detallePago = "Sueldo base: $sueldoCalculado";
+                $detallePago = "Monto: $sueldoCalculado";
             }
 
             $totalCalculado = $sueldoCalculado + $totalAbonos - $totalDescuentos;
@@ -107,11 +134,15 @@ class NempleadoController extends Controller
                 throw new \Exception("El total a pagar no coincide con los cálculos. Calculado: $totalCalculado, Recibido: {$request->total_pagado}");
             }
 
+            if ($request->has('sueldo_base_retiro')) {
+                $request->merge(['sueldo_base' => $request->sueldo_base_retiro]);
+            }
+
             $nempleadoData = [
                 'id_empleado' => $request->id_empleado,
                 'id_abonos' => $abonosIds,
                 'id_descuentos' => $descuentosIds,
-                'sueldo_base' => $sueldoCalculado,
+                'sueldo_base' => $request->sueldo_base ?? 0,
                 'total_descuentos' => $totalDescuentos,
                 'total_abonos' => $totalAbonos,
                 'total_pagado' => $request->total_pagado,
@@ -124,16 +155,29 @@ class NempleadoController extends Controller
                 'fecha_pago' => $request->fecha_pago
             ];
 
+            Log::info('Datos para crear Nempleado:', $nempleadoData);
+
             $nempleado = Nempleado::create($nempleadoData);
+            Log::info('Nempleado creado:', [
+                'id' => $nempleado->id_nempleado,
+                'data' => $nempleado->toArray()
+            ]);
 
             $this->marcarComoProcesados($abonosIds, $descuentosIds);
 
             DB::commit();
+            Log::info('Transacción completada exitosamente');
 
             return redirect()->route('nempleados.index')
                 ->with('success', 'Registro creado satisfactoriamente.');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Error en store Nempleado:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
+            ]);
+            
             return back()->withInput()
                 ->with('error', 'Error al guardar: ' . $e->getMessage());
         }

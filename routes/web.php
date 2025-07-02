@@ -93,6 +93,11 @@ Route::get('/estadisticas/RegistroVpdf', [EstadisticasVentasController::class, '
 Route::get('/cierre-ventas', [CierreVentasController::class, 'index'])->name('cierre.mensual');
 Route::get('/cierre-ventas-semanal', [CierreVentasSemanalController::class, 'index'])->name('cierre.semanal');
 
+// Rutas de exportación para cierre semanal
+Route::get('/cierre-ventas-semanal/export-pdf', [CierreVentasSemanalController::class, 'exportPdf'])->name('cierre-ventas-semanal.export-pdf');
+Route::get('/cierre-ventas-semanal/export-excel', [CierreVentasSemanalController::class, 'exportExcel'])->name('cierre-ventas-semanal.export-excel');
+Route::get('/cierre-ventas-semanal/export-excel', [CierreVentasSemanalController::class, 'exportExcel'])->name('cierre-ventas-semanal.export-excel');
+
 Route::get('/estadisticas-vanes', [VanesController::class, 'index'])->name('ventas.reporte');
 Route::get('/estadisticas/vanespdf', [VanesController::class, 'descargarReporteFinDeSemana'])->name('ventas.descargar-reporte');
 
