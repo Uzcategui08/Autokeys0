@@ -930,21 +930,15 @@ class CierreVentasSemanalController extends Controller
             ->get()
             ->groupBy('id_cliente')
             ->map(function ($ventas, $idCliente) {
-                if (!is_numeric($idCliente)) {
-                    Log::error('ID de cliente inválido encontrado:', ['idCliente' => $idCliente]);
-                    return null; 
-                }
-
                 $cliente = $ventas->first()->cliente;
                 return [
                     'id_cliente' => $idCliente,
-                    'cliente' => $cliente ? $cliente->nombre : 'Cliente Desconocido',
+                    'cliente' => $cliente ? $cliente->nombre : $idCliente,
                     'ventas_contado' => $ventas->where('tipo_venta', 'contado')->sum('valor_v'),
                     'ventas_credito' => $ventas->where('tipo_venta', 'credito')->sum('valor_v'),
                     'total_ventas' => $ventas->sum('valor_v')
                 ];
             })
-            ->filter() 
             ->values()
             ->sortByDesc('total_ventas');
     }
