@@ -768,11 +768,11 @@ class CierreVentasSemanalController extends Controller
                                     ];
                                 }, $item['productos']) : []
                             ];
-                        });
+                    });
 
-                        $costos = $venta->costosAsociados->map(function($costo) {
+                    $costos = $venta->costosAsociados->map(function($costo) {
                             $pagosCosto = $this->parsePagos($costo->pagos ?? '[]');
-                            return [
+                        return [
                                 'id' => $costo->id_costos,
                                 'descripcion' => $costo->descripcion,
                                 'subcategoria' => $this->formatearSubcategoria($costo->subcategoria),
@@ -780,12 +780,12 @@ class CierreVentasSemanalController extends Controller
                                 'metodo_pago_id' => $pagosCosto[0]['metodo_pago'] ?? null,
                                 'metodos_pago' => collect($pagosCosto)->pluck('metodo_pago')->unique()->implode(', '),
                                 'fecha' => $costo->f_costos
-                            ];
-                        });
+                        ];
+                    });
 
-                        $gastos = $venta->gastosAsociados->map(function($gasto) {
+                    $gastos = $venta->gastosAsociados->map(function($gasto) {
                             $pagosGasto = $this->parsePagos($gasto->pagos ?? '[]');
-                            return [
+                        return [
                                 'id' => $gasto->id_gastos,
                                 'descripcion' => $gasto->descripcion,
                                 'subcategoria' => $this->formatearSubcategoria($gasto->subcategoria),
@@ -793,42 +793,42 @@ class CierreVentasSemanalController extends Controller
                                 'metodo_pago_id' => $pagosGasto[0]['metodo_pago'] ?? null,
                                 'metodos_pago' => collect($pagosGasto)->pluck('metodo_pago')->unique()->implode(', '),
                                 'fecha' => $gasto->f_gastos
-                            ];
-                        });
-
-                        $metodosPago = collect($pagos)->pluck('metodo_pago')->unique()->implode(', ');
-                        $totalPagado = collect($pagos)->sum('monto');
-                        
-                        return [
-                            'id' => $venta->id,
-                            'fecha' => $venta->fecha_h,
-                            'cliente' => $venta->cliente,
-                            'valor_total' => $venta->valor_v,
-                            'tipo_venta' => $venta->tipo_venta,
-                            'estatus' => $venta->estatus,
-                            'pagos' => $pagos,
-                            'metodos_pago' => $metodosPago,
-                            'total_pagado' => $totalPagado,
-                            'trabajos' => $trabajos,
-                            'costos' => $costos,
-                            'total_costos' => $costos->sum('valor'),
-                            'gastos' => $gastos,
-                            'total_gastos' => $gastos->sum('valor'),
-                            'ganancia_bruta' => $venta->valor_v - $costos->sum('valor') - $gastos->sum('valor')
                         ];
-                    }),
-                    'total_ventas' => $tecnico->ventas->sum('valor_v'),
-                    'total_costos' => $tecnico->ventas->sum(function($venta) {
-                        return $venta->costosAsociados->sum('valor');
-                    }),
-                    'total_gastos' => $tecnico->ventas->sum(function($venta) {
-                        return $venta->gastosAsociados->sum('valor');
-                    }),
-                    'ganancia_total' => $tecnico->ventas->sum('valor_v') - 
-                                    $tecnico->ventas->sum(function($venta) {
-                                        return $venta->costosAsociados->sum('valor') + 
-                                                $venta->gastosAsociados->sum('valor');
-                                    })
+                    });
+
+                    $metodosPago = collect($pagos)->pluck('metodo_pago')->unique()->implode(', ');
+                    $totalPagado = collect($pagos)->sum('monto');
+                    
+                    return [
+                        'id' => $venta->id,
+                        'fecha' => $venta->fecha_h,
+                        'cliente' => $venta->cliente ? $venta->cliente->nombre : $venta->id_cliente,
+                        'valor_total' => $venta->valor_v,
+                        'tipo_venta' => $venta->tipo_venta,
+                        'estatus' => $venta->estatus,
+                        'pagos' => $pagos,
+                        'metodos_pago' => $metodosPago,
+                        'total_pagado' => $totalPagado,
+                        'trabajos' => $trabajos,
+                        'costos' => $costos,
+                        'total_costos' => $costos->sum('valor'),
+                        'gastos' => $gastos,
+                        'total_gastos' => $gastos->sum('valor'),
+                        'ganancia_bruta' => $venta->valor_v - $costos->sum('valor') - $gastos->sum('valor')
+                    ];
+                }),
+                'total_ventas' => $tecnico->ventas->sum('valor_v'),
+                'total_costos' => $tecnico->ventas->sum(function($venta) {
+                    return $venta->costosAsociados->sum('valor');
+                }),
+                'total_gastos' => $tecnico->ventas->sum(function($venta) {
+                    return $venta->gastosAsociados->sum('valor');
+                }),
+                'ganancia_total' => $tecnico->ventas->sum('valor_v') - 
+                                $tecnico->ventas->sum(function($venta) {
+                                    return $venta->costosAsociados->sum('valor') + 
+                                            $venta->gastosAsociados->sum('valor');
+                                })
                 ];
             });
     }
@@ -876,11 +876,14 @@ class CierreVentasSemanalController extends Controller
     private function getVentasPorCliente($startDate, $endDate)
     {
         return RegistroV::whereBetween('fecha_h', [$startDate, $endDate])
+            ->with('cliente')
             ->get()
-            ->groupBy('cliente') 
-            ->map(function ($ventas, $nombreCliente) {
+            ->groupBy('id_cliente')
+            ->map(function ($ventas, $idCliente) {
+                $cliente = $ventas->first()->cliente;
                 return [
-                    'cliente' => $nombreCliente,
+                    'id_cliente' => $idCliente,
+                    'cliente' => $cliente ? $cliente->nombre : $idCliente,
                     'ventas_contado' => $ventas->where('tipo_venta', 'contado')->sum('valor_v'),
                     'ventas_credito' => $ventas->where('tipo_venta', 'credito')->sum('valor_v'),
                     'total_ventas' => $ventas->sum('valor_v')

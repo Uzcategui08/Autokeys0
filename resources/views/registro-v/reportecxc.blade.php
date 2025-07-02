@@ -176,7 +176,7 @@
 
         @foreach($data as $item)
         @php
-            $cliente = \App\Models\Cliente::where('nombre', $item->cliente)->first();
+            $cliente = \App\Models\Cliente::find($item->id_cliente);
         @endphp
         <div class="cliente-header" style="display: flex; justify-content: space-between; align-items: center;">
             <span>{{ $item->cliente }}</span> -

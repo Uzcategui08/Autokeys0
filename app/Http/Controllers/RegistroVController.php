@@ -1362,17 +1362,15 @@ class RegistroVController extends Controller
             ->where('tipo_venta', 'credito');
 
         if ($request->cliente_id) {
-            $cliente = Cliente::find($request->cliente_id);
-            if ($cliente) {
-                $query->where('cliente', $cliente->nombre);
-            }
+            $query->where('id_cliente', $request->cliente_id);
         }
 
         if ($request->estatus) {
             $query->where('estatus', $request->estatus);
         }
 
-        $resumenClientes = $query->get()->groupBy('cliente')->map(function ($ventas, $clienteNombre) {
+        $resumenClientes = $query->get()->groupBy('id_cliente')->map(function ($ventas, $clienteId) {
+            $cliente = Cliente::find($clienteId);
             $totalPagado = $ventas->sum(function ($venta) {
                 if (is_array($venta->pagos)) {
                     return collect($venta->pagos)->sum('monto');
@@ -1381,7 +1379,7 @@ class RegistroVController extends Controller
             });
 
             return (object) [
-                'cliente' => $clienteNombre,
+                'cliente' => $cliente ? $cliente->nombre : 'Cliente no encontrado',
                 'telefono' => $ventas->first()->telefono,
                 'total_ventas' => $ventas->count(),
                 'total_ventas_monto' => $ventas->sum('valor_v'),
@@ -1452,10 +1450,7 @@ class RegistroVController extends Controller
             ->with(['cliente']);
 
         if ($clienteId) {
-            $cliente = Cliente::find($clienteId);
-            if ($cliente) {
-                $query->where('cliente', $cliente->nombre);
-            }
+            $query->where('id_cliente', $clienteId);
         }
 
         if ($estatus) {
@@ -1464,13 +1459,15 @@ class RegistroVController extends Controller
 
         $ventas = $query->get();
 
-        $data = $ventas->groupBy('cliente')->map(function ($ventasGrupo, $clienteNombre) use ($language) {
+        $data = $ventas->groupBy('id_cliente')->map(function ($ventasGrupo, $clienteId) use ($language) {
+            $cliente = Cliente::find($clienteId);
             $totalPagado = $ventasGrupo->sum(function ($venta) {
                 return is_array($venta->pagos) ? collect($venta->pagos)->sum('monto') : 0;
             });
 
             return (object) [
-                'cliente' => $clienteNombre,
+                'id_cliente' => $clienteId,
+                'cliente' => $cliente ? $cliente->nombre : 'Cliente no encontrado',
                 'telefono' => $ventasGrupo->first()->telefono,
                 'total_ventas' => $ventasGrupo->count(),
                 'total_ventas_monto' => $ventasGrupo->sum('valor_v'),
@@ -1487,8 +1484,13 @@ class RegistroVController extends Controller
                         if (is_array($itemsData) || is_object($itemsData)) {
                             foreach ($itemsData as $item) {
                                 $item = (object) $item;
+                                
+                                $trabajo = \App\Models\Trabajo::where('nombre', $item->trabajo)->first();
+                                $workName = $trabajo ? $trabajo->getNombreEnIdioma($language) : ($language === 'en' ? 'Unspecified work' : 'Trabajo no especificado');
+                                
                                 $items[] = (object) [
-                                    'trabajo' => $item->trabajo ?? $item->trabajo_nombre ?? ($language === 'en' ? 'Unspecified work' : 'Trabajo no especificado'),
+                                    'trabajo' => $workName,
+                                    'precio_trabajo' => $item->precio_trabajo ?? 0,
                                     'descripcion' => $item->descripcion ?? null,
                                     'productos' => isset($item->productos) ? array_map(function ($p) use ($language) {
                                         $p = (object) $p;
@@ -1504,6 +1506,7 @@ class RegistroVController extends Controller
 
                     return (object) [
                         'id' => $venta->id,
+                        'id_empleado' => $venta->id_empleado,
                         'fecha_h' => $venta->fecha_h,
                         'valor_v' => $venta->valor_v,
                         'total_pagado' => $totalPagadoVenta,
