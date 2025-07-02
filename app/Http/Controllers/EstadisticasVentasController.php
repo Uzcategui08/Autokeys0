@@ -73,17 +73,17 @@ class EstadisticasVentasController extends Controller
             ->get();
 
         foreach ($registros as $registro) {
-            $pagos = $registro->pagos ?? [];
+            $pagos = is_array($registro->pagos) ? $registro->pagos : (json_decode($registro->pagos, true) ?? []);
             foreach ($pagos as $pago) {
                 if (isset($pago['fecha_pago'])) {
                     $fechaPago = Carbon::parse($pago['fecha_pago']);
                     if ($fechaPago->year == $this->year && $fechaPago->month == $this->month) {
-                        $total += $pago['monto'];
+                        $total += $pago['monto'] ?? 0;
                     }
                 } else {
                     // Si no hay fecha de pago, solo sumar si la venta es de este mes
                     if (Carbon::parse($registro->fecha_h)->year == $this->year && Carbon::parse($registro->fecha_h)->month == $this->month) {
-                        $total += $pago['monto'];
+                        $total += $pago['monto'] ?? 0;
                     }
                 }
             }
@@ -265,8 +265,7 @@ class EstadisticasVentasController extends Controller
         $totalTrabajos = $trabajos->sum();
 
         // Obtener registros detallados con sus pagos
-        $registros = RegistroV::with('pagos')
-            ->whereYear('fecha_h', $this->year)
+        $registros = RegistroV::whereYear('fecha_h', $this->year)
             ->whereMonth('fecha_h', $this->month)
             ->get();
 
@@ -277,29 +276,29 @@ class EstadisticasVentasController extends Controller
         ];
 
         foreach ($registros as $registro) {
-            $tipoPago = $registro->tipo_pago; // contado o credito
-            $trabajos = json_decode($registro->items, true) ?? [];
+            $tipoPago = $registro->tipo_pago ?? 'contado'; // fallback por si no existe
+            $trabajos = is_array($registro->items) ? $registro->items : (json_decode($registro->items, true) ?? []);
 
-            foreach ($trabajos as $trabajo) {
-                if (!isset($ventasPorTrabajo[$tipoPago][$trabajo])) {
-                    $ventasPorTrabajo[$tipoPago][$trabajo] = [
+            foreach ($trabajos as $item) {
+                $trabajoKey = is_array($item) ? ($item['trabajo'] ?? (is_string($item) ? $item : 'Sin especificar')) : (is_string($item) ? $item : 'Sin especificar');
+                if (!isset($ventasPorTrabajo[$tipoPago][$trabajoKey])) {
+                    $ventasPorTrabajo[$tipoPago][$trabajoKey] = [
                         'total' => 0,
                         'metodos' => []
                     ];
                 }
 
                 // Procesar métodos de pago
-                if ($registro->pagos) {
-                    foreach ($registro->pagos as $pago) {
-                        $metodo = $pago['metodo']; // Obtener el nombre del método de pago
-                        if (!isset($ventasPorTrabajo[$tipoPago][$trabajo]['metodos'][$metodo])) {
-                            $ventasPorTrabajo[$tipoPago][$trabajo]['metodos'][$metodo] = [
-                                'total' => 0
-                            ];
-                        }
-                        $ventasPorTrabajo[$tipoPago][$trabajo]['metodos'][$metodo]['total'] += $pago['monto'];
-                        $ventasPorTrabajo[$tipoPago][$trabajo]['total'] += $pago['monto'];
+                $pagos = is_array($registro->pagos) ? $registro->pagos : (json_decode($registro->pagos, true) ?? []);
+                foreach ($pagos as $pago) {
+                    $metodo = $pago['metodo'] ?? ($pago['metodo_pago'] ?? 'N/A'); // Compatibilidad
+                    if (!isset($ventasPorTrabajo[$tipoPago][$trabajoKey]['metodos'][$metodo])) {
+                        $ventasPorTrabajo[$tipoPago][$trabajoKey]['metodos'][$metodo] = [
+                            'total' => 0
+                        ];
                     }
+                    $ventasPorTrabajo[$tipoPago][$trabajoKey]['metodos'][$metodo]['total'] += $pago['monto'] ?? 0;
+                    $ventasPorTrabajo[$tipoPago][$trabajoKey]['total'] += $pago['monto'] ?? 0;
                 }
             }
         }

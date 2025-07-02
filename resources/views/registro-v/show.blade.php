@@ -68,16 +68,13 @@
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-8">
                                         <div class="form-group">
                                             <label>Cliente</label>
-                                            <p class="form-control bg-light">{{ $registroV->cliente }}</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>Teléfono</label>
-                                            <p class="form-control bg-light">{{ $registroV->telefono }}</p>
+                                            <p class="form-control bg-light">
+                                                <i class="fas fa-user mr-1 text-secondary"></i>
+                                                {{ $registroV->cliente?->nombre ?? $registroV->cliente ?? 'N/A' }}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>

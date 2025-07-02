@@ -102,7 +102,7 @@
                                             <td>
                                                 <span class="text-truncate d-inline-block" style="max-width: 150px;">
                                                     <i class="fas fa-user mr-1 text-secondary"></i>
-                                                    {{ $registroV->cliente }}
+                                                     {{ $registroV->cliente?->nombre ?? $registroV->cliente ?? 'N/A' }}
                                                 </span>
                                             </td>
                                             <td>
