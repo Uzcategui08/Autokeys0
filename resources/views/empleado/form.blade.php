@@ -26,6 +26,7 @@
                         <option value="2" {{ old('cargo', $empleado?->cargo) == 2 ? 'selected' : '' }}>Administrativo</option>
                         <option value="3" {{ old('cargo', $empleado?->cargo) == 3 ? 'selected' : '' }}>Supervisor</option>
                         <option value="4" {{ old('cargo', $empleado?->cargo) == 4 ? 'selected' : '' }}>Gerente</option>
+                        <option value="5" {{ old('cargo', $empleado?->cargo) == 5 ? 'selected' : '' }}>Dueño</option>
                     </select>
                     {!! $errors->first('cargo', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
                 </div>
@@ -49,6 +50,7 @@
                         <option value="sueldo" {{ old('tipo_pago', $empleado?->tipo_pago) == 'sueldo' ? 'selected' : '' }}>Sueldo</option>
                         <option value="comision" {{ old('tipo_pago', $empleado?->tipo_pago) == 'comision' ? 'selected' : '' }}>Comisión</option>
                         <option value="horas" {{ old('tipo_pago', $empleado?->tipo_pago) == 'horas' ? 'selected' : '' }}>Horas</option>
+                        <option value="retiro" {{ old('tipo_pago', $empleado?->tipo_pago) == 'retiro' ? 'selected' : '' }}>Retiro</option>
                     </select>
                     {!! $errors->first('tipo_pago', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
                 </div>

@@ -3,7 +3,68 @@
 @section('title', 'Ventas')
 
 @section('content_header')
-    <h1>Registro de Ventas</h1>
+    <div class="d-flex justify-content-between align-items-center">
+        <h1>Registro de Ventas</h1>
+        <div class="filter-container">
+            <form action="{{ route('registro-vs.index') }}" method="GET" class="form-inline">
+                <div class="form-group mr-2">
+                    <label class="mr-2">Desde:</label>
+                    <select name="month_start" class="form-control form-control-sm">
+                        <option value="">Seleccione mes</option>
+                        @php
+                            $meses = [
+                                1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
+                                5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
+                                9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
+                            ];
+                        @endphp
+                        @foreach($meses as $key => $mes)
+                            <option value="{{ $key }}" {{ request('month_start') == $key ? 'selected' : '' }}>
+                                {{ $mes }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <select name="year_start" class="form-control form-control-sm ml-1">
+                        <option value="">Año</option>
+                        @foreach(range(date('Y') - 5, date('Y') + 1) as $year)
+                            <option value="{{ $year }}" {{ request('year_start') == $year ? 'selected' : '' }}>
+                                {{ $year }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                
+                <div class="form-group mr-2">
+                    <label class="mr-2">Hasta:</label>
+                    <select name="month_end" class="form-control form-control-sm">
+                        <option value="">Seleccione mes</option>
+                        @foreach($meses as $key => $mes)
+                            <option value="{{ $key }}" {{ request('month_end') == $key ? 'selected' : '' }}>
+                                {{ $mes }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <select name="year_end" class="form-control form-control-sm ml-1">
+                        <option value="">Año</option> 
+                        @foreach(range(date('Y') - 5, date('Y') + 1) as $year)
+                            <option value="{{ $year }}" {{ request('year_end') == $year ? 'selected' : '' }}>
+                                {{ $year }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-sm mr-2">
+                    <i class="fas fa-filter"></i> Filtrar
+                </button>
+                @if(request()->has('month_start') || request()->has('month_end'))
+                    <a href="{{ route('registro-vs.index') }}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-times"></i> Limpiar
+                    </a>
+                @endif
+            </form>
+        </div>
+    </div>
 @stop
 
 @section('content')
@@ -26,8 +87,8 @@
                     </div>
 
                     <div class="card-body bg-white">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-bordered dataTable">
+                        <div class="table-responsive" style="overflow-x: auto;">
+                            <table class="table table-striped table-bordered dataTable2" style="min-width: 1200px;">
                                 <thead class="thead">
                                     <tr>
                                         <th>ID Venta</th>
@@ -36,6 +97,7 @@
                                         <th>Cliente</th>
                                         <th>Tipo de Trabajo</th>
                                         <th>Métodos de Pago</th>
+                                        <th>Cobrado por</th>
                                         <th>Titular</th>
                                         <th>Productos</th>
                                         <th>Valor</th>
@@ -134,10 +196,32 @@
                                             <td>
                                                 @if(!empty($metodosPago))
                                                     <div class="d-flex flex-column">
-                                                        @foreach($metodosPago as $metodo)
+                                                        @foreach($pagos as $pago)
+                                                            @php
+                                                                $metodo = $pago['metodo_pago'] ?? '';
+                                                                $nombreMetodo = is_numeric($metodo) ? ($tiposDePago[$metodo]->name ?? $metodo) : $metodo;
+                                                                $monto = isset($pago['monto']) ? number_format($pago['monto'], 2) : '0.00';
+                                                            @endphp
                                                             <small class="text-nowrap">
                                                                 <i class="fas fa-credit-card mr-1 text-primary"></i>
-                                                                {{ $metodo }}
+                                                                {{ $nombreMetodo }} <span class="text-success">(${{ $monto }})</span>
+                                                            </small>
+                                                        @endforeach
+                                                    </div>
+                                                @else
+                                                    <span class="badge bg-light text-muted">N/A</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if(!empty($pagos))
+                                                    <div class="d-flex flex-column">
+                                                        @foreach($pagos as $pago)
+                                                            @php
+                                                                $cobrador = isset($pago['cobrador_id']) ? \App\Models\Empleado::find($pago['cobrador_id'])->nombre ?? 'Desconocido' : 'Desconocido';
+                                                            @endphp
+                                                            <small class="text-nowrap">
+                                                                <i class="fas fa-user-tie mr-1 text-info"></i>
+                                                                {{ $cobrador }}
                                                             </small>
                                                         @endforeach
                                                     </div>
@@ -263,8 +347,31 @@
 @stop
 
 @section('js')
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        $('.dataTable2').DataTable({
+            pageLength: 50,
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json'
+            },
+            dom: 'Bfrtip',
+            columnDefs: [
+                { 
+                    targets: -1, 
+                    width: '140px', 
+                    className: 'action-cell' 
+                },
+                {
+                    targets: '_all',
+                    className: 'compact-cell' 
+                }
+            ]
+        });
+    });
+
         $(document).ready(function() {
             
 

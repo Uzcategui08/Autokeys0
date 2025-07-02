@@ -84,6 +84,27 @@
                 </div>
             </div>
         </div>
+
+        <div class="card mb-4" id="retiro-base-group" style="display: none;">
+            <div class="card-header" style="background-color: #fff8e1;">
+                <h5 class="mb-0">Retiro del Dueño</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <strong>Pago al Dueño</strong>
+                    <p>Para registrar un pago al dueño, ingrese el monto en el campo.</p>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="sueldo_base_retiro" class="form-label fw-bold">Monto a Pagar</label>
+                            <input type="number" class="form-control" id="sueldo_base_retiro" name="sueldo_base_retiro" step="0.01" min="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="card mb-4" id="desglose-horas-group" style="display: none;">
             <div class="card-header" style="background-color: #e1f5fe;">
                 <h5 class="mb-0">Desglose de Horas</h5>
@@ -327,6 +348,13 @@ $(document).ready(function() {
                             $('#horas-trabajadas-group, #desglose-horas-group').show();
                             $('#sueldo_base').val('16.25');
                         } 
+                            else if (response.tipo_pago === 'retiro') {
+                            $('#retiro-base-group').show();
+                            $('#sueldo-base-group').closest('.card').hide(); 
+                            $('#sueldo_base_retiro').val(response.retiro_base || '0');
+
+                            calcularRetiroDueño();
+                        }
                         else if (response.tipo_pago === 'comision') {
                             $('#sueldo-base-group').closest('.card').hide(); 
                             $('#horas-trabajadas-group, #desglose-horas-group').hide();
@@ -553,6 +581,24 @@ $(document).ready(function() {
 
         $('#metodo_pago_json').val(JSON.stringify(metodosPagoSeleccionados));
     }
+
+    function calcularRetiroDueño() {
+        const montoRetiro = parseFloat($('#sueldo_base_retiro').val()) || 0;
+        
+        $('#total_abonos').val(formatCurrency(0));
+        $('#total_descuentos').val(formatCurrency(0));
+        $('#total_pagado').val(montoRetiro.toFixed(2));
+        
+        actualizarDistribucionPagos();
+        
+        if (metodosPagoSeleccionados.length === 0 && montoRetiro > 0) {
+            agregarMetodoPago(1, montoRetiro);
+        }
+    }
+
+    $(document).on('input', '#sueldo_base_retiro', function() {
+        calcularRetiroDueño();
+    });
 
     function formatDate(dateString) {
         const options = { year: 'numeric', month: 'short', day: 'numeric' };

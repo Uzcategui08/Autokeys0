@@ -527,7 +527,8 @@ $(document).ready(function() {
     function actualizarResumen() {
 
         totalPagado = calcularTotalPagado();
-        saldoPendiente = valorTotal - totalPagado;
+        const saldo = valorTotal - totalPagado;
+        saldoPendiente = Number(saldo.toFixed(2));
         
         $('#valor-total').text('$' + valorTotal.toFixed(2));
         $('#total-pagado').text('$' + totalPagado.toFixed(2));
@@ -548,7 +549,7 @@ $(document).ready(function() {
         const pagosJson = $('#pagos_json').val() || '[]';
         try {
             const pagos = JSON.parse(pagosJson);
-            return pagos.reduce((total, pago) => total + parseFloat(pago.monto), 0);
+            return Number(pagos.reduce((total, pago) => total + Number(pago.monto), 0).toFixed(2));
         } catch (e) {
             return 0;
         }

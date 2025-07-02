@@ -264,6 +264,46 @@ class EstadisticasVentasController extends Controller
         }
         $totalTrabajos = $trabajos->sum();
 
+        // Obtener registros detallados con sus pagos
+        $registros = RegistroV::with('pagos')
+            ->whereYear('fecha_h', $this->year)
+            ->whereMonth('fecha_h', $this->month)
+            ->get();
+
+        // Procesar ventas por trabajo y métodos de pago
+        $ventasPorTrabajo = [
+            'contado' => [],
+            'credito' => []
+        ];
+
+        foreach ($registros as $registro) {
+            $tipoPago = $registro->tipo_pago; // contado o credito
+            $trabajos = json_decode($registro->items, true) ?? [];
+
+            foreach ($trabajos as $trabajo) {
+                if (!isset($ventasPorTrabajo[$tipoPago][$trabajo])) {
+                    $ventasPorTrabajo[$tipoPago][$trabajo] = [
+                        'total' => 0,
+                        'metodos' => []
+                    ];
+                }
+
+                // Procesar métodos de pago
+                if ($registro->pagos) {
+                    foreach ($registro->pagos as $pago) {
+                        $metodo = $pago['metodo']; // Obtener el nombre del método de pago
+                        if (!isset($ventasPorTrabajo[$tipoPago][$trabajo]['metodos'][$metodo])) {
+                            $ventasPorTrabajo[$tipoPago][$trabajo]['metodos'][$metodo] = [
+                                'total' => 0
+                            ];
+                        }
+                        $ventasPorTrabajo[$tipoPago][$trabajo]['metodos'][$metodo]['total'] += $pago['monto'];
+                        $ventasPorTrabajo[$tipoPago][$trabajo]['total'] += $pago['monto'];
+                    }
+                }
+            }
+        }
+
         return [
             // Datos básicos
             'month' => $this->month,
@@ -277,6 +317,7 @@ class EstadisticasVentasController extends Controller
                 'num_transacciones' => $totalTrabajos, // Mostrar la suma de trabajos
                 'ticket_promedio' => $this->ticketPromedio(),
             ],
+            'ventas_por_trabajo' => $ventasPorTrabajo,
 
             // Costos y utilidad
             'costos' => [

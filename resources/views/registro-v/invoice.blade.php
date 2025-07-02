@@ -157,16 +157,22 @@
                     <table width="100%">
                         <tr>
                             <td class="info-label">Customer:</td>
-                            <td class="info-value">{{ $registroV->cliente }}</td>
+                            <td class="info-value">{{ $registroV->cliente ?: 'N/A' }}</td>
                         </tr>
                         <tr>
                             <td class="info-label">Phone:</td>
-                            <td class="info-value">{{ $registroV->telefono }}</td>
+                            <td class="info-value">{{ $registroV->telefono ?: 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="info-label">Address:</td>
+                            <td class="info-value">{{ $registroV->direccion ?: 'N/A' }}</td>
                         </tr>
                         @if($registroV->marca || $registroV->modelo || $registroV->año)
                         <tr>
                             <td class="info-label">Vehicle:</td>
-                            <td class="info-value">{{ $registroV->marca }} {{ $registroV->modelo }}@if($registroV->año) ({{ $registroV->año }})@endif</td>
+                            <td class="info-value">
+                                {{ $registroV->marca ?: 'N/A' }} {{ $registroV->modelo ?: '' }}@if($registroV->año) ({{ $registroV->año }})@endif
+                            </td>
                         </tr>
                         @endif
                     </table>

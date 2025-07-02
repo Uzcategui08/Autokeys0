@@ -49,7 +49,8 @@
                                                     1 => 'Técnico',
                                                     2 => 'Administrativo', 
                                                     3 => 'Supervisor',
-                                                    4 => 'Gerente'
+                                                    4 => 'Gerente',
+                                                    5 => 'Dueño'
                                                 ];
                                                 echo $cargos[$empleado->cargo] ?? 'Desconocido';
                                             @endphp
