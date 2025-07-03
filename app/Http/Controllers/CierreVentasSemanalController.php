@@ -219,6 +219,19 @@ class CierreVentasSemanalController extends Controller
         ));
     }
 
+    public function convertToProperArray($data)
+    {
+        if (is_array($data)) {
+            return array_map(function($item) {
+                if (is_object($item)) {
+                    return (array) $item;
+                }
+                return $item;
+            }, $data);
+        }
+        return $data;
+    }
+
     public function exportPdf(Request $request)
     {
         try {
@@ -458,32 +471,31 @@ class CierreVentasSemanalController extends Controller
             
             Log::info('Generando vista PDF');
             
-            // Validar los datos antes de enviar a la vista
-            // Convertir todos los datos a arrays
+            // Convertir todos los datos a arrays y asegurar que son arrays
             $data = [
-                'ventasPorCliente' => $ventasPorCliente->toArray(),
-                'resumenTrabajos' => $resumenTrabajos->toArray(),
-                'ventasPorLugarVenta' => $ventasPorLugarVenta->toArray(),
+                'ventasPorCliente' => $this->convertToProperArray($ventasPorCliente->toArray()),
+                'resumenTrabajos' => $this->convertToProperArray($resumenTrabajos->toArray()),
+                'ventasPorLugarVenta' => $this->convertToProperArray($ventasPorLugarVenta->toArray()),
                 'startDate' => $startDate->format('d/m/Y'),
                 'endDate' => $endDate->format('d/m/Y'),
-                'reporteVentas' => $reporteVentas->toArray(),
-                'reporteCostosGastos' => $reporteCostosGastos->toArray(),
-                'ingresosRecibidos' => $ingresosRecibidos->toArray(),
-                'llavesPorTecnico' => $llavesPorTecnico->toArray(),
+                'reporteVentas' => $this->convertToProperArray($reporteVentas->toArray()),
+                'reporteCostosGastos' => $this->convertToProperArray($reporteCostosGastos->toArray()),
+                'ingresosRecibidos' => $this->convertToProperArray($ingresosRecibidos->toArray()),
+                'llavesPorTecnico' => $this->convertToProperArray($llavesPorTecnico->toArray()),
                 'totales' => $totales,
                 'totalCostosLlaves' => $totalCostosLlaves,
                 'ganancia' => $ganancia,
                 'retiroDueño' => $retiroDueño,
                 'gananciaFinal' => $gananciaFinal,
-                'metodosPago' => $metodosPago->toArray(), 
-                'ventasDetalladasPorTecnico' => $ventasDetalladasPorTecnico->toArray(),
-                'tiposDePago' => TiposDePago::all()->toArray(), 
-                'almacenesDisponibles' => Almacene::all()->toArray(),
-                'cargasDescargas' => $descargasManuales->toArray(),
+                'metodosPago' => $this->convertToProperArray($metodosPago->toArray()), 
+                'ventasDetalladasPorTecnico' => $this->convertToProperArray($ventasDetalladasPorTecnico->toArray()),
+                'tiposDePago' => $this->convertToProperArray(TiposDePago::all()->toArray()), 
+                'almacenesDisponibles' => $this->convertToProperArray(Almacene::all()->toArray()),
+                'cargasDescargas' => $this->convertToProperArray($descargasManuales->toArray()),
                 'totalDescargas' => $totalDescargas,
                 'ventasPorTrabajo' => [
-                    'contado' => $ventasPorTrabajo['contado']->toArray(),
-                    'credito' => $ventasPorTrabajo['credito']->toArray()
+                    'contado' => $this->convertToProperArray($ventasPorTrabajo['contado']->toArray()),
+                    'credito' => $this->convertToProperArray($ventasPorTrabajo['credito']->toArray())
                 ]
             ];
 
