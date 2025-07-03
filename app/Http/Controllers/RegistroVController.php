@@ -1485,8 +1485,24 @@ class RegistroVController extends Controller
                             foreach ($itemsData as $item) {
                                 $item = (object) $item;
                                 
-                                $trabajo = \App\Models\Trabajo::where('nombre', $item->trabajo)->first();
-                                $workName = $trabajo ? $trabajo->getNombreEnIdioma($language) : ($language === 'en' ? 'Unspecified work' : 'Trabajo no especificado');
+                                $trabajoNombre = null;
+                                
+                                if (isset($item->trabajo_nombre)) {
+                                    $trabajoNombre = $item->trabajo_nombre;
+                                }
+
+                                if (!$trabajoNombre && isset($item->trabajo)) {
+                                    $trabajoNombre = $item->trabajo;
+                                }
+                                
+                                if ($trabajoNombre) {
+                                    $trabajo = \App\Models\Trabajo::where('nombre', $trabajoNombre)
+                                        ->first();
+                                    
+                                    $workName = $trabajo ? $trabajo->getNombreEnIdioma($language) : ($language === 'en' ? 'Unspecified work' : 'Trabajo no especificado');
+                                } else {
+                                    $workName = $language === 'en' ? 'Unspecified work' : 'Trabajo no especificado';
+                                }
                                 
                                 $items[] = (object) [
                                     'trabajo' => $workName,
