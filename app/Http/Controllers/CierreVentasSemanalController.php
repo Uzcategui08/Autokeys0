@@ -459,28 +459,32 @@ class CierreVentasSemanalController extends Controller
             Log::info('Generando vista PDF');
             
             // Validar los datos antes de enviar a la vista
+            // Convertir todos los datos a arrays
             $data = [
-                'ventasPorCliente' => $ventasPorCliente,
-                'resumenTrabajos' => $resumenTrabajos,
-                'ventasPorLugarVenta' => $ventasPorLugarVenta,
+                'ventasPorCliente' => $ventasPorCliente->toArray(),
+                'resumenTrabajos' => $resumenTrabajos->toArray(),
+                'ventasPorLugarVenta' => $ventasPorLugarVenta->toArray(),
                 'startDate' => $startDate->format('d/m/Y'),
                 'endDate' => $endDate->format('d/m/Y'),
-                'reporteVentas' => $reporteVentas,
-                'reporteCostosGastos' => $reporteCostosGastos,
-                'ingresosRecibidos' => $ingresosRecibidos,
-                'llavesPorTecnico' => $llavesPorTecnico,
+                'reporteVentas' => $reporteVentas->toArray(),
+                'reporteCostosGastos' => $reporteCostosGastos->toArray(),
+                'ingresosRecibidos' => $ingresosRecibidos->toArray(),
+                'llavesPorTecnico' => $llavesPorTecnico->toArray(),
                 'totales' => $totales,
                 'totalCostosLlaves' => $totalCostosLlaves,
                 'ganancia' => $ganancia,
                 'retiroDueño' => $retiroDueño,
                 'gananciaFinal' => $gananciaFinal,
-                'metodosPago' => $metodosPago, 
-                'ventasDetalladasPorTecnico' => $ventasDetalladasPorTecnico,
-                'tiposDePago' => TiposDePago::all(), 
-                'almacenesDisponibles' => Almacene::all(),
-                'cargasDescargas' => $descargasManuales,
+                'metodosPago' => $metodosPago->toArray(), 
+                'ventasDetalladasPorTecnico' => $ventasDetalladasPorTecnico->toArray(),
+                'tiposDePago' => TiposDePago::all()->toArray(), 
+                'almacenesDisponibles' => Almacene::all()->toArray(),
+                'cargasDescargas' => $descargasManuales->toArray(),
                 'totalDescargas' => $totalDescargas,
-                'ventasPorTrabajo' => $ventasPorTrabajo
+                'ventasPorTrabajo' => [
+                    'contado' => $ventasPorTrabajo['contado']->toArray(),
+                    'credito' => $ventasPorTrabajo['credito']->toArray()
+                ]
             ];
 
             // Verificar si hay datos nulos o inválidos
