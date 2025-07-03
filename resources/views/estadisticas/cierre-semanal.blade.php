@@ -717,7 +717,11 @@
                             @php $totalContado = $ventasPorTrabajo['total_contado']; @endphp
                             @foreach($ventasPorTrabajo['contado'] as $trabajo => $data)
                             <tr>
-                                <td>{{ $trabajo ?: 'Sin especificar' }}</td>
+                                @php
+                                    $trabajoId = $data['trabajo_id'] ?? null;
+                                    $nombreTrabajo = $trabajoId && isset($trabajos[$trabajoId]) ? $trabajos[$trabajoId] : $trabajo;
+                                @endphp
+                                <td>{{ $nombreTrabajo }}</td>
                                 <td class="text-right bg-ventas">${{ number_format($data['total'], 2) }}</td>
                                 <td>
                                     <div class="d-flex flex-column">
@@ -768,7 +772,11 @@
                             @php $totalCredito = $ventasPorTrabajo['total_credito']; @endphp
                             @foreach($ventasPorTrabajo['credito'] as $trabajo => $data)
                             <tr>
-                                <td>{{ $trabajo ?: 'Sin especificar' }}</td>
+                                @php
+                                    $trabajoId = $data['trabajo_id'] ?? null;
+                                    $nombreTrabajo = $trabajoId && isset($trabajos[$trabajoId]) ? $trabajos[$trabajoId] : $trabajo;
+                                @endphp
+                                <td>{{ $nombreTrabajo }}</td>
                                 <td class="text-right bg-ventas">${{ number_format($data['total'], 2) }}</td>
                                 <td>
                                     <div class="d-flex flex-column">
@@ -817,7 +825,11 @@
                 <tbody>
                     @foreach($resumenTrabajos as $trabajo => $data)
                     <tr>
-                        <td>{{ explode('-', $data['nombre'])[0] }}</td>
+                        @php
+                            $trabajoId = $data['trabajo_id'] ?? null;
+                            $nombreTrabajo = $trabajoId && isset($trabajos[$trabajoId]) ? $trabajos[$trabajoId] : $data['nombre'];
+                        @endphp
+                        <td>{{ $nombreTrabajo }}</td>
                         <td class="text-right bg-resumen">{{ $data['cantidad'] }}</td>
                     </tr>
                     @endforeach

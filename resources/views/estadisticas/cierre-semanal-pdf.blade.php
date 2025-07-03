@@ -372,8 +372,8 @@
                                                         $paymentMethods = [];
                                                         foreach($venta['pagos'] as $pago) {
                                                             foreach($tiposDePago as $tipo) {
-                                                                if($tipo->id == ($pago['metodo_pago'] ?? null)) {
-                                                                    $paymentMethods[] = $tipo->name;
+                                                                if($tipo['id'] == ($pago['metodo_pago'] ?? null)) {
+                                                                    $paymentMethods[] = $tipo['name'];
                                                                     break;
                                                                 }
                                                             }
@@ -397,7 +397,7 @@
                                             @foreach($venta['trabajos'] as $trabajo)
                                             <div class="mb-2 border-bottom pb-1">
                                                 <div class="d-flex justify-content-between">
-                                                    <span class="font-weight-bold">{{ $trabajo['trabajo'] }}</span>
+                                                    <span class="font-weight-bold">{{ $trabajo['nombre'] }}</span>
                                                     <span>${{ number_format($trabajo['precio_trabajo'], 2) }}</span>
                                                 </div>
                                                 @if($trabajo['descripcion'])
@@ -457,8 +457,8 @@
                                                             <td>{{ $costo['descripcion'] }} <small class="text-muted">({{ $costo['subcategoria'] }})</small></td>
                                                             <td>
                                                                 @foreach($tiposDePago as $tipo)
-                                                                    @if($tipo->id == ($costo['metodo_pago_id'] ?? null))
-                                                                        {{ $tipo->name }}
+                                                                    @if($tipo['id'] == ($costo['metodo_pago_id'] ?? null))
+                                                                        {{ $tipo['name'] }}
                                                                         @break
                                                                     @endif
                                                                 @endforeach
@@ -496,8 +496,8 @@
                                                             <td>{{ $gasto['descripcion'] }} <small class="text-muted">({{ $gasto['subcategoria'] }})</small></td>
                                                             <td>
                                                                 @foreach($tiposDePago as $tipo)
-                                                                    @if($tipo->id == ($gasto['metodo_pago_id'] ?? null))
-                                                                        {{ $tipo->name }}
+                                                                    @if($tipo['id'] == ($gasto['metodo_pago_id'] ?? null))
+                                                                        {{ $tipo['name'] }}
                                                                         @break
                                                                     @endif
                                                                 @endforeach
@@ -535,8 +535,8 @@
                                                     <td>{{ \Carbon\Carbon::parse($pago['fecha'] ?? now())->format('d/m/Y') }}</td>
                                                     <td>
                                                         @foreach($tiposDePago as $tipo)
-                                                            @if($tipo->id == ($pago['metodo_pago'] ?? null))
-                                                                {{ $tipo->name }}
+                                                            @if($tipo['id'] == ($pago['metodo_pago'] ?? null))
+                                                                {{ $tipo['name'] }}
                                                                 @break
                                                             @endif
                                                         @endforeach
@@ -608,7 +608,9 @@
                             
                             @if(isset($item['costos'][$i]))
                                 <td class="bg-costos">{{ $item['costos'][$i]['descripcion'] }}</td>
-                                <td class="bg-costos">{{ $item['costos'][$i]['metodo_pago'] }}</td>
+                                <td class="bg-costos">
+                                    {{ $item['costos'][$i]['metodo_pago'] ?? 'Desconocido' }}
+                                </td>
                                 <td class="text-right bg-costos">${{ number_format($item['costos'][$i]['total'], 2) }}</td>
                             @else
                                 <td colspan="3" class="bg-costos"></td>
@@ -616,7 +618,9 @@
 
                             @if(isset($item['gastos'][$i]))
                                 <td class="bg-gastos">{{ $item['gastos'][$i]['descripcion'] }}</td>
-                                <td class="bg-gastos">{{ $item['gastos'][$i]['metodo_pago'] }}</td>
+                                <td class="bg-gastos">
+                                    {{ $item['gastos'][$i]['metodo_pago'] ?? 'Desconocido' }}
+                                </td>
                                 <td class="text-right bg-gastos">${{ number_format($item['gastos'][$i]['total'], 2) }}</td>
                             @else
                                 <td colspan="3" class="bg-gastos"></td>
@@ -648,7 +652,7 @@
                         <th rowspan="2" class="align-middle">Técnico</th>
                         <th rowspan="2" class="align-middle">Llave</th>
                         @foreach($almacenesDisponibles as $almacen)
-                            <th colspan="2" class="text-center bg-llaves">{{ $almacen->nombre }}</th>
+                            <th colspan="2" class="text-center bg-llaves">{{ $almacen['nombre'] }}</th>
                         @endforeach
                         <th rowspan="2" class="text-center">Total</th>
                         <th rowspan="2" class="text-center">Valor</th>
@@ -672,8 +676,8 @@
                             <td class="font-weight-bold">{{ $tecnico['tecnico'] }}</td>
                             <td>{{ $llave['nombre'] }} (ID: {{ $llave['id_producto'] }})</td>
                             @foreach($almacenesDisponibles as $almacen)
-                                <td class="text-right bg-llaves">{{ $llave['almacenes'][$almacen->id]['cantidad'] ?? 0 }}</td>
-                                <td class="text-right bg-llaves">${{ number_format($llave['almacenes'][$almacen->id]['total'] ?? 0, 2) }}</td>
+                                <td class="text-right bg-llaves">{{ $llave['almacenes'][$almacen['id_almacen']]['cantidad'] ?? 0 }}</td>
+                                <td class="text-right bg-llaves">${{ number_format($llave['almacenes'][$almacen['id_almacen']]['total'] ?? 0, 2) }}</td>
                             @endforeach
                             <td class="text-right font-weight-bold">{{ $llave['total_cantidad'] }}</td>
                             <td class="text-right font-weight-bold">${{ number_format($llave['total_valor'], 2) }}</td>
@@ -694,8 +698,8 @@
                                 $totalValorAlmacen = 0;
                                 foreach($llavesPorTecnico as $tecnico) {
                                     foreach($tecnico['llaves'] as $llave) {
-                                        $totalAlmacen += $llave['almacenes'][$almacen->id]['cantidad'] ?? 0;
-                                        $totalValorAlmacen += $llave['almacenes'][$almacen->id]['total'] ?? 0;
+                                        $totalAlmacen += $llave['almacenes'][$almacen['id_almacen']]['cantidad'] ?? 0;
+                                        $totalValorAlmacen += $llave['almacenes'][$almacen['id_almacen']]['total'] ?? 0;
                                     }
                                 }
                             @endphp
@@ -802,16 +806,19 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @php $totalContado = $ventasPorTrabajo['total_contado']; @endphp
-                            @foreach($ventasPorTrabajo['contado'] as $trabajo => $data)
+                            @php 
+                                $ventasPorTrabajoContado = $ventasPorTrabajo['contado'] ?? [];
+                                $totalContado = $ventasPorTrabajo['total_contado'] ?? 0;
+                            @endphp
+                            @foreach($ventasPorTrabajoContado as $trabajo => $data)
                             <tr>
-                                <td>{{ $trabajo ?: 'Sin especificar' }}</td>
+                                <td>{{ $trabajos[$trabajo] ?? $trabajo ?? 'Sin especificar' }}</td>
                                 <td class="text-right">${{ number_format($data['total'], 2) }}</td>
                                 <td>
                                     @foreach($data['metodos'] as $metodo => $detalle)
                                     <div class="mb-1">
                                         <span class="badge bg-light text-dark">
-                                            {{ $metodosPago->where('id', preg_replace('/[^0-9]/', '', $metodo))->first()?->name ?? 'Desconocido' }}: 
+                                            {{ $metodosPago[preg_replace('/[^0-9]/', '', $metodo)] ?? 'Desconocido' }}: 
                                             ${{ number_format($detalle['total'], 2) }}
                                         </span>
                                     </div>
@@ -847,16 +854,19 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @php $totalCredito = $ventasPorTrabajo['total_credito']; @endphp
-                            @foreach($ventasPorTrabajo['credito'] as $trabajo => $data)
+                            @php 
+                                $ventasPorTrabajoCredito = $ventasPorTrabajo['credito'] ?? [];
+                                $totalCredito = $ventasPorTrabajo['total_credito'] ?? 0;
+                            @endphp
+                            @foreach($ventasPorTrabajoCredito as $trabajo => $data)
                             <tr>
-                                <td>{{ $trabajo ?: 'Sin especificar' }}</td>
+                                <td>{{ $trabajos[$trabajo] ?? $trabajo ?? 'Sin especificar' }}</td>
                                 <td class="text-right">${{ number_format($data['total'], 2) }}</td>
                                 <td>
                                     @foreach($data['metodos'] as $metodo => $detalle)
                                     <div class="mb-1">
                                         <span class="badge bg-light text-dark">
-                                            {{ $metodosPago->where('id', preg_replace('/[^0-9]/', '', $metodo))->first()?->name ?? 'Desconocido' }}: 
+                                            {{ $metodosPago[preg_replace('/[^0-9]/', '', $metodo)] ?? 'Desconocido' }}: 
                                             ${{ number_format($detalle['total'], 2) }}
                                         </span>
                                     </div>

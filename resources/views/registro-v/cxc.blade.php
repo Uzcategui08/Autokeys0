@@ -65,12 +65,17 @@
                                             foreach ($items as $item) {
                                                 if (isset($item['productos']) && is_array($item['productos'])) {
                                                     foreach ($item['productos'] as $producto) {
-                                                        $nombre = $producto['nombre_producto'] ?? 'Producto no especificado';
+                                                        $codigo = $producto['producto'] ?? 'N/A';
                                                         $cantidad = $producto['cantidad'] ?? 0;
-                                                        $productoModel = \App\Models\Producto::where('item', $nombre)->first();
-                                                        $codigo = $productoModel ? $productoModel->id_producto : 'N/A';
+                                                        $nombre = $producto['nombre_producto'] ?? 'Producto no especificado';
+
+                                                        $productoInfo = \App\Models\Producto::where('id_producto', $codigo)->first();
+                                                        $nombreProducto = $productoInfo ? $productoInfo->item : $nombre;
+
+                                                        $nombreProducto = json_decode('"' . $nombreProducto . '"');
+                                                        
                                                         $productos[] = [
-                                                            'nombre' => $nombre,
+                                                            'nombre' => $nombreProducto,
                                                             'codigo' => $codigo,
                                                             'cantidad' => $cantidad
                                                         ];
@@ -110,7 +115,7 @@
                                                     <div class="d-flex flex-wrap gap-1">
                                                         @foreach(array_slice($trabajos, 0, 2) as $trabajo)
                                                             <span class="badge bg-info text-white">
-                                                                {{ explode(' - ', $trabajo)[0] }}
+                                                                {{ json_decode('"' . explode(' - ', $trabajo)[0] . '"') }}
                                                             </span>
                                                         @endforeach
                                                         @if(count($trabajos) > 2)

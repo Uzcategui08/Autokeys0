@@ -163,17 +163,20 @@
             <tr>
                 <td>
                     <table width="100%">
+                        @php
+                            $clienteInfo = \App\Models\Cliente::where('id_cliente', $registroV->id_cliente)->first();
+                        @endphp
                         <tr>
                             <td class="info-label">Cliente:</td>
-                            <td class="info-value">{{ $registroV->cliente }}</td>
+                            <td class="info-value">{{ $clienteInfo ? $clienteInfo->nombre : 'N/A' }}</td>
                         </tr>
                         <tr>
                             <td class="info-label">Teléfono:</td>
-                            <td class="info-value">{{ $registroV->telefono }}</td>
+                            <td class="info-value">{{ $clienteInfo ? $clienteInfo->telefono : 'N/A' }}</td>
                         </tr>
                         <tr>
                             <td class="info-label">Dirección:</td>
-                            <td class="info-value">{{ $registroV->direccion ? $registroV->direccion : 'N/A' }}</td>
+                            <td class="info-value">{{ $clienteInfo ? $clienteInfo->direccion : 'N/A' }}</td>
                         </tr>
                         @if($registroV->marca || $registroV->modelo || $registroV->año)
                         <tr>
