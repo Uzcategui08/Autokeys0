@@ -251,8 +251,34 @@ class CierreVentasSemanalController extends Controller
 
     public function exportPdf(Request $request)
     {
+        $trabajos = TrabajoModel::select('id_trabajo', 'nombre')
+            ->get()
+            ->pluck('nombre', 'id_trabajo')
+            ->toArray();
 
-        $trabajos = TrabajoModel::select('id_trabajo', 'nombre')->get()->pluck('nombre', 'id_trabajo')->toArray();
+        $formatosTrabajo = [
+            'duplicado' => 'Duplicado',
+            'perdida' => 'Pérdida',
+            'programacion' => 'Programación',
+            'alarma' => 'Alarma',
+            'airbag' => 'Airbag',
+            'rekey' => 'Rekey',
+            'lishi' => 'Lishi',
+            'remote_start' => 'Remote Start',
+            'control' => 'Control',
+            'venta' => 'Venta',
+            'apertura' => 'Apertura',
+            'cambio_chip' => 'Cambio de Chip',
+            'revision' => 'Revisión',
+            'suiche' => 'Suiche',
+            'llave_puerta' => 'Llave de Puerta',
+            'cinturon' => 'Cinturón',
+            'diag' => 'Diagnóstico',
+            'emuladores' => 'Emuladores',
+            'clonacion' => 'Clonación'
+        ];
+        
+        $trabajos = array_merge($trabajos, $formatosTrabajo);
 
         $formatosTrabajo = [
             'duplicado' => 'Duplicado',
@@ -1256,7 +1282,8 @@ class CierreVentasSemanalController extends Controller
                     if (!$contado->has($trabajoNombre)) {
                         $contado->put($trabajoNombre, [
                             'metodos' => collect(),
-                            'total' => 0
+                            'total' => 0,
+                            'trabajo_id' => $item['trabajo_id'] ?? null
                         ]);
                     }
                     
@@ -1286,7 +1313,8 @@ class CierreVentasSemanalController extends Controller
                     if (!$credito->has($trabajoNombre)) {
                         $credito->put($trabajoNombre, [
                             'metodos' => collect(),
-                            'total' => 0
+                            'total' => 0,
+                            'trabajo_id' => $item['trabajo_id'] ?? null
                         ]);
                     }
                     
@@ -1336,19 +1364,26 @@ class CierreVentasSemanalController extends Controller
             
             foreach ($items as $item) {
                 $trabajoKey = $item['trabajo'] ?? 'Sin especificar';
+                $trabajoId = $item['trabajo_id'] ?? null;
                 
                 if (!$trabajos->has($trabajoKey)) {
-                    $trabajos->put($trabajoKey, 0);
+                    $trabajos->put($trabajoKey, [
+                        'cantidad' => 0,
+                        'trabajo_id' => $trabajoId
+                    ]);
                 }
                 
-                $trabajos->put($trabajoKey, $trabajos->get($trabajoKey) + 1);
+                $trabajoData = $trabajos->get($trabajoKey);
+                $trabajoData['cantidad']++;
+                $trabajos->put($trabajoKey, $trabajoData);
             }
         }
 
-        return $trabajos->map(function ($cantidad, $trabajoKey) {
+        return $trabajos->map(function ($data, $trabajoKey) {
             return [
-                'cantidad' => $cantidad,
-                'nombre' => $this->formatosTrabajo[$trabajoKey] ?? $trabajoKey
+                'cantidad' => $data['cantidad'],
+                'nombre' => $this->formatosTrabajo[$trabajoKey] ?? $trabajoKey,
+                'trabajo_id' => $data['trabajo_id']
             ];
         })->sortByDesc('cantidad')->values();
     }
