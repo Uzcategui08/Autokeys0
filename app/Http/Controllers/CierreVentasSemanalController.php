@@ -224,7 +224,22 @@ class CierreVentasSemanalController extends Controller
         if (is_array($data)) {
             return array_map(function($item) {
                 if (is_object($item)) {
-                    return (array) $item;
+                    // Si es un objeto, intentamos convertirlo a array
+                    try {
+                        $array = (array) $item;
+                        // Verificar si el array tiene claves numéricas
+                        if (array_values($array) === $array) {
+                            // Si tiene claves numéricas, mantenemos el array
+                            return $array;
+                        }
+                        // Si tiene claves asociativas, convertimos cada valor
+                        return array_map(function($value) {
+                            return is_object($value) ? (array) $value : $value;
+                        }, $array);
+                    } catch (\Exception $e) {
+                        // Si falla la conversión, devolvemos el objeto original
+                        return $item;
+                    }
                 }
                 return $item;
             }, $data);
@@ -471,6 +486,30 @@ class CierreVentasSemanalController extends Controller
             
             Log::info('Generando vista PDF');
             
+            // Verificar tipos de datos antes de convertir
+            Log::info('Tipos de datos antes de la conversión:', [
+                'ventasPorCliente' => gettype($ventasPorCliente),
+                'resumenTrabajos' => gettype($resumenTrabajos),
+                'ventasPorLugarVenta' => gettype($ventasPorLugarVenta),
+                'reporteVentas' => gettype($reporteVentas),
+                'reporteCostosGastos' => gettype($reporteCostosGastos),
+                'ingresosRecibidos' => gettype($ingresosRecibidos),
+                'llavesPorTecnico' => gettype($llavesPorTecnico),
+                'metodosPago' => gettype($metodosPago),
+                'ventasDetalladasPorTecnico' => gettype($ventasDetalladasPorTecnico),
+                'tiposDePago' => gettype(TiposDePago::all()),
+                'almacenesDisponibles' => gettype(Almacene::all()),
+                'cargasDescargas' => gettype($descargasManuales),
+                'ventasPorTrabajo_contado' => gettype($ventasPorTrabajo['contado']),
+                'ventasPorTrabajo_credito' => gettype($ventasPorTrabajo['credito'])
+            ]);
+
+            // Verificar estructura de ventasPorTrabajo
+            Log::info('Estructura de ventasPorTrabajo:', [
+                'contado_sample' => $ventasPorTrabajo['contado']->first() ?? null,
+                'credito_sample' => $ventasPorTrabajo['credito']->first() ?? null
+            ]);
+
             // Convertir todos los datos a arrays y asegurar que son arrays
             $data = [
                 'ventasPorCliente' => $this->convertToProperArray($ventasPorCliente->toArray()),
@@ -523,6 +562,24 @@ class CierreVentasSemanalController extends Controller
                     }
                     return $value;
                 })->toArray()
+            ]);
+
+            // Verificar tipos de datos después de la conversión
+            Log::info('Tipo de datos después de la conversión:', [
+                'ventasPorCliente' => gettype($data['ventasPorCliente']),
+                'resumenTrabajos' => gettype($data['resumenTrabajos']),
+                'ventasPorLugarVenta' => gettype($data['ventasPorLugarVenta']),
+                'reporteVentas' => gettype($data['reporteVentas']),
+                'reporteCostosGastos' => gettype($data['reporteCostosGastos']),
+                'ingresosRecibidos' => gettype($data['ingresosRecibidos']),
+                'llavesPorTecnico' => gettype($data['llavesPorTecnico']),
+                'metodosPago' => gettype($data['metodosPago']),
+                'ventasDetalladasPorTecnico' => gettype($data['ventasDetalladasPorTecnico']),
+                'tiposDePago' => gettype($data['tiposDePago']),
+                'almacenesDisponibles' => gettype($data['almacenesDisponibles']),
+                'cargasDescargas' => gettype($data['cargasDescargas']),
+                'ventasPorTrabajo_contado' => gettype($data['ventasPorTrabajo']['contado']),
+                'ventasPorTrabajo_credito' => gettype($data['ventasPorTrabajo']['credito'])
             ]);
 
             Log::info('Cargando vista PDF');
