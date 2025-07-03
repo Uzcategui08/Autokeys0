@@ -1477,6 +1477,13 @@ class RegistroVController extends Controller
                     $pagos = is_array($venta->pagos) ? $venta->pagos : [];
                     $totalPagadoVenta = collect($pagos)->sum('monto');
 
+                    function decodeUnicode($text) {
+                        if (is_string($text)) {
+                            return json_decode('"' . str_replace('\\u', '\u', $text) . '"');
+                        }
+                        return $text;
+                    }
+
                     $items = [];
                     if ($venta->items) {
                         $itemsData = is_string($venta->items) ? json_decode($venta->items) : $venta->items;
@@ -1489,13 +1496,6 @@ class RegistroVController extends Controller
                                 
                                 $workName = $trabajo ? $trabajo->getNombreEnIdioma($language) : ($language === 'en' ? 'Unspecified work' : 'Trabajo no especificado');
                                 
-                                function decodeUnicode($text) {
-                                    if (is_string($text)) {
-                                        return json_decode('"' . str_replace('\\u', '\u', $text) . '"');
-                                    }
-                                    return $text;
-                                }
-
                                 $items[] = (object) [
                                     'trabajo' => decodeUnicode($workName),
                                     'precio_trabajo' => $item->precio_trabajo ?? 0,
