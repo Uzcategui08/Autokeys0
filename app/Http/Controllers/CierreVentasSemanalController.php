@@ -357,25 +357,64 @@ class CierreVentasSemanalController extends Controller
             ]);
 
             Log::info('Consultando resumen de trabajos');
+            Log::info('Datos de entrada:', ['startDate' => $startDate->format('Y-m-d'), 'endDate' => $endDate->format('Y-m-d')]);
             $resumenTrabajos = $this->getResumenTrabajos($startDate, $endDate);
             Log::info('Resumen de trabajos obtenido:', [
                 'count' => count($resumenTrabajos),
-                'first' => $resumenTrabajos->first() ?? null
+                'first' => $resumenTrabajos->first() ?? null,
+                'total_trabajos' => $resumenTrabajos->sum('cantidad')
             ]);
 
+            // Verificar si hay trabajos con nombres inválidos
+            $trabajosInvalidos = $resumenTrabajos->filter(function($trabajo) {
+                return !is_string($trabajo['trabajo']) || empty(trim($trabajo['trabajo']));
+            });
+            if ($trabajosInvalidos->count() > 0) {
+                Log::warning('Trabajos inválidos encontrados:', [
+                    'count' => $trabajosInvalidos->count(),
+                    'invalid_jobs' => $trabajosInvalidos->toArray()
+                ]);
+            }
+
             Log::info('Consultando ventas por lugar de venta');
+            Log::info('Datos de entrada:', ['startDate' => $startDate->format('Y-m-d'), 'endDate' => $endDate->format('Y-m-d')]);
             $ventasPorLugarVenta = $this->getVentasPorLugarVenta($startDate, $endDate);
             Log::info('Ventas por lugar de venta obtenidas:', [
                 'count' => count($ventasPorLugarVenta),
-                'first' => $ventasPorLugarVenta->first() ?? null
+                'first' => $ventasPorLugarVenta->first() ?? null,
+                'total_ventas' => $ventasPorLugarVenta->sum('total_ventas')
             ]);
 
+            // Verificar si hay lugares de venta con nombres inválidos
+            $lugaresInvalidos = $ventasPorLugarVenta->filter(function($lugar) {
+                return !is_string($lugar['lugar_venta']) || empty(trim($lugar['lugar_venta']));
+            });
+            if ($lugaresInvalidos->count() > 0) {
+                Log::warning('Lugares de venta inválidos encontrados:', [
+                    'count' => $lugaresInvalidos->count(),
+                    'invalid_places' => $lugaresInvalidos->toArray()
+                ]);
+            }
+
             Log::info('Consultando ventas por cliente');
+            Log::info('Datos de entrada:', ['startDate' => $startDate->format('Y-m-d'), 'endDate' => $endDate->format('Y-m-d')]);
             $ventasPorCliente = $this->getVentasPorCliente($startDate, $endDate);
             Log::info('Ventas por cliente obtenidas:', [
                 'count' => count($ventasPorCliente),
-                'first' => $ventasPorCliente->first() ?? null
+                'first' => $ventasPorCliente->first() ?? null,
+                'total_ventas' => $ventasPorCliente->sum('total_ventas')
             ]);
+
+            // Verificar si hay clientes con nombres inválidos
+            $clientesInvalidos = $ventasPorCliente->filter(function($cliente) {
+                return !is_string($cliente['cliente']) || empty(trim($cliente['cliente']));
+            });
+            if ($clientesInvalidos->count() > 0) {
+                Log::warning('Clientes con nombres inválidos encontrados:', [
+                    'count' => $clientesInvalidos->count(),
+                    'invalid_clients' => $clientesInvalidos->toArray()
+                ]);
+            }
 
             Log::info('Procesando ventas por trabajo');
             $ventasPorTrabajo['contado'] = collect($ventasPorTrabajo['contado'])->map(function($trabajoData) use ($metodosPago) {
@@ -418,6 +457,8 @@ class CierreVentasSemanalController extends Controller
             Log::info('Total de descargas:', ['valor' => $totalDescargas]);
             
             Log::info('Generando vista PDF');
+            
+            // Validar los datos antes de enviar a la vista
             $data = [
                 'ventasPorCliente' => $ventasPorCliente,
                 'resumenTrabajos' => $resumenTrabajos,
@@ -441,9 +482,31 @@ class CierreVentasSemanalController extends Controller
                 'totalDescargas' => $totalDescargas,
                 'ventasPorTrabajo' => $ventasPorTrabajo
             ];
+
+            // Verificar si hay datos nulos o inválidos
+            $datosInvalidos = collect($data)->filter(function($value, $key) {
+                if (is_array($value) || $value instanceof \Illuminate\Support\Collection) {
+                    return $value->isEmpty();
+                }
+                return $value === null || (is_string($value) && trim($value) === '');
+            });
+
+            if ($datosInvalidos->count() > 0) {
+                Log::warning('Datos inválidos encontrados en la vista PDF:', [
+                    'invalid_data' => $datosInvalidos->toArray(),
+                    'total_invalid' => $datosInvalidos->count()
+                ]);
+            }
+
             Log::info('Datos para vista PDF:', [
                 'count' => count($data),
-                'keys' => array_keys($data)
+                'keys' => array_keys($data),
+                'sample_data' => collect($data)->map(function($value, $key) {
+                    if (is_array($value) || $value instanceof \Illuminate\Support\Collection) {
+                        return $value->first() ?? null;
+                    }
+                    return $value;
+                })->toArray()
             ]);
 
             Log::info('Cargando vista PDF');
