@@ -1459,6 +1459,13 @@ class RegistroVController extends Controller
 
         $ventas = $query->get();
 
+        function decodeUnicode($text) {
+            if (is_string($text)) {
+                return json_decode('"' . str_replace('\\u', '\u', $text) . '"');
+            }
+            return $text;
+        }
+
         $data = $ventas->groupBy('id_cliente')->map(function ($ventasGrupo, $clienteId) use ($language) {
             $cliente = Cliente::find($clienteId);
             $totalPagado = $ventasGrupo->sum(function ($venta) {
@@ -1476,13 +1483,6 @@ class RegistroVController extends Controller
                 'ventas' => $ventasGrupo->map(function ($venta) use ($language) {
                     $pagos = is_array($venta->pagos) ? $venta->pagos : [];
                     $totalPagadoVenta = collect($pagos)->sum('monto');
-
-                    function decodeUnicode($text) {
-                        if (is_string($text)) {
-                            return json_decode('"' . str_replace('\\u', '\u', $text) . '"');
-                        }
-                        return $text;
-                    }
 
                     $items = [];
                     if ($venta->items) {
