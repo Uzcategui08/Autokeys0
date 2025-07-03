@@ -1489,14 +1489,21 @@ class RegistroVController extends Controller
                                 
                                 $workName = $trabajo ? $trabajo->getNombreEnIdioma($language) : ($language === 'en' ? 'Unspecified work' : 'Trabajo no especificado');
                                 
+                                function decodeUnicode($text) {
+                                    if (is_string($text)) {
+                                        return json_decode('"' . str_replace('\\u', '\u', $text) . '"');
+                                    }
+                                    return $text;
+                                }
+
                                 $items[] = (object) [
-                                    'trabajo' => $workName,
+                                    'trabajo' => decodeUnicode($workName),
                                     'precio_trabajo' => $item->precio_trabajo ?? 0,
-                                    'descripcion' => $item->descripcion ?? null,
+                                    'descripcion' => decodeUnicode($item->descripcion ?? null),
                                     'productos' => isset($item->productos) ? array_map(function ($p) use ($language) {
                                         $p = (object) $p;
                                         return (object) [
-                                            'nombre_producto' => $p->nombre_producto ?? ($language === 'en' ? 'Unspecified product' : 'Producto no especificado'),
+                                            'nombre_producto' => decodeUnicode($p->nombre_producto ?? ($language === 'en' ? 'Unspecified product' : 'Producto no especificado')),
                                             'cantidad' => $p->cantidad ?? 1
                                         ];
                                     }, (array) $item->productos) : []
