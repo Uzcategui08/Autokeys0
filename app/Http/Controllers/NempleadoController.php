@@ -71,7 +71,7 @@ class NempleadoController extends Controller
                 'id_descuentos_json' => 'nullable|json',
                 'metodo_pago_json' => 'required|json',
                 'horas_trabajadas' => $empleado->tipo_pago === 'horas' ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
-                'sueldo_base' => 'required|numeric|min:0',
+                'sueldo_base' => $empleado->tipo_pago === 'comision' ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
                 'precio_hora_normal' => $empleado->tipo_pago === 'horas' ? 'required|numeric|min:0' : 'nullable',
                 'precio_hora_extra' => $empleado->tipo_pago === 'horas' ? 'required|numeric|min:0' : 'nullable',
                 'fecha_pago' => 'required|date',
@@ -340,7 +340,7 @@ class NempleadoController extends Controller
         try {
             $nominaEmpleado = Nempleado::with(['empleado'])
                 ->findOrFail($idNempleado);
-
+            
             $abonos = $this->procesarRelacion($nominaEmpleado->id_abonos, Abono::class, 'id_abonos', 'a_fecha');
             $descuentos = $this->procesarRelacion($nominaEmpleado->id_descuentos, Descuento::class, 'id_descuentos', 'd_fecha');
             $metodosPago = $this->procesarMetodosPago($nominaEmpleado->metodo_pago);
@@ -350,7 +350,7 @@ class NempleadoController extends Controller
                 'empleado' => $nominaEmpleado->empleado,
                 'fecha_desde' => $nominaEmpleado->fecha_desde,
                 'fecha_hasta' => $nominaEmpleado->fecha_hasta,
-                'fecha_pago' => $nominaEmpleado->created_at,
+                'fecha_pago' => $nominaEmpleado->fecha_pago,
                 'sueldo_base' => $nominaEmpleado->sueldo_base,
                 'total_descuentos' => $nominaEmpleado->total_descuentos,
                 'total_abonos' => $nominaEmpleado->total_abonos,
@@ -402,11 +402,11 @@ class NempleadoController extends Controller
     {
         try {
             $nominasEmpleados = Nempleado::with('empleado')
-                ->whereBetween('created_at', [
+                ->whereBetween('fecha_pago', [
                     \Carbon\Carbon::parse($fechaDesde)->startOfDay(),
                     \Carbon\Carbon::parse($fechaHasta)->endOfDay()
                 ])
-                ->orderBy('created_at', 'desc')
+                ->orderBy('fecha_pago', 'desc')
                 ->get();
 
             $totales = [
@@ -500,23 +500,23 @@ class NempleadoController extends Controller
 
                 if ($request->filled('tipo') && $request->tipo == 'individual') {
                     $query = Nempleado::with(['empleado'])
-                        ->whereDate('created_at', '>=', $fechaDesde)
-                        ->whereDate('created_at', '<=', $fechaHasta);
+                        ->whereDate('fecha_pago', '>=', $fechaDesde)
+                        ->whereDate('fecha_pago', '<=', $fechaHasta);
 
                     if ($request->filled('empleado_id')) {
                         $query->where('id_empleado', $request->empleado_id);
                     }
 
-                    $pagosIndividuales = $query->orderBy('created_at', 'desc')->get()
+                    $pagosIndividuales = $query->orderBy('fecha_pago', 'desc')->get()
                         ->map(function ($pago) {
-                            // Agregar descripción del tipo de pago
+
                             $pago->descripcion_pago = $this->getDescripcionPago($pago);
                             return $pago;
                         });
                 } elseif ($request->filled('tipo') && $request->tipo == 'general') {
                     $pagos = Nempleado::with(['empleado'])
-                        ->whereDate('created_at', '>=', $fechaDesde)
-                        ->whereDate('created_at', '<=', $fechaHasta)
+                        ->whereDate('fecha_pago', '>=', $fechaDesde)
+                        ->whereDate('fecha_pago', '<=', $fechaHasta)
                         ->get();
 
                     $metodosPago = [];
@@ -550,11 +550,21 @@ class NempleadoController extends Controller
                     $resumenGeneral = [
                         'total_empleados' => $pagos->unique('id_empleado')->count(),
                         'total_pagos' => $pagos->count(),
-                        'total_pagado' => $pagos->sum('total_pagado'),
-                        'total_sueldo_base' => $pagos->sum('sueldo_base'),
-                        'total_abonos' => $pagos->sum('total_abonos'),
-                        'total_descuentos' => $pagos->sum('total_descuentos'),
-                        'total_costos' => $pagos->sum('total_costos'),
+                        'total_pagado' => $pagos->reduce(function ($carry, $item) {
+                            return $carry + (float)($item->total_pagado ?? 0);
+                        }, 0),
+                        'total_sueldo_base' => $pagos->reduce(function ($carry, $item) {
+                            return $carry + (float)($item->sueldo_base ?? 0);
+                        }, 0),
+                        'total_abonos' => $pagos->reduce(function ($carry, $item) {
+                            return $carry + (float)($item->total_abonos ?? 0);
+                        }, 0),
+                        'total_descuentos' => $pagos->reduce(function ($carry, $item) {
+                            return $carry + (float)($item->total_descuentos ?? 0);
+                        }, 0),
+                        'total_costos' => $pagos->reduce(function ($carry, $item) {
+                            return $carry + (float)($item->total_costos ?? 0);
+                        }, 0),
                         'metodos_pago' => $metodosPago,
                         'fecha_desde' => $fechaDesde,
                         'fecha_hasta' => $fechaHasta,
@@ -576,7 +586,6 @@ class NempleadoController extends Controller
         }
     }
 
-    // Nuevo método para obtener descripción del pago
     protected function getDescripcionPago($pago)
     {
         switch ($pago->tipo_pago_empleado) {

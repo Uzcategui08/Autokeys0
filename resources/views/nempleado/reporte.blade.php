@@ -97,7 +97,7 @@
                                                     <td class="text-right">${{ number_format($pago->total_abonos, 2) }}</td>
                                                     <td class="text-right">${{ number_format($pago->total_descuentos, 2) }}</td>
                                                     <td class="text-right">${{ number_format($pago->total_pagado, 2) }}</td>
-                                                    <td class="text-center">{{ $pago->created_at->format('d/m/Y') }}</td>
+                                                    <td class="text-center">{{ $pago->fecha_pago ?: 'N/A' }}</td>
                                                     <td class="text-center">
                                                         <button class="btn btn-sm btn-outline-primary generar-pdf" 
                                                                 data-tipo="individual"

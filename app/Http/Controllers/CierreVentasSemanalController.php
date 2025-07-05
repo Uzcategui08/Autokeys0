@@ -46,6 +46,20 @@ class CierreVentasSemanalController extends Controller
         'clonacion' => 'Clonación'
     ];
 
+    private function getNombreTrabajoPorId($trabajoId)
+    {
+        $trabajo = TrabajoModel::find($trabajoId);
+        return $trabajo ? $trabajo->nombre : 'Trabajo no encontrado';
+    }
+
+    private function decodeUnicode($texto)
+    {
+        if (is_string($texto)) {
+            return json_decode('"' . str_replace('\\u', '\u', $texto) . '"');
+        }
+        return $texto;
+    }
+
     public function index(Request $request)
     {
             $yearSelected = $request->input('year', now()->year);
@@ -88,45 +102,37 @@ class CierreVentasSemanalController extends Controller
 
         $descargasManualesFormato = [
             'tecnico' => 'Manual',
-            'llaves' => collect($descargasManuales)->groupBy('producto')->map(function($grupo, $producto) {
-                $primerRegistro = $grupo->first();
-                $idProducto = $primerRegistro['id_producto'] ?? null;
+            'llaves' => collect($descargasManuales)->map(function($item) {
+                $idProducto = $item['id_producto'] ?? null;
+                $almacenId = $item['id_almacen'] ?? null;
                 
-                $llave = [
-                    'nombre' => Producto::where('id_producto', $primerRegistro['id_producto'])->value('item') ?? 'Producto no encontrado',
+                $producto = Producto::where('id_producto', $idProducto)->first();
+                
+                $diferencia = abs($item['cantidad_nueva'] - $item['cantidad_anterior']);
+                $precio = $producto ? $producto->precio : 0;
+                
+                return [
+                    'nombre' => $producto ? $producto->item : 'Producto no encontrado',
                     'id_producto' => $idProducto,
-                    'almacenes' => collect($grupo)->groupBy('id_almacen')->map(function($almacenGrupo) use ($idProducto) {
-                        $diferencias = $almacenGrupo->map(function($item) {
-                            return abs($item['cantidad_nueva'] - $item['cantidad_anterior']);
-                        });
-                        
-                        $cantidad = $diferencias->sum();
-
-                        $precio = Producto::where('id_producto', $almacenGrupo->first()['id_producto'])->value('precio') ?? 0;
-                        return [
-                            'cantidad' => $cantidad,
-                            'total' => $cantidad * $precio,
+                    'almacenes' => [
+                        $almacenId => [
+                            'cantidad' => $diferencia,
+                            'total' => $diferencia * $precio,
                             'id_producto' => $idProducto
-                        ];
-                    }),
-                    'total_cantidad' => $grupo->map(function($item) {
-                        return abs($item['cantidad_nueva'] - $item['cantidad_anterior']);
-                    })->sum(),
-                    'total_valor' => $grupo->map(function($item) {
-                        $diferencia = abs($item['cantidad_nueva'] - $item['cantidad_anterior']);
-                        $precio = Producto::where('id_producto', $item['id_producto'])->value('precio') ?? 0;
-                        return $diferencia * $precio;
-                    })->sum(),
+                        ]
+                    ],
+                    'total_cantidad' => $diferencia,
+                    'total_valor' => $diferencia * $precio,
                     'id_producto' => $idProducto
                 ];
-                return $llave;
             }),
             'total_llaves' => $descargasManuales->map(function($item) {
-                return $item['cantidad'];
+                return abs($item['cantidad_nueva'] - $item['cantidad_anterior']);
             })->sum(),
             'total_valor' => $descargasManuales->map(function($item) {
                 $diferencia = abs($item['cantidad_nueva'] - $item['cantidad_anterior']);
-                return $diferencia * ($item['precio'] ?? 0);
+                $precio = Producto::where('id_producto', $item['id_producto'])->value('precio') ?? 0;
+                return $diferencia * $precio;
             })->sum()
         ];
 
@@ -1049,8 +1055,20 @@ class CierreVentasSemanalController extends Controller
             ->get()
             ->map(function($tecnico) use ($metodosPago) {
                 $pagosEmpleado = $tecnico->pagosEmpleados->map(function($pago) use ($tecnico, $metodosPago) {
-                    $metodoPagoId = is_string($pago->metodo_pago) ? json_decode($pago->metodo_pago, true)[0]['metodo_pago'] ?? null : $pago->metodo_pago;
-                    $metodoPago = $metodosPago->where('id', $metodoPagoId)->first();
+                    // Para pagos de nómina, el método de pago está en formato JSON
+                    $metodoPago = is_string($pago->metodo_pago) 
+                        ? json_decode($pago->metodo_pago, true)[0]['nombre'] ?? 'Desconocido'
+                        : ($pago->metodo_pago[0]['nombre'] ?? 'Desconocido');
+                    
+                    // Convertir a mayúscula inicial
+                    $metodoPago = ucfirst($metodoPago);
+                    
+                    return [
+                        'valor' => $pago->total_pagado,
+                        'metodo_pago' => $metodoPago,
+                        'fecha' => $pago->fecha_pago,
+                        'tipo' => $tecnico->tipo
+                    ];
                     
                     return [
                         'valor' => $pago->total_pagado,
@@ -1101,10 +1119,15 @@ class CierreVentasSemanalController extends Controller
                         $pagos = $this->parsePagos($venta->pagos ?? '[]'); 
 
                         $trabajos = collect($items)->map(function($item) {
+                            // Obtener el nombre del trabajo usando el trabajo_id si está presente
+                            $nombreTrabajo = $item['trabajo_id'] 
+                                ? $this->getNombreTrabajoPorId($item['trabajo_id'])
+                                : ($this->formatosTrabajo[$item['trabajo'] ?? 'Sin especificar'] ?? ($item['trabajo'] ?? 'Sin especificar'));
+                            
                             return [
-                                'trabajo' => $this->formatosTrabajo[$item['trabajo'] ?? 'Sin especificar'] ?? ($item['trabajo'] ?? 'Sin especificar'),
+                                'trabajo' => $nombreTrabajo,
                                 'precio_trabajo' => $item['precio_trabajo'] ?? 0,
-                                'descripcion' => $item['descripcion'] ?? null,
+                                'descripcion' => $item['descripcion'] ? $this->decodeUnicode($item['descripcion']) : null,
                                 'productos' => isset($item['productos']) ? array_map(function($producto) {
                                     return [
                                         'producto' => $producto['producto'] ?? null,
@@ -1275,8 +1298,11 @@ class CierreVentasSemanalController extends Controller
             $valorPorItem = $totalItems > 0 ? $venta->valor_v / $totalItems : $venta->valor_v;
             
             foreach ($items as $item) {
-                $trabajoKey = $item['trabajo'] ?? 'Sin especificar';
-                $trabajoNombre = $this->formatosTrabajo[$trabajoKey] ?? $trabajoKey;
+                // Obtener el nombre del trabajo usando el trabajo_id si existe
+                $trabajoNombre = $item['trabajo_id'] 
+                    ? $this->getNombreTrabajoPorId($item['trabajo_id'])
+                    : ($this->formatosTrabajo[$item['trabajo'] ?? 'Sin especificar'] ?? ($item['trabajo'] ?? 'Sin especificar'));
+                $trabajoKey = $trabajoNombre;
                 
                 if ($venta->tipo_venta === 'contado') {
                     if (!$contado->has($trabajoNombre)) {
@@ -1363,7 +1389,11 @@ class CierreVentasSemanalController extends Controller
             $items = json_decode($venta->items, true) ?? [];
             
             foreach ($items as $item) {
-                $trabajoKey = $item['trabajo'] ?? 'Sin especificar';
+                // Obtener el nombre del trabajo usando el trabajo_id si existe
+                $trabajoNombre = $item['trabajo_id'] 
+                    ? $this->getNombreTrabajoPorId($item['trabajo_id'])
+                    : ($this->formatosTrabajo[$item['trabajo'] ?? 'Sin especificar'] ?? ($item['trabajo'] ?? 'Sin especificar'));
+                $trabajoKey = $trabajoNombre;
                 $trabajoId = $item['trabajo_id'] ?? null;
                 
                 if (!$trabajos->has($trabajoKey)) {
@@ -1382,7 +1412,7 @@ class CierreVentasSemanalController extends Controller
         return $trabajos->map(function ($data, $trabajoKey) {
             return [
                 'cantidad' => $data['cantidad'],
-                'nombre' => $this->formatosTrabajo[$trabajoKey] ?? $trabajoKey,
+                'nombre' => $trabajoKey,
                 'trabajo_id' => $data['trabajo_id']
             ];
         })->sortByDesc('cantidad')->values();
@@ -1425,11 +1455,14 @@ class CierreVentasSemanalController extends Controller
         
         foreach ($transacciones as $transaccion) {
             if (is_array($transaccion) && isset($transaccion['tipo'])) {
-                $metodoPagoKey = $transaccion['metodo_pago'] ?? null;
+                $metodoPagoData = json_decode($transaccion['metodo_pago'], true);
+                
+                $metodoPago = $metodoPagoData ? $metodoPagoData[0]['nombre'] ?? 'Desconocido' : 'Desconocido';
+                
                 $resultados[] = [
                     'subcategoria' => $transaccion['tipo'] == 1 ? 'Salario Cerrajero' : 'Gastos Personal',
                     'descripcion' => 'Pago a empleado (Nómina)',
-                    'metodo_pago' => $metodosPago[$metodoPagoKey] ?? ucfirst($metodoPagoKey) ?? 'Desconocido',
+                    'metodo_pago' => $transaccion['metodo_pago'],
                     'total' => $transaccion['valor'],
                     'fecha_pago' => $transaccion['fecha']
                 ];
@@ -1492,7 +1525,7 @@ class CierreVentasSemanalController extends Controller
             'totalVentasContado' => collect($reporteVentas)->sum('ventas_contado'),
             'totalVentasCredito' => collect($reporteVentas)->sum('ventas_credito'),
             'totalVentas' => collect($reporteVentas)->sum('total_ventas'),
-            'totalCostos' => collect($reporteCostosGastos)->sum(fn($item) => collect($item['costos'])->sum('total')) + $costosLlaves,
+            'totalCostos' => collect($reporteCostosGastos)->sum(fn($item) => collect($item['costos'])->sum('total')),
             'totalGastos' => collect($reporteCostosGastos)->sum(fn($item) => collect($item['gastos'])->sum('total')),
             'totalIngresosRecibidos' => $ingresosRecibidos->sum('total'),
             'totalGeneralLlaves' => $llavesData->sum('total_llaves'),
@@ -1503,10 +1536,20 @@ class CierreVentasSemanalController extends Controller
     private function getCargasDescargas($startDate, $endDate)
     {
         return AjusteInventario::with(['producto', 'almacene', 'user'])
-            ->whereBetween('created_at', [$startDate, $endDate])
+            ->where(function($query) use ($startDate, $endDate) {
+                $query->whereBetween('fecha_ajuste', [$startDate, $endDate])
+                    ->orWhere(function($query) use ($startDate, $endDate) {
+                        $query->whereNull('fecha_ajuste')
+                            ->whereBetween('created_at', [$startDate, $endDate]);
+                    });
+            })
             ->where('tipo_ajuste', 'ajuste2')
+            ->where('cierre', true)
             ->get()
             ->map(function($ajuste) {
+                $fecha = $ajuste->fecha_ajuste ? 
+                    \Carbon\Carbon::parse($ajuste->fecha_ajuste) : 
+                    \Carbon\Carbon::parse($ajuste->created_at);
                 return [
                     'usuario' => $ajuste->user->name,
                     'producto' => $ajuste->producto->nombre,
@@ -1518,7 +1561,7 @@ class CierreVentasSemanalController extends Controller
                     'cantidad_anterior' => $ajuste->cantidad_anterior,
                     'cantidad_nueva' => $ajuste->cantidad_nueva,
                     'motivo' => $ajuste->descripcion,
-                    'fecha' => $ajuste->created_at->format('d/m/Y H:i'),
+                    'fecha' => $fecha->format('d/m/Y'),
                     'es_carga' => false,
                     'precio' => $ajuste->producto->precio ?? 0
                 ];
