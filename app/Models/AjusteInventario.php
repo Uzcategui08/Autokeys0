@@ -19,7 +19,8 @@ class AjusteInventario extends Model
         'cantidad_nueva',
         'descripcion',
         'user_id',
-        'cierre'
+        'cierre',
+        'fecha_ajuste'
     ];
 
     // Campos calculados o accesores

@@ -94,6 +94,15 @@
                             </small>
                         </div>
 
+                        <div class="form-group">
+                            <label for="fecha_ajuste" class="form-label">Fecha del Ajuste</label>
+                            <input type="date" name="fecha_ajuste" id="fecha_ajuste" 
+                                   class="form-control" value="{{ old('fecha_ajuste', now()->format('Y-m-d')) }}">
+                            <small id="fechaHelp" class="form-text text-muted">
+                                Fecha en que se realizó el ajuste
+                            </small>
+                        </div>
+
                         <div id="cierreGroup" class="form-group" style="display: none;">
                             <label for="cierre" class="form-label">¿Incluir en Cierre?</label>
                             <div class="form-check">

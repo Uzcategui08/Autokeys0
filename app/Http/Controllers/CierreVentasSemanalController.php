@@ -1536,11 +1536,20 @@ class CierreVentasSemanalController extends Controller
     private function getCargasDescargas($startDate, $endDate)
     {
         return AjusteInventario::with(['producto', 'almacene', 'user'])
-            ->whereBetween('created_at', [$startDate, $endDate])
+            ->where(function($query) use ($startDate, $endDate) {
+                $query->whereBetween('fecha_ajuste', [$startDate, $endDate])
+                    ->orWhere(function($query) use ($startDate, $endDate) {
+                        $query->whereNull('fecha_ajuste')
+                            ->whereBetween('created_at', [$startDate, $endDate]);
+                    });
+            })
             ->where('tipo_ajuste', 'ajuste2')
             ->where('cierre', true)
             ->get()
             ->map(function($ajuste) {
+                $fecha = $ajuste->fecha_ajuste ? 
+                    \Carbon\Carbon::parse($ajuste->fecha_ajuste) : 
+                    \Carbon\Carbon::parse($ajuste->created_at);
                 return [
                     'usuario' => $ajuste->user->name,
                     'producto' => $ajuste->producto->nombre,
@@ -1552,7 +1561,7 @@ class CierreVentasSemanalController extends Controller
                     'cantidad_anterior' => $ajuste->cantidad_anterior,
                     'cantidad_nueva' => $ajuste->cantidad_nueva,
                     'motivo' => $ajuste->descripcion,
-                    'fecha' => $ajuste->created_at->format('d/m/Y H:i'),
+                    'fecha' => $fecha->format('d/m/Y'),
                     'es_carga' => false,
                     'precio' => $ajuste->producto->precio ?? 0
                 ];
