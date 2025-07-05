@@ -805,7 +805,6 @@ $(document).ready(function() {
                         </button>
                     </div>
                 </div>
-                ${isExisting && costoData.fecha ? `<input type="hidden" name="costos_extras[${currentIndex}][fecha]" value="${costoData.fecha}">` : ''}
             </div>
         `);
 
@@ -945,7 +944,6 @@ $(document).ready(function() {
                         </button>
                     </div>
                 </div>
-                ${isExisting && gastoData.fecha ? `<input type="hidden" name="gastos[${currentIndex}][fecha]" value="${gastoData.fecha}">` : ''}
             </div>
         `);
 

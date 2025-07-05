@@ -31,7 +31,7 @@ class Inventario extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['id_inventario', 'id_producto', 'id_almacen', 'cantidad'];
+    protected $fillable = ['id_inventario', 'id_producto', 'id_almacen', 'cantidad', 'cierre'];
 
 
     /**

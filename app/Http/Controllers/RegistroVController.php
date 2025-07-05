@@ -240,7 +240,7 @@ class RegistroVController extends Controller
                         ];
 
                         $costo = Costo::create([
-                            'f_costos' => $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
+                            'f_costos' => $costoData['f_costos'] ?? $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
                             'id_tecnico' => $request->input('id_empleado'),
                             'descripcion' => $costoData['descripcion'],
                             'subcategoria' => $costoData['subcategoria'],
@@ -272,7 +272,7 @@ class RegistroVController extends Controller
                         ];
 
                         $gasto = Gasto::create([
-                            'f_gastos' => $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
+                            'f_gastos' => $gastoData['f_gastos'] ?? $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
                             'id_tecnico' => $request->input('id_empleado'),
                             'descripcion' => $gastoData['descripcion'],
                             'subcategoria' => $gastoData['subcategoria'],
@@ -435,7 +435,7 @@ class RegistroVController extends Controller
                     'subcategoria' => $costo->subcategoria,
                     'metodo_pago' => $pagosData[0]['metodo_pago'] ?? null,
                     'cobro' => $costo->estatus,
-                    'fecha' => $costo->f_costos
+                    'f_costos' => $costo->f_costos
                 ];
             }
         }
@@ -463,7 +463,7 @@ class RegistroVController extends Controller
                     'subcategoria' => $gasto->subcategoria,
                     'metodo_pago' => $pagosData[0]['metodo_pago'] ?? null,
                     'estatus' => $gasto->estatus,
-                    'fecha' => $gasto->fecha
+                    'f_gastos' => $gasto->f_gastos
                 ];
             }
         }
@@ -604,7 +604,7 @@ class RegistroVController extends Controller
                         'subcategoria' => $costo->subcategoria,
                         'metodo_pago' => $pagosData[0]['metodo_pago'] ?? null,
                         'cobro' => $costo->estatus,
-                        'fecha' => $costo->f_costos
+                        'f_costos' => $costo->f_costos
                     ];
                 }
             }
@@ -635,7 +635,7 @@ class RegistroVController extends Controller
                         'subcategoria' => $gasto->subcategoria,
                         'metodo_pago' => $pagosData[0]['metodo_pago'] ?? null,
                         'estatus' => $gasto->estatus,
-                        'fecha' => $gasto->fecha
+                        'f_gastos' => $gasto->f_gastos
                     ];
                 }
             }
@@ -966,7 +966,16 @@ class RegistroVController extends Controller
                                 Log::debug("Actualizando costo existente", ['id_costo' => $costoData['id_costos']]);
                                 $costo = Costo::find($costoData['id_costos']);
                                 if ($costo) {
+                                    $fechaAntes = $costo->f_costos;
+                                    $fechaNueva = $costoData['f_costos']; // Usamos directamente la fecha del request
+                                    Log::debug("Actualizando fecha de costo", [
+                                        'id_costo' => $costo->id_costos,
+                                        'fecha_anterior' => $fechaAntes,
+                                        'fecha_nueva' => $fechaNueva
+                                    ]);
+
                                     $costo->update([
+                                        'f_costos' => $fechaNueva ?? now()->format('Y-m-d'),
                                         'descripcion' => $costoData['descripcion'],
                                         'valor' => (float)($costoData['monto'] ?? 0),
                                         'subcategoria' => $costoData['subcategoria'],
@@ -975,14 +984,17 @@ class RegistroVController extends Controller
                                         'id_tecnico' => $request->input('id_empleado')
                                     ]);
                                     $costosIds[] = $costo->id_costos;
-                                    Log::debug("Costo actualizado", ['id_costo' => $costo->id_costos]);
+                                    Log::debug("Costo actualizado", [
+                                        'id_costo' => $costo->id_costos,
+                                        'fecha_actual' => $costo->f_costos
+                                    ]);
                                     continue;
                                 }
                             }
 
                             Log::debug("Creando nuevo costo");
                             $nuevoCosto = Costo::create([
-                                'f_costos' => $costoData['fecha'] ?? now()->format('Y-m-d'),
+                                'f_costos' => $costoData['f_costos'] ?? now()->format('Y-m-d'),
                                 'id_tecnico' => $request->input('id_empleado'),
                                 'descripcion' => $costoData['descripcion'],
                                 'subcategoria' => $costoData['subcategoria'],
@@ -1000,7 +1012,7 @@ class RegistroVController extends Controller
                     }
                 }
             }
-            $validatedData['costos'] = json_encode($costosIds);
+            $validatedData['costos'] = $costosIds;
             Log::debug('Costos procesados', ['costos_ids' => $costosIds]);
 
             // Procesamiento de gastos
@@ -1024,7 +1036,16 @@ class RegistroVController extends Controller
                                 Log::debug("Actualizando gasto existente", ['id_gasto' => $gastoData['id_gastos']]);
                                 $gasto = Gasto::find($gastoData['id_gastos']);
                                 if ($gasto) {
+                                    $fechaAntes = $gasto->f_gastos;
+                                    $fechaNueva = $gastoData['f_gastos']; 
+                                    Log::debug("Actualizando fecha de gasto", [
+                                        'id_gasto' => $gasto->id_gastos,
+                                        'fecha_anterior' => $fechaAntes,
+                                        'fecha_nueva' => $fechaNueva
+                                    ]);
+
                                     $gasto->update([
+                                        'f_gastos' => $fechaNueva ?? now()->format('Y-m-d'),
                                         'descripcion' => $gastoData['descripcion'],
                                         'valor' => (float)($gastoData['monto'] ?? 0),
                                         'estatus' => 'pagado',
@@ -1034,14 +1055,17 @@ class RegistroVController extends Controller
                                         'id_registro_v' => $registroV->id
                                     ]);
                                     $gastosIds[] = $gasto->id_gastos;
-                                    Log::debug("Gasto actualizado", ['id_gasto' => $gasto->id_gastos]);
+                                    Log::debug("Gasto actualizado", [
+                                        'id_gasto' => $gasto->id_gastos,
+                                        'fecha_actual' => $gasto->f_gastos
+                                    ]);
                                     continue;
                                 }
                             }
 
                             Log::debug("Creando nuevo gasto");
                             $nuevoGasto = Gasto::create([
-                                'f_gastos' => $gastoData['fecha'] ?? now()->format('Y-m-d'),
+                                'f_gastos' => $gastoData['f_gastos'] ?? now()->format('Y-m-d'),
                                 'id_tecnico' => $request->input('id_empleado'),
                                 'descripcion' => $gastoData['descripcion'],
                                 'subcategoria' => $gastoData['subcategoria'],
@@ -1059,7 +1083,7 @@ class RegistroVController extends Controller
                     }
                 }
             }
-            $validatedData['gastos'] = json_encode($gastosIds);
+            $validatedData['gastos'] = $gastosIds;
             Log::debug('Gastos procesados', ['gastos_ids' => $gastosIds]);
 
             // Procesamiento de pagos

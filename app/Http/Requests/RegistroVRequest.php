@@ -38,7 +38,9 @@ class RegistroVRequest extends FormRequest
             'año' => 'nullable|integer',
             'items' => 'required',
             'metodo_pce' => 'nullable|string',
-            'tipo_venta' => 'required|string'
+            'tipo_venta' => 'required|string',
+            'costos_extras.*.f_costos' => 'nullable|date',
+            'gastos.*.f_gastos' => 'nullable|date'
         ];
     }
 }

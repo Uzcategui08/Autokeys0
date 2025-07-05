@@ -25,6 +25,7 @@ class InventarioRequest extends FormRequest
 			'id_producto' => 'required',
 			'id_almacen' => 'required',
 			'cantidad' => 'required',
+            'cierre' => 'boolean|nullable|required_if:tipo_ajuste,ajuste2',
         ];
     }
 }

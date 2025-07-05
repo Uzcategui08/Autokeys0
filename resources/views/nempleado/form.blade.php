@@ -600,11 +600,6 @@ $(document).ready(function() {
         calcularRetiroDueño();
     });
 
-    function formatDate(dateString) {
-        const options = { year: 'numeric', month: 'short', day: 'numeric' };
-        return new Date(dateString).toLocaleDateString('es-ES', options);
-    }
-
     function formatCurrency(amount) {
         return parseFloat(amount || 0).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
     }
@@ -653,7 +648,7 @@ $(document).ready(function() {
                         <td class="text-right text-success font-weight-bold">
                             $${formatCurrency(abono.valor)}
                         </td>
-                        <td>${abono.a_fecha ? formatDate(abono.a_fecha) : 'N/A'}</td>
+                        <td>${abono.a_fecha || 'N/A'}</td>
                     </tr>`;
                     totalAbonos += parseFloat(abono.valor) || 0;
                 });
@@ -671,7 +666,7 @@ $(document).ready(function() {
                         <td class="text-right text-danger font-weight-bold">
                             $${formatCurrency(descuento.valor)}
                         </td>
-                        <td>${descuento.d_fecha ? formatDate(descuento.d_fecha) : 'N/A'}</td>
+                        <td>${descuento.d_fecha || 'N/A'}</td>
                     </tr>`;
                     totalDescuentos += parseFloat(descuento.valor) || 0;
                 });

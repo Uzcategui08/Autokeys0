@@ -402,7 +402,7 @@
                     <div class="compact-info-title">INFORMACIÓN</div>
                     <div><strong>Nombre:</strong> {{ $empleado->nombre }}</div>
                     <div><strong>Cédula:</strong> {{ $empleado->cedula }}</div>
-                    <div><strong>Fecha de Pago:</strong> {{ $fecha_pago->format('d/m/Y') }}</div>
+                    <div><strong>Fecha de Pago:</strong> {{ date('d/m/Y', strtotime($fecha_pago)) }}</div>
 
                     @if(count($metodos_pago) > 0)
                     <div style="margin-top: 8px;">

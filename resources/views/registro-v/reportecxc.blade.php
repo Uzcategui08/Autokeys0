@@ -179,9 +179,9 @@
             $cliente = \App\Models\Cliente::find($item->id_cliente);
         @endphp
         <div class="cliente-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <span>{{ $item->cliente }}</span> -
+            <span>{{ $cliente->nombre }}</span> -
             <span style="font-weight: normal; font-size: 11px;">
-                Tel: {{ $item->telefono ?? 'n/a' }} &nbsp; | &nbsp; 
+                Tel: {{ $cliente->telefono ?? 'n/a' }} &nbsp; | &nbsp; 
                 Dir: {{ $cliente ? $cliente->direccion : 'n/a' }}
             </span>
         </div>

@@ -94,6 +94,17 @@
                             </small>
                         </div>
 
+                        <div id="cierreGroup" class="form-group" style="display: none;">
+                            <label for="cierre" class="form-label">¿Incluir en Cierre?</label>
+                            <div class="form-check">
+                                <input type="hidden" name="cierre" value="0">
+                                <input class="form-check-input" type="checkbox" name="cierre" id="cierre" value="1">
+                                <label class="form-check-label" for="cierre">
+                                    Marcar si este ajuste debe incluirse en el cierre
+                                </label>
+                            </div>
+                        </div>
+
                         <div class="form-group">
                             <label for="descripcion" class="form-label">Descripción (opcional)</label>
                             <textarea name="descripcion" id="descripcion" class="form-control" 
@@ -159,6 +170,36 @@
 
         // Asignar evento al cambiar el tipo de ajuste
         document.getElementById('tipo_ajuste').addEventListener('change', validarCantidad);
+    });
+    function validarCantidad() {
+        const input = document.getElementById('cantidad_ajuste');
+        const helpText = document.getElementById('cantidadHelp');
+        
+        if (input.value < 1) {
+            helpText.textContent = 'Cantidad mínima: 1 unidad';
+            input.setCustomValidity('La cantidad debe ser mayor o igual a 1');
+        } else {
+            helpText.textContent = 'Cantidad mínima: 1 unidad';
+            input.setCustomValidity('');
+        }
+    }
+
+    function toggleCierreField() {
+        const tipoAjuste = document.getElementById('tipo_ajuste').value;
+        const cierreGroup = document.getElementById('cierreGroup');
+        
+        if (tipoAjuste === 'ajuste2') {
+            cierreGroup.style.display = 'block';
+        } else {
+            cierreGroup.style.display = 'none';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        validarCantidad();
+        toggleCierreField();
+
+        document.getElementById('tipo_ajuste').addEventListener('change', toggleCierreField);
     });
 </script>
 @stop

@@ -177,9 +177,9 @@
             $cliente = \App\Models\Cliente::where('nombre', $item->cliente)->first();
         @endphp
         <div class="cliente-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <span>{{ $item->cliente }}</span> -
+            <span>{{ $cliente->nombre }}</span> -
             <span style="font-weight: normal; font-size: 11px;">
-                Phone: {{ $item->telefono ?? 'n/a' }} &nbsp; | &nbsp; 
+                Phone: {{ $cliente->telefono ?? 'n/a' }} &nbsp; | &nbsp; 
                 Address: {{ $cliente ? $cliente->direccion : 'n/a' }}
             </span>
         </div>

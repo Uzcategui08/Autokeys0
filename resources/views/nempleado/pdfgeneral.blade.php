@@ -246,7 +246,7 @@
                     <td class="text-right text-bold">${{ number_format($empleado['netoPagado'], 2) }}</td>
                     <td class="metodo-pago">
                         @foreach($empleado['metodos_pago'] as $metodo)
-                        {{ $metodo['nombre'] }}: ${{ number_format($metodo['monto'], 2) }}<br>
+                        {{ ucfirst($metodo['nombre']) }}: ${{ number_format($metodo['monto'], 2) }}<br>
                         @endforeach
                     </td>
                 </tr>
