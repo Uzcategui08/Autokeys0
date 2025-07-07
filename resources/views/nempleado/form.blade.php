@@ -46,7 +46,17 @@
 
         <div id="tablaResultados" class="card mb-4" style="display:none;">
             <div class="card-header" style="background-color: #e8f5e9;">
-                <h5 class="mb-0">Registros encontrados</h5>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Registros encontrados</h5>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline-primary me-2" id="seleccionarTodos">
+                            <i class="fas fa-check-square"></i> Seleccionar todos
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="deseleccionarTodos">
+                            <i class="fas fa-square"></i> Deseleccionar todos
+                        </button>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -625,6 +635,83 @@ $(document).ready(function() {
             </tr>
         `);
         $('#tablaResultados').show();
+
+        function actualizarTotales() {
+            let totalAbonos = 0;
+            let totalDescuentos = 0;
+            abonosSeleccionados = [];
+            descuentosSeleccionados = [];
+
+            $('.check-abono:checked').each(function() {
+                const id = $(this).data('id');
+                const monto = parseFloat($(this).data('monto')) || 0;
+                if (id) {
+                    abonosSeleccionados.push(id);
+                    totalAbonos += monto;
+                }
+            });
+
+            $('.check-descuento:checked').each(function() {
+                const id = $(this).data('id');
+                const monto = parseFloat($(this).data('monto')) || 0;
+                if (id) {
+                    descuentosSeleccionados.push(id);
+                    totalDescuentos += monto;
+                }
+            });
+
+            $('#id_abonos_json').val(JSON.stringify(abonosSeleccionados));
+            $('#id_descuentos_json').val(JSON.stringify(descuentosSeleccionados));
+
+            $('#total_abonos').val(formatCurrency(totalAbonos));
+            $('#total_descuentos').val(formatCurrency(totalDescuentos));
+
+            const empleadoId = $('#id_empleado').val();
+            if (empleadoId) {
+                $.get('/empleados/' + empleadoId + '/datos-pago', function(response) {
+                    let sueldoCalculado = 0;
+                    
+                    if (response.success && response.tipo_pago === 'horas') {
+                        const horasTrabajadas = parseFloat($('#horas_trabajadas').val()) || 0;
+                        const precioNormal = parseFloat($('#precio_hora_normal').val()) || 0;
+                        const precioExtra = parseFloat($('#precio_hora_extra').val()) || 0;
+
+                        const horasNormales = Math.min(horasTrabajadas, 40);
+                        const horasExtras = Math.max(horasTrabajadas - 40, 0);
+                        
+                        sueldoCalculado = (horasNormales * precioNormal) + (horasExtras * precioExtra);
+
+                        $('#horas_normales_cantidad').val(horasNormales);
+                        $('#horas_extras_cantidad').val(horasExtras);
+                        $('#total_horas_normales').val('$' + (horasNormales * precioNormal).toFixed(2));
+                        $('#total_horas_extras').val('$' + (horasExtras * precioExtra).toFixed(2));
+                        $('#total_horas_calculadas').text(horasTrabajadas);
+                        $('#total_pago_horas').text(sueldoCalculado.toFixed(2));
+                    } else {
+                        sueldoCalculado = parseFloat($('#sueldo_base').val()) || 0;
+                    }
+
+                    const totalPagado = sueldoCalculado + totalAbonos - totalDescuentos;
+                    $('#total_pagado').val(totalPagado.toFixed(2));
+
+                    actualizarDistribucionPagos();
+                });
+            }
+        }
+
+        $('#seleccionarTodos').click(function() {
+            $('.check-abono, .check-descuento').prop('checked', true);
+            actualizarTotales();
+        });
+
+        $('#deseleccionarTodos').click(function() {
+            $('.check-abono, .check-descuento').prop('checked', false);
+            actualizarTotales();
+        });
+
+        $('.check-abono, .check-descuento').change(function() {
+            actualizarTotales();
+        });
 
         $.get('{{ route("nomina.getRegistros") }}', {
             id_empleado: empleadoId,
