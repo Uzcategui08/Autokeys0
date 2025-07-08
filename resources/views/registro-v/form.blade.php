@@ -370,9 +370,10 @@
         <!-- Sección 7: Botón de Envío -->
         <div class="row">
             <div class="col-md-12 text-center">
-                <button type="submit" class="btn btn-primary btn-lg px-5">
-                    <i class="fas fa-save me-2"></i> {{ __('Grabar Registro') }}
-                </button>
+                 <input type="hidden" name="id" id="venta_id" value="{{ old('id', isset($registroV->id) ? $registroV->id : '') }}">
+                 <button type="submit" class="btn btn-primary btn-lg px-5">
+                     <i class="fas fa-save me-2"></i> {{ __('Grabar Registro') }}
+                 </button>
             </div>
         </div>
     </div>
@@ -1155,13 +1156,16 @@ $(document).ready(function() {
         const almacenSelect = $row.find('select[name$="[almacen]"]');
         
         if (productoSelect.val() && almacenSelect.val() && cantidad > 0) {
+            const ventaId = $('input[name="id"]').val();
+            
             $.ajax({
                 url: '/verificar-stock',
                 type: 'GET',
                 data: {
                     producto_id: productoSelect.val(),
                     almacen_id: almacenSelect.val(),
-                    cantidad: cantidad
+                    cantidad: cantidad,
+                    venta_id: ventaId
                 },
                 success: function(response) {
                     if (!response.suficiente) {
