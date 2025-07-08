@@ -47,7 +47,6 @@
             </div>
         </div>
 
-        <!-- Segunda fila de campos -->
         <div class="row">
             <div class="col-md-6">
                 <div class="form-group mb-3">
@@ -89,7 +88,10 @@
             <label for="items" class="form-label fw-bold">{{ __('Trabajo') }}</label>
             
             @php
-                $itemsExistentes = is_string($orden->items ?? '') ? json_decode($orden->items, true) : ($orden->items ?? []);
+                $itemsExistentes = $orden->items ?? [];
+                if (is_string($itemsExistentes)) {
+                    $itemsExistentes = json_decode($itemsExistentes, true) ?? [];
+                }
             @endphp
             
             @if(!empty($itemsExistentes))
@@ -104,9 +106,12 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">{{ __('Precio') }}</label>
-                            <input type="number" name="items[{{ $index }}][cantidad]" 
-                                   class="form-control" placeholder="Precio" min="1"
-                                   value="{{ $item['cantidad'] ?? '' }}">
+                            <input type="text" name="items[{{ $index }}][cantidad]" 
+                                   class="form-control" placeholder="Precio" min="0.01"
+                                   value="{{ number_format(floatval($item['cantidad'] ?? 0), 2, '.', '') }}"
+                                   oninput="formatNumber(this)"
+                                   onblur="validateNumber(this)">
+                            <div class="invalid-feedback">Por favor, ingrese un número válido (ejemplo: 123.90 o 123,90)</div>
                         </div>
                         <div class="col-md-1">
                             <button type="button" class="btn btn-danger btn-remove-item mt-4">×</button>
@@ -142,10 +147,39 @@
 <script>
 $(document).ready(function() {
     $('.select2').select2();
-    
+
     let itemIndex = {{ !empty($itemsExistentes) ? count($itemsExistentes) : 0 }};
 
+    function formatNumber(input) {
+        let value = input.value.replace(',', '.');
+        value = value.replace(/[^\d.]/g, '');
+        value = value.replace(/\./g, match => (value.indexOf('.') === value.lastIndexOf('.') ? '.' : ''));
+        if (value.startsWith('.')) value = '0' + value;
+        if (value.includes('.')) {
+            let parts = value.split('.');
+            value = parts[0] + '.' + parts[1].slice(0, 2);
+        }
+        input.value = value;
+    }
+
+    function validateNumber(input) {
+        const value = input.value;
+        if (value === '') return;
+
+        const num = parseFloat(value.replace(',', '.'));
+        if (!isNaN(num)) {
+            input.value = num.toFixed(2);
+            input.classList.remove('is-invalid');
+            input.setCustomValidity('');
+        } else {
+            input.classList.add('is-invalid');
+            input.setCustomValidity('Por favor, ingrese un número válido');
+        }
+    }
+
     function addNewItem(itemData = {descripcion: '', cantidad: ''}) {
+        const cantidad = itemData.cantidad ? itemData.cantidad.replace(',', '.') : '';
+        
         const newItemGroup = $(`
             <div class="item-group mb-4 p-3 border rounded" data-index="${itemIndex}">
                 <div class="row mb-2">
@@ -157,9 +191,12 @@ $(document).ready(function() {
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">{{ __('Precio') }}</label>
-                        <input type="number" name="items[${itemIndex}][cantidad]" 
-                               class="form-control" placeholder="Precio" min="1"
-                               value="${itemData.cantidad}">
+                        <input type="text" name="items[${itemIndex}][cantidad]" 
+                               class="form-control" placeholder="Precio" min="0.01"
+                               value="${cantidad}"
+                               oninput="formatNumber(this)"
+                               onblur="validateNumber(this)">
+                        <div class="invalid-feedback">Por favor, ingrese un número válido (ejemplo: 123.90 o 123,90)</div>
                     </div>
                     <div class="col-md-1">
                         <button type="button" class="btn btn-danger btn-remove-item mt-4">×</button>

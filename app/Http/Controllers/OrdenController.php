@@ -115,7 +115,7 @@ class OrdenController extends Controller
         $orden->items = array_map(function($item) {
             return [
                 'descripcion' => $item['descripcion'] ?? '',
-                'cantidad' => $item['cantidad'] ?? 1
+                'cantidad' => $item['cantidad'] ?? '0.00'
             ];
         }, $items);
     
@@ -135,6 +135,13 @@ class OrdenController extends Controller
             return !empty($item['descripcion']) && !empty($item['cantidad']);
         });
     
+        $items = array_map(function($item) {
+            return [
+                'descripcion' => $item['descripcion'] ?? '',
+                'cantidad' => str_replace(',', '.', $item['cantidad'] ?? '0.00')
+            ];
+        }, $items);
+
         $validatedData['items'] = !empty($items) ? json_encode(array_values($items)) : null;
 
         $orden->update($validatedData);
