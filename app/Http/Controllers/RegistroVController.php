@@ -753,7 +753,7 @@ class RegistroVController extends Controller
 
     public function verificarStock(Request $request)
     {
-        Log::info('Inicio de verificaciÃ³n de stock', [
+        Log::info('Inicio de verificación de stock', [
             'request_data' => $request->all(),
             'time' => now()
         ]);
@@ -774,10 +774,18 @@ class RegistroVController extends Controller
             ->where('id_almacen', $almacenId)
             ->first();
 
-        $stockDisponible = $inventario ? $inventario->cantidad : 0;
+        $stockBase = $inventario ? $inventario->cantidad : 0;
+        Log::debug('Stock base del inventario', [
+            'stock_base' => $stockBase
+        ]);
 
         $cantidadOriginal = 0;
-        if ($ventaId) {
+        
+        if (!$ventaId) {
+            Log::debug('No se proporcionó venta_id, asumiendo nueva venta');
+            $suficiente = $stockBase >= $cantidadRequerida;
+            $stockDisponible = $stockBase;
+        } else {
             $venta = RegistroV::find($ventaId);
             if ($venta) {
                 $items = json_decode($venta->items, true) ?? [];
@@ -785,23 +793,41 @@ class RegistroVController extends Controller
                     if (isset($item['productos'])) {
                         foreach ($item['productos'] as $producto) {
                             if ($producto['producto'] == $productoId && $producto['almacen'] == $almacenId) {
-                                $cantidadOriginal += $producto['cantidad'];
+                                $cantidadOriginal = $producto['cantidad'];
+                                break 2;
                             }
                         }
                     }
                 }
 
-                $stockDisponible += $cantidadOriginal;
-                Log::debug('Ajuste por venta existente', [
-                    'cantidad_original' => $cantidadOriginal,
-                    'stock_ajustado' => $stockDisponible
-                ]);
+                $stockDisponible = $stockBase;
+
+                if ($cantidadRequerida > $cantidadOriginal) {
+                    $diferencia = $cantidadRequerida - $cantidadOriginal;
+                    $suficiente = $stockDisponible >= $diferencia;
+                    Log::debug('Ajuste por venta existente', [
+                        'cantidad_original' => $cantidadOriginal,
+                        'cantidad_requerida' => $cantidadRequerida,
+                        'diferencia' => $diferencia,
+                        'stock_disponible' => $stockDisponible,
+                        'suficiente' => $suficiente
+                    ]);
+                } else {
+                    $suficiente = true;
+                    Log::debug('Ajuste por venta existente', [
+                        'cantidad_original' => $cantidadOriginal,
+                        'cantidad_requerida' => $cantidadRequerida,
+                        'suficiente' => $suficiente
+                    ]);
+                }
+            } else {
+                Log::debug('No se encontró la venta con ID: ' . $ventaId);
+                $suficiente = $stockBase >= $cantidadRequerida;
+                $stockDisponible = $stockBase;
             }
         }
 
-        $suficiente = $stockDisponible >= $cantidadRequerida;
-
-        Log::info('Resultado de verificaciÃ³n de stock', [
+        Log::info('Resultado de verificación de stock', [
             'stock_disponible' => $stockDisponible,
             'cantidad_requerida' => $cantidadRequerida,
             'suficiente' => $suficiente,
