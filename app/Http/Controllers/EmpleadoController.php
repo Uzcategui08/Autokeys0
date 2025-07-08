@@ -71,10 +71,18 @@ class EmpleadoController extends Controller
      */
     public function update(EmpleadoRequest $request, Empleado $empleado): RedirectResponse
     {
-        $empleado->update($request->validated());
+        $validated = $request->validated();
+        
+        if ($empleado->tipo_pago !== $validated['tipo_pago']) {
+            $validated['salario_base'] = 0;
+        } else {
+            $validated['salario_base'] = $request->input('salario_base', 0);
+        }
+        
+        $empleado->update($validated);
 
         return Redirect::route('empleados.index')
-            ->with('success', 'Empleado actualizado sasatisfactoriamente.');
+            ->with('success', 'Empleado actualizado satisfactoriamente.');
     }
 
     public function destroy($id): RedirectResponse
