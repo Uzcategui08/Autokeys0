@@ -841,11 +841,8 @@ $(document).ready(function() {
         calcularPorcentajeCerrajero();
     });
 
-    $(document).on('input', '.monto-ce, #valor_v', function() {
-        const valorVenta = parseFloat($('#valor_v').val()) || 0;
-        if (!isNaN(valorVenta)) {
-            calcularPorcentajeCerrajero();
-        }
+    $(document).on('input', '.monto-ce', function() {
+        calcularPorcentajeCerrajero();
     });
 
     $(document).ready(function() {
@@ -981,12 +978,22 @@ $(document).ready(function() {
         calcularPorcentajeCerrajero();
     });
 
-    $(document).on('input', '.monto-gasto, #valor_v', function() {
-        const valorVenta = parseFloat($('#valor_v').val()) || 0;
-        if (!isNaN(valorVenta)) {
-            calcularPorcentajeCerrajero();
-        }
+    $(document).on('input change', '.monto-gasto', function() {
+        calcularPorcentajeCerrajero();
     });
+
+    function inicializarValorVenta() {
+        let totalTrabajos = 0;
+        
+        $('.item-group').each(function() {
+            const precioTrabajo = parseFloat($(this).find('.precio-trabajo').val()) || 0;
+            totalTrabajos += precioTrabajo;
+        });
+        
+        const valorFinal = totalTrabajos;
+        $('#valor_v').val(valorFinal.toFixed(2));
+        $('#total-trabajos').val(`$${valorFinal.toFixed(2)}`);
+    }
 
     $(document).ready(function() {
         if (gastosExistentes && gastosExistentes.length > 0) {
@@ -1007,10 +1014,21 @@ $(document).ready(function() {
             addNewGastoGroup();
         }
 
+        inicializarValorVenta();
+        
         setTimeout(() => {
-        calcularTotalTrabajos();
-        actualizarValorVenta();
-        calcularPorcentajeCerrajero();
+            calcularTotalTrabajos();
+            const valorVenta = parseFloat($('#valor_v').val()) || 0;
+            const totalCostos = calcularTotalCostos();
+            const totalGastos = calcularTotalGastos();
+            
+            console.log('Calculando comisión final:', {
+                valorVenta,
+                totalCostos,
+                totalGastos
+            });
+            
+            calcularPorcentajeCerrajero();
         }, 500);
     });
 
@@ -1243,9 +1261,11 @@ $(document).ready(function() {
         const valorVenta = parseFloat($('#valor_v').val()) || 0;
         const totalCostos = calcularTotalCostos();
         const totalGastos = calcularTotalGastos();
+
         if (isNaN(valorVenta) || isNaN(totalCostos) || isNaN(totalGastos)) {
             console.error('Error en cálculo: algún valor es NaN');
             $('#porcentaje_c').val('0.00');
+            $('.porcentaje-cerrajero-display').text('$0.00');
             return;
         }
 
@@ -1257,13 +1277,7 @@ $(document).ready(function() {
 
         $('#porcentaje_c').val(porcentajeFinal.toFixed(2));
 
-        console.log('Cálculo porcentaje cerrajero:', {
-            valorVenta,
-            totalCostos,
-            totalGastos,
-            totalNeto,
-            porcentajeFinal
-        });
+        $('.porcentaje-cerrajero-display').text(`$${porcentajeFinal.toFixed(2)}`);
     }
 
     function actualizarValorVenta() {
@@ -1550,18 +1564,11 @@ $(document).ready(function() {
         calcularTotalTrabajos();
     });
 
-    $(document).on('input change', '.precio-trabajo, .monto-ce, .monto-gasto, #valor_v', function() {
-        calcularPorcentajeCerrajero();
-    });
-
-    $(document).on('change', '.select2-trabajo', function() {
-        calcularTotalTrabajos();
-        calcularPorcentajeCerrajero();
-    });
-
-    $(document).on('input', '.precio-trabajo, .costo-input, .gasto-input', function() {
-        calcularTotalTrabajos();
-        calcularPorcentajeCerrajero(); 
+    $(document).on('input change', '.monto-ce, .monto-gasto', function() {
+        const currentTarget = $(this);
+        setTimeout(() => {
+            calcularPorcentajeCerrajero();
+        }, 100);
     });
 
     $(document).on('change', '.select2-producto', function() {
@@ -1615,6 +1622,47 @@ $(document).ready(function() {
     });
 
     $(document).ready(function() {
+        function calcularPorcentajeCerrajero() {
+            const valorVenta = parseFloat($('#valor_v').val()) || 0;
+            const totalCostos = calcularTotalCostos() || 0;
+            const totalGastos = calcularTotalGastos() || 0;
+            
+            let porcentajeCerrajero = valorVenta - totalCostos - totalGastos;
+            
+            porcentajeCerrajero = Math.max(0, porcentajeCerrajero);
+            
+            $('#porcentaje_c').val(porcentajeCerrajero.toFixed(2));
+            $('.porcentaje-cerrajero-display').text(`$${porcentajeCerrajero.toFixed(2)}`);
+        }
+
+        function inicializarValorVenta() {
+            let totalTrabajos = 0;
+            
+            $('.item-group').each(function() {
+                const precioTrabajo = parseFloat($(this).find('.precio-trabajo').val()) || 0;
+                totalTrabajos += precioTrabajo;
+            });
+            
+            const valorFinal = totalTrabajos;
+            $('#valor_v').val(valorFinal.toFixed(2));
+            $('#total-trabajos').val(`$${valorFinal.toFixed(2)}`);
+        }
+
+        inicializarValorVenta();
+
+        function actualizarValorVenta() {
+            let totalTrabajos = 0;
+            
+            $('.item-group').each(function() {
+                const precioTrabajo = parseFloat($(this).find('.precio-trabajo').val()) || 0;
+                totalTrabajos += precioTrabajo;
+            });
+            
+            $('#valor_v').val(totalTrabajos.toFixed(2));
+            
+            $('#total-trabajos').val(`$${totalTrabajos.toFixed(2)}`);
+        }
+
         if (itemsExistentes && itemsExistentes.length > 0) {
             console.log('Items a cargar:', itemsExistentes);
             
@@ -1714,7 +1762,7 @@ $(document).ready(function() {
         } else {
             addNewItemGroup();
         }
-        
+
         calcularTotalTrabajos();
         calcularPorcentajeCerrajero();
     });

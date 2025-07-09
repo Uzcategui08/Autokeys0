@@ -176,6 +176,7 @@ class RegistroVController extends Controller
             $validatedData = $request->validated();
 
             $trabajos = [];
+            $valorTotal = 0;
             Log::info('Procesando items de trabajos');
             if ($request->has('items')) {
                 foreach ($request->input('items') as $index => $item) {
@@ -218,11 +219,15 @@ class RegistroVController extends Controller
                             'descripcion' => $item['descripcion'] ?? null,
                             'productos' => $productos,
                         ];
+
+                        $valorTotal += (float)$precioTrabajo;
                     }
                 }
             }
             $validatedData['items'] = json_encode($trabajos);
             Log::debug('Items procesados', ['items' => $trabajos]);
+
+            $validatedData['valor_v'] = $valorTotal;
 
             $costosIds = [];
             Log::info('Procesando costos extras');
@@ -230,9 +235,10 @@ class RegistroVController extends Controller
                 foreach ($request->input('costos_extras') as $costoIndex => $costoData) {
                     if (!empty($costoData['descripcion'])) {
                         Log::debug("Procesando costo extra {$costoIndex}", ['costo' => $costoData]);
+                        $monto = max(0, (float)($costoData['monto'] ?? 0));
                         $pagoCosto = [
                             [
-                                'monto' => (float)($costoData['monto'] ?? 0),
+                                'monto' => $monto,
                                 'metodo_pago' => $costoData['metodo_pago'] ?? 'efectivo',
                                 'fecha' => $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
                                 'cobrador_id' => $costoData['metodo_pago'] ? $request->input('id_empleado') : null
@@ -244,7 +250,7 @@ class RegistroVController extends Controller
                             'id_tecnico' => $request->input('id_empleado'),
                             'descripcion' => $costoData['descripcion'],
                             'subcategoria' => $costoData['subcategoria'],
-                            'valor' => (float)($costoData['monto'] ?? 0),
+                            'valor' => $monto,
                             'estatus' => 'pagado',
                             'pagos' => $pagoCosto
                         ]);
@@ -262,9 +268,10 @@ class RegistroVController extends Controller
                 foreach ($request->input('gastos') as $gastoIndex => $gastoData) {
                     if (!empty($gastoData['descripcion'])) {
                         Log::debug("Procesando gasto {$gastoIndex}", ['gasto' => $gastoData]);
+                        $monto = max(0, (float)($gastoData['monto'] ?? 0));
                         $pagoGasto = [
                             [
-                                'monto' => (float)($gastoData['monto'] ?? 0),
+                                'monto' => $monto,
                                 'metodo_pago' => $gastoData['metodo_pago'] ?? 'efectivo',
                                 'fecha' => $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
                                 'cobrador_id' => $gastoData['metodo_pago'] ? $request->input('id_empleado') : null
@@ -276,7 +283,7 @@ class RegistroVController extends Controller
                             'id_tecnico' => $request->input('id_empleado'),
                             'descripcion' => $gastoData['descripcion'],
                             'subcategoria' => $gastoData['subcategoria'],
-                            'valor' => (float)($gastoData['monto'] ?? 0),
+                            'valor' => $monto,
                             'estatus' => 'pagado',
                             'pagos' => $pagoGasto,
                         ]);
@@ -467,6 +474,8 @@ class RegistroVController extends Controller
                 ];
             }
         }
+
+        $registroV->valor_v = max(0, $registroV->valor_v);
 
         $pagos = [];
 
