@@ -38,6 +38,7 @@
                         <option value="">{{ __('Seleccionar Tipo') }}</option>
                         <option value="1" {{ old('tipo', $empleado?->tipo) == 1 ? 'selected' : '' }}>Costo</option>
                         <option value="2" {{ old('tipo', $empleado?->tipo) == 2 ? 'selected' : '' }}>Gasto</option>
+                        <option value="3" {{ old('tipo', $empleado?->tipo) == 3 ? 'selected' : '' }}>Retiro</option>
                     </select>
                     {!! $errors->first('tipo', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
                 </div>
