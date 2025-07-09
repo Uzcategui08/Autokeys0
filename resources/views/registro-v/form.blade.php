@@ -437,6 +437,10 @@ $(document).ready(function() {
         dropdownAutoWidth: true,
     });
 
+    $(document).on('input', '.precio-trabajo', function() {
+        actualizarValoresTrabajo();
+    });
+
     /**************************************
      * SECCIÓN DE PAGOS PARCIALES
      **************************************/
@@ -453,7 +457,34 @@ $(document).ready(function() {
         }
     }
 
-    inicializarValorTotal();
+    function inicializarValores() {
+        $('.item-group').each(function() {
+            const $trabajoSelect = $(this).find('.select2-trabajo');
+            const $precioTrabajo = $(this).find('.precio-trabajo');
+            const trabajoId = $trabajoSelect.val();
+            
+            if (trabajoId) {
+                cargarTrabajosEnSelect($trabajoSelect, trabajoId).then(function() {
+                    const precio = $trabajoSelect.find('option:selected').data('precio');
+                    $precioTrabajo.val(precio || '0');
+                    $precioTrabajo.trigger('input');
+                });
+            }
+        });
+
+        setTimeout(function() {
+            const totalTrabajos = calcularTotalTrabajos();
+            $('#total-trabajos').val('$' + totalTrabajos.toFixed(2));
+            const $valorV = $('#valor_v');
+            $valorV.val(totalTrabajos.toFixed(2));
+            $valorV.trigger('change');
+            
+
+            calcularPorcentajeCerrajero();
+        }, 500); 
+    }
+
+    inicializarValores();
 
     const observer = new MutationObserver(function(mutations) {
         mutations.forEach(function(mutation) {
@@ -1245,6 +1276,12 @@ $(document).ready(function() {
                 totalTrabajos += precio;
             }
         });
+        
+        return totalTrabajos;
+    }
+
+    function actualizarValoresTrabajo() {
+        const totalTrabajos = calcularTotalTrabajos();
         
         $('#total-trabajos').val('$' + totalTrabajos.toFixed(2));
         
