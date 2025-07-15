@@ -983,7 +983,7 @@ class RegistroVController extends Controller
             // Procesamiento de costos extras
             Log::debug('Procesando costos extras');
             $costosIds = [];
-            $costosAntiguos = $registroV->costos->pluck('id_costos')->toArray();
+            $costosAntiguos = collect($registroV->costos)->pluck('id_costos')->toArray();
             
             if ($request->has('costos_extras')) {
                 foreach ($request->input('costos_extras') as $cIndex => $costoData) {
@@ -1049,7 +1049,7 @@ class RegistroVController extends Controller
                     }
                 }
             }
-\
+
             $costosAEliminar = array_diff($costosAntiguos, $costosIds);
             foreach ($costosAEliminar as $costoId) {
                 try {
@@ -1066,7 +1066,7 @@ class RegistroVController extends Controller
 
             Log::debug('Procesando gastos');
             $gastosIds = [];
-            $gastosAntiguos = $registroV->gastos->pluck('id_gastos')->toArray();
+            $gastosAntiguos = collect($registroV->gastos)->pluck('id_gastos')->toArray();
             
             if ($request->has('gastos')) {
                 foreach ($request->input('gastos') as $gIndex => $gastoData) {
