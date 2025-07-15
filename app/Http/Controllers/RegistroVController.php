@@ -789,7 +789,7 @@ class RegistroVController extends Controller
         ]);
 
         $cantidadOriginal = 0;
-        
+
         if (!$ventaId) {
             Log::debug('No se proporcionó venta_id, asumiendo nueva venta');
             $suficiente = $stockBase >= $cantidadRequerida;
@@ -984,7 +984,7 @@ class RegistroVController extends Controller
             Log::debug('Procesando costos extras');
             $costosIds = [];
             $costosAntiguos = $registroV->costos->pluck('id_costos')->toArray();
-            
+
             if ($request->has('costos_extras')) {
                 foreach ($request->input('costos_extras') as $cIndex => $costoData) {
                     try {
@@ -1049,7 +1049,7 @@ class RegistroVController extends Controller
                     }
                 }
             }
-\
+
             $costosAEliminar = array_diff($costosAntiguos, $costosIds);
             foreach ($costosAEliminar as $costoId) {
                 try {
@@ -1060,14 +1060,14 @@ class RegistroVController extends Controller
                     throw $e;
                 }
             }
-            
+
             $validatedData['costos'] = $costosIds;
             Log::debug('Costos procesados', ['costos_ids' => $costosIds]);
 
             Log::debug('Procesando gastos');
             $gastosIds = [];
             $gastosAntiguos = $registroV->gastos->pluck('id_gastos')->toArray();
-            
+
             if ($request->has('gastos')) {
                 foreach ($request->input('gastos') as $gIndex => $gastoData) {
                     try {
@@ -1087,7 +1087,7 @@ class RegistroVController extends Controller
                                 $gasto = Gasto::find($gastoData['id_gastos']);
                                 if ($gasto) {
                                     $fechaAntes = $gasto->f_gastos;
-                                    $fechaNueva = $gastoData['f_gastos']; 
+                                    $fechaNueva = $gastoData['f_gastos'];
                                     Log::debug("Actualizando fecha de gasto", [
                                         'id_gasto' => $gasto->id_gastos,
                                         'fecha_anterior' => $fechaAntes,
@@ -1144,7 +1144,7 @@ class RegistroVController extends Controller
                     throw $e;
                 }
             }
-            
+
             $validatedData['gastos'] = $gastosIds;
             Log::debug('Gastos procesados', ['gastos_ids' => $gastosIds]);
 
@@ -1544,7 +1544,8 @@ class RegistroVController extends Controller
 
         $ventas = $query->get();
 
-        function decodeUnicode($text) {
+        function decodeUnicode($text)
+        {
             if (is_string($text)) {
                 return json_decode('"' . str_replace('\\u', '\u', $text) . '"');
             }
@@ -1578,9 +1579,9 @@ class RegistroVController extends Controller
                                 $item = (object) $item;
 
                                 $trabajo = \App\Models\Trabajo::find($item->trabajo_id);
-                                
+
                                 $workName = $trabajo ? $trabajo->getNombreEnIdioma($language) : ($language === 'en' ? 'Unspecified work' : 'Trabajo no especificado');
-                                
+
                                 $items[] = (object) [
                                     'trabajo' => decodeUnicode($workName),
                                     'precio_trabajo' => $item->precio_trabajo ?? 0,
