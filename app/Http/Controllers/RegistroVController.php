@@ -983,6 +983,8 @@ class RegistroVController extends Controller
             // Procesamiento de costos extras
             Log::debug('Procesando costos extras');
             $costosIds = [];
+            $costosAntiguos = $registroV->costos->pluck('id_costos')->toArray();
+            
             if ($request->has('costos_extras')) {
                 foreach ($request->input('costos_extras') as $cIndex => $costoData) {
                     try {
@@ -1002,7 +1004,7 @@ class RegistroVController extends Controller
                                 $costo = Costo::find($costoData['id_costos']);
                                 if ($costo) {
                                     $fechaAntes = $costo->f_costos;
-                                    $fechaNueva = $costoData['f_costos']; // Usamos directamente la fecha del request
+                                    $fechaNueva = $costoData['f_costos'];
                                     Log::debug("Actualizando fecha de costo", [
                                         'id_costo' => $costo->id_costos,
                                         'fecha_anterior' => $fechaAntes,
@@ -1047,12 +1049,25 @@ class RegistroVController extends Controller
                     }
                 }
             }
+\
+            $costosAEliminar = array_diff($costosAntiguos, $costosIds);
+            foreach ($costosAEliminar as $costoId) {
+                try {
+                    Costo::find($costoId)->delete();
+                    Log::debug("Costo eliminado", ['id_costo' => $costoId]);
+                } catch (\Exception $e) {
+                    Log::error("Error eliminando costo", ['error' => $e->getMessage(), 'id_costo' => $costoId]);
+                    throw $e;
+                }
+            }
+            
             $validatedData['costos'] = $costosIds;
             Log::debug('Costos procesados', ['costos_ids' => $costosIds]);
 
-            // Procesamiento de gastos
             Log::debug('Procesando gastos');
             $gastosIds = [];
+            $gastosAntiguos = $registroV->gastos->pluck('id_gastos')->toArray();
+            
             if ($request->has('gastos')) {
                 foreach ($request->input('gastos') as $gIndex => $gastoData) {
                     try {
@@ -1118,10 +1133,21 @@ class RegistroVController extends Controller
                     }
                 }
             }
+
+            $gastosAEliminar = array_diff($gastosAntiguos, $gastosIds);
+            foreach ($gastosAEliminar as $gastoId) {
+                try {
+                    Gasto::find($gastoId)->delete();
+                    Log::debug("Gasto eliminado", ['id_gasto' => $gastoId]);
+                } catch (\Exception $e) {
+                    Log::error("Error eliminando gasto", ['error' => $e->getMessage(), 'id_gasto' => $gastoId]);
+                    throw $e;
+                }
+            }
+            
             $validatedData['gastos'] = $gastosIds;
             Log::debug('Gastos procesados', ['gastos_ids' => $gastosIds]);
 
-            // Procesamiento de pagos
             Log::debug('Procesando pagos');
             $pagosValidados = [];
             $totalPagado = 0;
