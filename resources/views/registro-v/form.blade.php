@@ -63,6 +63,7 @@
                                 <option value="Van Grande-Pulga" {{ old('lugarventa', $registroV?->lugarventa) == 'Van Grande-Pulga' ? 'selected' : '' }}>Van Grande-Pulga</option>
                                 <option value="Van Pequeña" {{ old('lugarventa', $registroV?->lugarventa) == 'Van Pequeña' ? 'selected' : '' }}>Van Pequeña</option>
                                 <option value="Van Pequeña-Pulga" {{ old('lugarventa', $registroV?->lugarventa) == 'Van Pequeña-Pulga' ? 'selected' : '' }}>Van Pequeña-Pulga</option>
+                                <option value="Corolla" {{ old('lugarventa', $registroV?->lugarventa) == 'Corolla' ? 'selected' : '' }}>Corolla</option>
                             </select>
                             {!! $errors->first('lugarventa', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                         </div>
