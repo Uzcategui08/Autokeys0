@@ -38,29 +38,22 @@ class RegistroVController extends Controller
             ->where('estatus', 'pagado')
             ->orderBy('fecha_h', 'desc');
 
-        if (
-            $request->filled('month_start') && $request->filled('year_start') &&
-            $request->filled('month_end') && $request->filled('year_end')
-        ) {
+        $fechaDesde = $request->input('fecha_desde');
+        $fechaHasta = $request->input('fecha_hasta');
 
-            $startDate = Carbon::create($request->year_start, $request->month_start, 1);
-            $endDate = Carbon::create($request->year_end, $request->month_end, 1)->endOfMonth();
-
-            $query->whereBetween('fecha_h', [$startDate, $endDate]);
-        } elseif ($request->filled('month_start') && $request->filled('year_start')) {
-            $startDate = Carbon::create($request->year_start, $request->month_start, 1);
-            $query->where('fecha_h', '>=', $startDate);
-        } elseif ($request->filled('month_end') && $request->filled('year_end')) {
-            $endDate = Carbon::create($request->year_end, $request->month_end, 1)->endOfMonth();
-            $query->where('fecha_h', '<=', $endDate);
-        } elseif ($request->filled('month_start')) {
-            $query->whereMonth('fecha_h', $request->month_start);
-        } elseif ($request->filled('month_end')) {
-            $query->whereMonth('fecha_h', $request->month_end);
+        if (!empty($fechaDesde) && !empty($fechaHasta)) {
+            $query->whereDate('fecha_h', '>=', $fechaDesde)
+                ->whereDate('fecha_h', '<=', $fechaHasta);
+        } else {
+            // Si no se envían fechas, filtrar por el mes actual
+            $startOfMonth = Carbon::now()->startOfMonth()->format('Y-m-d');
+            $endOfMonth = Carbon::now()->endOfMonth()->format('Y-m-d');
+            $query->whereBetween('fecha_h', [$startOfMonth, $endOfMonth]);
         }
 
-        if (auth()->user()->hasRole('limited')) {
-            $query->where('id_empleado', auth()->id());
+        $user = Auth::user();
+        if ($user && property_exists($user, 'role') && $user->role === 'limited') {
+            $query->where('id_empleado', $user->id);
         }
 
         $registroVs = $query->get();

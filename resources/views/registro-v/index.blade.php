@@ -7,57 +7,24 @@
         <h1>Registro de Ventas</h1>
         <div class="filter-container">
             <form action="{{ route('registro-vs.index') }}" method="GET" class="form-inline">
+                @php
+                    $hoy = \Carbon\Carbon::now();
+                    $desdeDefault = request('fecha_desde') ?? $hoy->copy()->startOfMonth()->format('Y-m-d');
+                    $hastaDefault = request('fecha_hasta') ?? $hoy->copy()->endOfMonth()->format('Y-m-d');
+                @endphp
                 <div class="form-group mr-2">
                     <label class="mr-2">Desde:</label>
-                    <select name="month_start" class="form-control form-control-sm">
-                        <option value="">Seleccione mes</option>
-                        @php
-                            $meses = [
-                                1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
-                                5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
-                                9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
-                            ];
-                        @endphp
-                        @foreach($meses as $key => $mes)
-                            <option value="{{ $key }}" {{ request('month_start') == $key ? 'selected' : '' }}>
-                                {{ $mes }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <select name="year_start" class="form-control form-control-sm ml-1">
-                        <option value="">Año</option>
-                        @foreach(range(date('Y') - 5, date('Y') + 1) as $year)
-                            <option value="{{ $year }}" {{ request('year_start') == $year ? 'selected' : '' }}>
-                                {{ $year }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <input type="date" name="fecha_desde" class="form-control form-control-sm" value="{{ $desdeDefault }}">
                 </div>
-                
                 <div class="form-group mr-2">
                     <label class="mr-2">Hasta:</label>
-                    <select name="month_end" class="form-control form-control-sm">
-                        <option value="">Seleccione mes</option>
-                        @foreach($meses as $key => $mes)
-                            <option value="{{ $key }}" {{ request('month_end') == $key ? 'selected' : '' }}>
-                                {{ $mes }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <select name="year_end" class="form-control form-control-sm ml-1">
-                        <option value="">Año</option> 
-                        @foreach(range(date('Y') - 5, date('Y') + 1) as $year)
-                            <option value="{{ $year }}" {{ request('year_end') == $year ? 'selected' : '' }}>
-                                {{ $year }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <input type="date" name="fecha_hasta" class="form-control form-control-sm" value="{{ $hastaDefault }}">
                 </div>
                 
                 <button type="submit" class="btn btn-primary btn-sm mr-2">
                     <i class="fas fa-filter"></i> Filtrar
                 </button>
-                @if(request()->has('month_start') || request()->has('month_end'))
+                @if(request()->has('fecha_desde') || request()->has('fecha_hasta'))
                     <a href="{{ route('registro-vs.index') }}" class="btn btn-secondary btn-sm">
                         <i class="fas fa-times"></i> Limpiar
                     </a>
