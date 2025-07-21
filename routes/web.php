@@ -170,8 +170,10 @@ Route::resource('abonos', AbonoController::class);
 Route::resource('descuentos', DescuentoController::class);
 
 Route::resource('costos', CostoController::class);
-
 Route::resource('gastos', GastoController::class);
+
+Route::delete('/registro-vs/{id}/costos/{costo_id}', [RegistroVController::class, 'eliminarCosto'])->name('registro-vs.eliminar-costo');
+Route::delete('/registro-vs/{id}/gastos/{gasto_id}', [RegistroVController::class, 'eliminarGasto'])->name('registro-vs.eliminar-gasto');
 
 Route::get('/inventario/{productoId}/{almacenId}', function ($productoId, $almacenId) {
     $inventario = Inventario::where('id_producto', $productoId)

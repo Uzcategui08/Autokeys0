@@ -1218,18 +1218,18 @@ class CierreVentasSemanalController extends Controller
                                     return $venta->costosAsociados->sum('valor') + 
                                             $venta->gastosAsociados->sum('valor');
                                 })
-                ];
-            });
+            ];
+        });
     }
 
     private function getIngresosRecibidos($startDate, $endDate, $metodosPago)
-{
+    {
     return Empleado::with(['ventas'])
         ->whereHas('ventas', function($query) {
             $query->whereNotNull('pagos')
                   ->whereRaw("json_array_length(pagos) > 0"); // PostgreSQL-compatible check
         })
-        ->get()
+            ->get()
         ->map(function($tecnico) use ($startDate, $endDate, $metodosPago) {
             $pagosRecibidos = collect();
             
@@ -1237,20 +1237,19 @@ class CierreVentasSemanalController extends Controller
                 $pagos = $this->parsePagos($venta->pagos);
                 
                 foreach ($pagos as $pago) {
-                    if (!isset($pago['fecha'], $pago['metodo_pago'], $pago['monto'])) {
-                        continue;
-                    }
-                    
-                    $fechaPago = Carbon::parse($pago['fecha']);
-                    $fechaVenta = Carbon::parse($venta->fecha_h);
-                    
+                if (!isset($pago['fecha'], $pago['metodo_pago'], $pago['monto'])) {
+                    continue;
+                }
+                
+                $fechaPago = Carbon::parse($pago['fecha']);
+                    $fechaVenta = Carbon::parse($venta->fecha_h);                
                     if ($fechaPago->between($startDate, $endDate) && !$fechaVenta->between($startDate, $endDate)) {
-                        $pagosRecibidos->push([
-                            'metodo_pago' => $metodosPago[$pago['metodo_pago']] ?? 'Desconocido',
-                            'monto' => $pago['monto'],
+                    $pagosRecibidos->push([
+                        'metodo_pago' => $metodosPago[$pago['metodo_pago']] ?? 'Desconocido',
+                        'monto' => $pago['monto'],
                             'fecha_venta' => $venta->fecha_h,
-                            'fecha_pago' => $pago['fecha']
-                        ]);
+                        'fecha_pago' => $pago['fecha']
+                    ]);
                     }
                 }
             }
@@ -1261,7 +1260,8 @@ class CierreVentasSemanalController extends Controller
                 'total' => $pagosRecibidos->sum('monto')
             ];
         });
-}
+    }
+    
     private function getVentasPorCliente($startDate, $endDate)
     {
         return RegistroV::whereBetween('fecha_h', [$startDate, $endDate])
@@ -1270,13 +1270,13 @@ class CierreVentasSemanalController extends Controller
             ->groupBy('id_cliente')
             ->map(function ($ventas, $idCliente) {
                 $cliente = $ventas->first()->cliente;
-                return [
+        return [
                     'id_cliente' => $idCliente,
                     'cliente' => $cliente ? $cliente->nombre : $idCliente,
                     'ventas_contado' => $ventas->where('tipo_venta', 'contado')->sum('valor_v'),
                     'ventas_credito' => $ventas->where('tipo_venta', 'credito')->sum('valor_v'),
                     'total_ventas' => $ventas->sum('valor_v')
-                ];
+        ];
             })
             ->values()
             ->sortByDesc('total_ventas');

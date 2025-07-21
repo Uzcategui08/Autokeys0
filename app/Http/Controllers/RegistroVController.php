@@ -70,6 +70,103 @@ class RegistroVController extends Controller
         return view('registro-v.index', compact('registroVs', 'tiposDePago', 'productos'));
     }
 
+    public function eliminarCosto(Request $request, $id, $costo_id)
+    {
+        try {
+            $registroV = RegistroV::findOrFail($id);
+            $costo = Costo::findOrFail($costo_id);
+            
+            Log::info('Intentando eliminar costo', [
+                'costo_id' => $costo_id,
+                'registroV_id' => $id,
+                'costo_registro_id' => $costo->id_registro_v,
+                'url' => $request->fullUrl(),
+                'headers' => $request->headers->all(),
+                'costos_array' => $registroV->costos ?? null
+            ]);
+            
+            if (!in_array($costo_id, $registroV->costos ?? [])) {
+                Log::warning('Costo no autorizado', [
+                    'costo_id' => $costo_id,
+                    'registroV_id' => $id,
+                    'costos_array' => $registroV->costos ?? null
+                ]);
+                return response()->json(['error' => 'No autorizado'], 403);
+            }
+
+            $costo->delete();
+
+            $registroV->costos = array_filter($registroV->costos, function($costoId) use ($costo_id) {
+                return $costoId != $costo_id;
+            });
+            $registroV->save();
+            
+            Log::info('Costo eliminado exitosamente', [
+                'costo_id' => $costo_id,
+                'costos_actualizados' => $registroV->costos
+            ]);
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            Log::error('Error eliminando costo', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'costo_id' => $costo_id ?? null,
+                'registroV_id' => $id ?? null
+            ]);
+            return response()->json(['error' => 'Error al eliminar el costo'], 500);
+        }
+    }
+
+    public function eliminarGasto(Request $request, $id, $gasto_id)
+    {
+        try {
+            $registroV = RegistroV::findOrFail($id);
+            $gasto = Gasto::findOrFail($gasto_id);
+            
+            Log::info('Intentando eliminar gasto', [
+                'gasto_id' => $gasto_id,
+                'registroV_id' => $id,
+                'gasto_registro_id' => $gasto->id_registro_v,
+                'url' => $request->fullUrl(),
+                'headers' => $request->headers->all(),
+                'gastos_array' => $registroV->gastos ?? null
+            ]);
+            
+            // Verificar si el gasto está en el array de gastos del registro
+            if (!in_array($gasto_id, $registroV->gastos ?? [])) {
+                Log::warning('Gasto no autorizado', [
+                    'gasto_id' => $gasto_id,
+                    'registroV_id' => $id,
+                    'gastos_array' => $registroV->gastos ?? null
+                ]);
+                return response()->json(['error' => 'No autorizado'], 403);
+            }
+            
+            // Eliminar el gasto
+            $gasto->delete();
+            
+            // Actualizar el array de gastos en el registro
+            $registroV->gastos = array_filter($registroV->gastos, function($gastoId) use ($gasto_id) {
+                return $gastoId != $gasto_id;
+            });
+            $registroV->save();
+            
+            Log::info('Gasto eliminado exitosamente', [
+                'gasto_id' => $gasto_id,
+                'gastos_actualizados' => $registroV->gastos
+            ]);
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            Log::error('Error eliminando gasto', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'gasto_id' => $gasto_id ?? null,
+                'registroV_id' => $id ?? null
+            ]);
+            return response()->json(['error' => 'Error al eliminar el gasto'], 500);
+        }
+    }
+
     public function cxc(Request $request): View
     {
         $query = RegistroV::with(['cliente', 'empleado'])
@@ -983,8 +1080,6 @@ class RegistroVController extends Controller
             // Procesamiento de costos extras
             Log::debug('Procesando costos extras');
             $costosIds = [];
-            $costosAntiguos = collect($registroV->costos)->pluck('id_costos')->toArray();
-            
             if ($request->has('costos_extras')) {
                 foreach ($request->input('costos_extras') as $cIndex => $costoData) {
                     try {
@@ -1004,7 +1099,7 @@ class RegistroVController extends Controller
                                 $costo = Costo::find($costoData['id_costos']);
                                 if ($costo) {
                                     $fechaAntes = $costo->f_costos;
-                                    $fechaNueva = $costoData['f_costos'];
+                                    $fechaNueva = $costoData['f_costos']; // Usamos directamente la fecha del request
                                     Log::debug("Actualizando fecha de costo", [
                                         'id_costo' => $costo->id_costos,
                                         'fecha_anterior' => $fechaAntes,
@@ -1049,25 +1144,12 @@ class RegistroVController extends Controller
                     }
                 }
             }
-
-            $costosAEliminar = array_diff($costosAntiguos, $costosIds);
-            foreach ($costosAEliminar as $costoId) {
-                try {
-                    Costo::find($costoId)->delete();
-                    Log::debug("Costo eliminado", ['id_costo' => $costoId]);
-                } catch (\Exception $e) {
-                    Log::error("Error eliminando costo", ['error' => $e->getMessage(), 'id_costo' => $costoId]);
-                    throw $e;
-                }
-            }
-            
             $validatedData['costos'] = $costosIds;
             Log::debug('Costos procesados', ['costos_ids' => $costosIds]);
 
+            // Procesamiento de gastos
             Log::debug('Procesando gastos');
             $gastosIds = [];
-            $gastosAntiguos = collect($registroV->gastos)->pluck('id_gastos')->toArray();
-            
             if ($request->has('gastos')) {
                 foreach ($request->input('gastos') as $gIndex => $gastoData) {
                     try {
@@ -1133,21 +1215,10 @@ class RegistroVController extends Controller
                     }
                 }
             }
-
-            $gastosAEliminar = array_diff($gastosAntiguos, $gastosIds);
-            foreach ($gastosAEliminar as $gastoId) {
-                try {
-                    Gasto::find($gastoId)->delete();
-                    Log::debug("Gasto eliminado", ['id_gasto' => $gastoId]);
-                } catch (\Exception $e) {
-                    Log::error("Error eliminando gasto", ['error' => $e->getMessage(), 'id_gasto' => $gastoId]);
-                    throw $e;
-                }
-            }
-            
             $validatedData['gastos'] = $gastosIds;
             Log::debug('Gastos procesados', ['gastos_ids' => $gastosIds]);
 
+            // Procesamiento de pagos
             Log::debug('Procesando pagos');
             $pagosValidados = [];
             $totalPagado = 0;

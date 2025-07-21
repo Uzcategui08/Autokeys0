@@ -428,10 +428,11 @@
 </style>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 $(document).ready(function() {
+
     $('.select2').select2({
         width: '100%',
         dropdownAutoWidth: true,
@@ -868,8 +869,46 @@ $(document).ready(function() {
     });
 
     $(document).on('click', '.btn-remove-costo', function() {
-        $(this).closest('.costo-group').remove();
-        calcularPorcentajeCerrajero();
+        const costoGroup = $(this).closest('.costo-group');
+        const idCosto = costoGroup.find('input[name$="[id_costos]"]').val();
+        
+        if (idCosto && '{{ $registroV->id ?? '' }}') { 
+            Swal.fire({
+                title: '¿Está seguro?',
+                text: "¿Desea eliminar este costo?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `/registro-vs/{{ $registroV->id }}/costos/${idCosto}`,
+                        type: 'DELETE',
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                costoGroup.remove();
+                                calcularPorcentajeCerrajero();
+                                mostrarAlerta('success', 'Costo eliminado exitosamente');
+                            } else {
+                                mostrarAlerta('error', 'Error al eliminar el costo');
+                            }
+                        },
+                        error: function(xhr) {
+                            mostrarAlerta('error', 'Error al eliminar el costo: ' + xhr.responseJSON?.error || 'Error desconocido');
+                        }
+                    });
+                }
+            });
+        } else {
+            costoGroup.remove();
+            calcularPorcentajeCerrajero();
+        }
     });
 
     $(document).on('input', '.monto-ce', function() {
@@ -1005,8 +1044,46 @@ $(document).ready(function() {
     });
 
     $(document).on('click', '.btn-remove-gasto', function() {
-        $(this).closest('.gasto-group').remove();
-        calcularPorcentajeCerrajero();
+        const gastoGroup = $(this).closest('.gasto-group');
+        const gastoId = gastoGroup.find('input[name$="[id_gastos]"]').val();
+        
+        if (gastoId && '{{ $registroV->id ?? '' }}') { 
+            Swal.fire({
+                title: '¿Está seguro?',
+                text: "¿Desea eliminar este gasto?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `/registro-vs/{{ $registroV->id }}/gastos/${gastoId}`,
+                        type: 'DELETE',
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                gastoGroup.remove();
+                                calcularPorcentajeCerrajero();
+                                mostrarAlerta('success', 'Gasto eliminado exitosamente');
+                            } else {
+                                mostrarAlerta('error', 'Error al eliminar el gasto');
+                            }
+                        },
+                        error: function(xhr) {
+                            mostrarAlerta('error', 'Error al eliminar el gasto: ' + xhr.responseJSON?.error || 'Error desconocido');
+                        }
+                    });
+                }
+            });
+        } else {
+            gastoGroup.remove();
+            calcularPorcentajeCerrajero();
+        }
     });
 
     $(document).on('input change', '.monto-gasto', function() {
