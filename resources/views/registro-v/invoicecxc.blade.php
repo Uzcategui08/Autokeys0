@@ -24,11 +24,9 @@
             border-bottom: 1px dashed #ccc;
         }
         .header-logo {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
+            width: 120px;
+            height: 120px;
             object-fit: cover;
-            border: 2px solid #ccc;
             display: block;
             margin: 0 auto 8px auto;
         }
@@ -164,7 +162,7 @@
 <body>
     <div class="recibo-container">
         <div class="header">
-            <img src="{{ public_path('/images/AutoFondo.jpeg') }}" alt="Logo" class="header-logo">
+            <img src="{{ public_path('/images/Logo1.png') }}" alt="Logo" class="header-logo">
             <h1>RECEIPT</h1>
             <p>Generated on: {{ date('m/d/Y') }}</p>
         </div>
@@ -224,6 +222,9 @@
                 </tbody>
             </table>
 
+
+
+
             <!-- Work details -->
             @foreach($venta->items as $itemGroup)
             <div class="trabajo-info">
@@ -231,7 +232,6 @@
                 @if($itemGroup->descripcion)
                 <div class="trabajo-descripcion">{{ $itemGroup->descripcion }}</div>
                 @endif
-                
                 @if(count($itemGroup->productos) > 0)
                 <table class="productos-table">
                     <tr>
@@ -247,7 +247,13 @@
             </div>
             @endforeach
         </div>
+                            {{-- Detalle del vehículo: mostrar siempre, solo con los campos de la migración/modelo --}}
+            <div style="margin: 2mm 0 2mm 0; padding: 2mm; background: #f4f4f4; border-left: 3px solid #c2c2c2; border-radius: 2mm; font-size: 10px;">
+                <h3>Vehicle Details:</h3>
+                <span><strong>Brand:</strong> {{ $venta->marca ?? '-' }} - </span><span><strong>Model:</strong> {{ $venta->modelo ?? '-' }}</span> - <span><strong>Year:</strong> {{ $venta->año ?? '-' }}</span><br>
+            </div>
         @endforeach
+
 
         <table>
             <tfoot>

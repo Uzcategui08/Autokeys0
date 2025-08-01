@@ -1669,7 +1669,11 @@ class RegistroVController extends Controller
                         'valor_v' => $venta->valor_v,
                         'total_pagado' => $totalPagadoVenta,
                         'pagos' => $pagos,
-                        'items' => $items
+                        'items' => $items,
+                        // campos de vehículo
+                        'marca' => $venta->marca ?? null,
+                        'modelo' => $venta->modelo ?? null,
+                        'año' => $venta->año ?? null
                     ];
                 })
             ];
