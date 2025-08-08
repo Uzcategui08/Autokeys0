@@ -371,15 +371,14 @@
                                                     @php
                                                         $paymentMethods = [];
                                                         foreach($venta['pagos'] as $pago) {
-                                                            foreach($tiposDePago as $tipo) {
-                                                                if($tipo['id'] == ($pago['metodo_pago'] ?? null)) {
-                                                                    $paymentMethods[] = $tipo['name'];
-                                                                    break;
-                                                                }
+                                                            $metodoPagoId = $pago['metodo_pago'] ?? null;
+                                                            if ($metodoPagoId !== null) {
+                                                                $paymentMethods[] = $tiposDePago[$metodoPagoId] ?? 'Método ' . $metodoPagoId;
                                                             }
                                                         }
+                                                        $paymentMethods = array_unique($paymentMethods);
                                                     @endphp
-                                                    {{ implode(', ', array_unique($paymentMethods)) }}
+                                                    {{ implode(', ', $paymentMethods) }}
                                                 @else
                                                     Sin pagos
                                                 @endif
@@ -456,12 +455,21 @@
                                                             <td>#{{ $costo['id'] }}</td>
                                                             <td>{{ $costo['descripcion'] }} <small class="text-muted">({{ $costo['subcategoria'] }})</small></td>
                                                             <td>
-                                                                @foreach($tiposDePago as $tipo)
-                                                                    @if($tipo['id'] == ($costo['metodo_pago_id'] ?? null))
-                                                                        {{ $tipo['name'] }}
-                                                                        @break
-                                                                    @endif
-                                                                @endforeach
+                                                                @php
+                                                                    $metodoPago = $costo['metodo_pago_id'] ?? null;
+                                                                    $metodoPagoNombre = 'Método Desconocido';
+                                                                    if ($metodoPagoId) {
+                                                                        if (is_array($metodosPago)) {
+                                                                            $metodoPagoNombre = $metodosPago[$metodoPagoId] ?? 'Método ' . $metodoPagoId;
+                                                                        } elseif (is_object($metodosPago) && method_exists($metodosPago, 'firstWhere')) {
+                                                                            $metodoPago = $metodosPago->firstWhere('id', $metodoPagoId);
+                                                                            $metodoPagoNombre = $metodoPago ? $metodoPago->name : 'Método ' . $metodoPagoId;
+                                                                        } else {
+                                                                            $metodoPagoNombre = is_string($metodoPagoId) ? $metodoPagoId : 'Método ' . $metodoPagoId;
+                                                                        }
+                                                                    }
+                                                                @endphp
+                                                                {{ $metodoPagoNombre }}
                                                             </td>
                                                             <td class="text-right text-danger">${{ number_format($costo['valor'], 2) }}</td>
                                                         </tr>
@@ -495,12 +503,11 @@
                                                             <td>#{{ $gasto['id'] }}</td>
                                                             <td>{{ $gasto['descripcion'] }} <small class="text-muted">({{ $gasto['subcategoria'] }})</small></td>
                                                             <td>
-                                                                @foreach($tiposDePago as $tipo)
-                                                                    @if($tipo['id'] == ($gasto['metodo_pago_id'] ?? null))
-                                                                        {{ $tipo['name'] }}
-                                                                        @break
-                                                                    @endif
-                                                                @endforeach
+                                                                @php
+                                                                    $metodoPago = $gasto['metodo_pago_id'] ?? null;
+                                                                    // Mostrar el contenido completo para depuración
+                                                                    echo '<pre>' . print_r($metodoPago, true) . '</pre>';
+                                                                @endphp
                                                             </td>
                                                             <td class="text-right text-warning">${{ number_format($gasto['valor'], 2) }}</td>
                                                         </tr>
@@ -534,12 +541,36 @@
                                                 <tr>
                                                     <td>{{ \Carbon\Carbon::parse($pago['fecha'] ?? now())->format('d/m/Y') }}</td>
                                                     <td>
-                                                        @foreach($tiposDePago as $tipo)
-                                                            @if($tipo['id'] == ($pago['metodo_pago'] ?? null))
-                                                                {{ $tipo['name'] }}
-                                                                @break
-                                                            @endif
-                                                        @endforeach
+                                                        @php
+                                                            $metodoPago = $pago['metodo_pago'] ?? null;
+                                                            $metodoPagoNombre = 'Método Desconocido';
+                                                            
+                                                            if ($metodoPago) {
+                                                                if (is_string($metodoPago)) {
+                                                                    // Si ya es un string, usarlo directamente
+                                                                    $metodoPagoNombre = $metodoPago;
+                                                                } else if (is_array($metodoPago) && isset($metodoPago['App\Models\TiposDePago'])) {
+                                                                    // Si es un array con el modelo TiposDePago anidado
+                                                                    $metodoPagoNombre = $metodoPago['App\Models\TiposDePago']['name'] ?? 'Método ' . ($metodoPago['App\Models\TiposDePago']['id'] ?? 'N/A');
+                                                                } else if (is_array($metodoPago) && isset($metodoPago['name'])) {
+                                                                    // Si es un array con name e id directamente
+                                                                    $metodoPagoNombre = $metodoPago['name'];
+                                                                } else if (is_numeric($metodoPago) && is_array($metodosPago) && isset($metodosPago[$metodoPago])) {
+                                                                    // Si es un ID numérico y tenemos el array de métodos
+                                                                    $metodoPagoNombre = $metodosPago[$metodoPago];
+                                                                } else if (is_object($metodoPago) && isset($metodoPago->name)) {
+                                                                    // Si es un objeto con propiedad name
+                                                                    $metodoPagoNombre = $metodoPago->name;
+                                                                } else if (is_object($metodoPago) && isset($metodoPago->{"App\Models\TiposDePago"})) {
+                                                                    // Si es un objeto con TiposDePago anidado
+                                                                    $metodoPagoNombre = $metodoPago->{"App\Models\TiposDePago"}->name ?? 'Método ' . ($metodoPago->{"App\Models\TiposDePago"}->id ?? 'N/A');
+                                                                } else {
+                                                                    // Cualquier otro caso, intentar convertirlo a string
+                                                                    $metodoPagoNombre = (string)$metodoPago;
+                                                                }
+                                                            }
+                                                        @endphp
+                                                        {{ $metodoPagoNombre }}
                                                     </td>
                                                     <td>
                                                         @if(isset($pago['cobrador_id']))
@@ -609,7 +640,27 @@
                             @if(isset($item['costos'][$i]))
                                 <td class="bg-costos">{{ $item['costos'][$i]['descripcion'] }}</td>
                                 <td class="bg-costos">
-                                    {{ $item['costos'][$i]['metodo_pago'] ?? 'Desconocido' }}
+                                    @php
+                                        $costo = $item['costos'][$i];
+                                        $metodoPago = $costo['metodo_pago'] ?? 'Desconocido';
+                                        
+                                        // Si hay un array de métodos de pago, intentar obtener el nombre del primero
+                                        if (isset($costo['metodos_pago']) && is_array($costo['metodos_pago']) && count($costo['metodos_pago']) > 0) {
+                                            $primerMetodo = $costo['metodos_pago'][0];
+                                            if (is_object($primerMetodo) && isset($primerMetodo->name)) {
+                                                // Para objetos de modelo Eloquent
+                                                $metodoPago = $primerMetodo->name;
+                                            } elseif (is_array($primerMetodo) && isset($primerMetodo['name'])) {
+                                                // Para arrays asociativos
+                                                $metodoPago = $primerMetodo['name'];
+                                            } elseif (is_string($primerMetodo)) {
+                                                // Para strings directos (como en nómina)
+                                                $metodoPago = $primerMetodo;
+                                            }
+                                        }
+                                        
+                                        echo htmlspecialchars($metodoPago);
+                                    @endphp
                                 </td>
                                 <td class="text-right bg-costos">${{ number_format($item['costos'][$i]['total'], 2) }}</td>
                             @else
@@ -619,7 +670,27 @@
                             @if(isset($item['gastos'][$i]))
                                 <td class="bg-gastos">{{ $item['gastos'][$i]['descripcion'] }}</td>
                                 <td class="bg-gastos">
-                                    {{ $item['gastos'][$i]['metodo_pago'] ?? 'Desconocido' }}
+                                    @php
+                                        $gasto = $item['gastos'][$i];
+                                        $metodoPago = $gasto['metodo_pago'] ?? 'Desconocido';
+                                        
+                                        // Si hay un array de métodos de pago, intentar obtener el nombre del primero
+                                        if (isset($gasto['metodos_pago']) && is_array($gasto['metodos_pago']) && count($gasto['metodos_pago']) > 0) {
+                                            $primerMetodo = $gasto['metodos_pago'][0];
+                                            if (is_object($primerMetodo) && isset($primerMetodo->name)) {
+                                                // Para objetos de modelo Eloquent
+                                                $metodoPago = $primerMetodo->name;
+                                            } elseif (is_array($primerMetodo) && isset($primerMetodo['name'])) {
+                                                // Para arrays asociativos
+                                                $metodoPago = $primerMetodo['name'];
+                                            } elseif (is_string($primerMetodo)) {
+                                                // Para strings directos (como en nómina)
+                                                $metodoPago = $primerMetodo;
+                                            }
+                                        }
+                                        
+                                        echo htmlspecialchars($metodoPago);
+                                    @endphp
                                 </td>
                                 <td class="text-right bg-gastos">${{ number_format($item['gastos'][$i]['total'], 2) }}</td>
                             @else
@@ -630,7 +701,7 @@
                     @endforeach
                     
                     <tr class="font-weight-bold">
-                        <td>TOTALES</td>
+                        <td colspan="1">TOTALES</td>
                         <td colspan="2" class="bg-costos"></td>
                         <td class="text-right bg-costos">${{ number_format($totales['totalCostos'] ?? 0, 2) }}</td>
                         <td colspan="2" class="bg-gastos"></td>
@@ -818,8 +889,11 @@
                                     @foreach($data['metodos'] as $metodo => $detalle)
                                     <div class="mb-1">
                                         <span class="badge bg-light text-dark">
-                                            {{ $metodosPago[preg_replace('/[^0-9]/', '', $metodo)] ?? 'Desconocido' }}: 
-                                            ${{ number_format($detalle['total'], 2) }}
+                                            @if(is_array($detalle) && isset($detalle['nombre']))
+                                                {{ $detalle['nombre'] }}: ${{ number_format($detalle['total'] ?? 0, 2) }}
+                                            @else
+                                                {{ $metodosPago[$metodo] ?? 'Método ' . $metodo }}: ${{ number_format(is_array($detalle) ? ($detalle['total'] ?? 0) : $detalle, 2) }}
+                                            @endif
                                         </span>
                                     </div>
                                     @endforeach
@@ -866,8 +940,11 @@
                                     @foreach($data['metodos'] as $metodo => $detalle)
                                     <div class="mb-1">
                                         <span class="badge bg-light text-dark">
-                                            {{ $metodosPago[preg_replace('/[^0-9]/', '', $metodo)] ?? 'Desconocido' }}: 
-                                            ${{ number_format($detalle['total'], 2) }}
+                                            @if(is_array($detalle) && isset($detalle['nombre']))
+                                                {{ $detalle['nombre'] }}: ${{ number_format($detalle['total'] ?? 0, 2) }}
+                                            @else
+                                                {{ $metodosPago[$metodo] ?? 'Método ' . $metodo }}: ${{ number_format(is_array($detalle) ? ($detalle['total'] ?? 0) : $detalle, 2) }}
+                                            @endif
                                         </span>
                                     </div>
                                     @endforeach

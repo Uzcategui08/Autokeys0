@@ -132,21 +132,44 @@
                         $totalCredito = 0;
                         $totalRecibidos = 0;
                         $totalGeneral = 0;
+
+                        $tecnicosMap = [];
+                        foreach($reporteVentas as $item) {
+                            $tecnicosMap[$item['tecnico']] = [
+                                'ventas_contado' => $item['ventas_contado'],
+                                'ventas_credito' => $item['ventas_credito'],
+                                'total_ventas' => $item['total_ventas']
+                            ];
+                        }
+
+                        foreach($ingresosRecibidos as $ingreso) {
+                            if (!isset($tecnicosMap[$ingreso['tecnico']])) {
+                                $tecnicosMap[$ingreso['tecnico']] = [
+                                    'ventas_contado' => 0,
+                                    'ventas_credito' => 0,
+                                    'total_ventas' => 0
+                                ];
+                            }
+                        }
                     @endphp
                     
-                    @foreach($reporteVentas as $index => $item)
+                    @foreach($tecnicosMap as $tecnicoNombre => $datosVentas)
+                    @php
+                        $ingreso = collect($ingresosRecibidos)->firstWhere('tecnico', $tecnicoNombre);
+                        $ingresoTotal = $ingreso['total'] ?? 0;
+                    @endphp
                     <tr>
-                        <td class="font-weight-bold">{{ $item['tecnico'] }}</td>
-                        <td class="text-right bg-ventas">${{ number_format($item['ventas_contado'], 2) }}</td>
-                        <td class="text-right bg-ventas">${{ number_format($item['ventas_credito'], 2) }}</td>
-                        <td class="text-right bg-ventas">${{ number_format($ingresosRecibidos[$index]['total'] ?? 0, 2) }}</td>
-                        <td class="text-right font-weight-bold bg-gray-100">${{ number_format($item['total_ventas'] + ($ingresosRecibidos[$index]['total'] ?? 0), 2) }}</td>
+                        <td class="font-weight-bold">{{ $tecnicoNombre }}</td>
+                        <td class="text-right bg-ventas">${{ number_format($datosVentas['ventas_contado'], 2) }}</td>
+                        <td class="text-right bg-ventas">${{ number_format($datosVentas['ventas_credito'], 2) }}</td>
+                        <td class="text-right bg-ventas">${{ number_format($ingresoTotal, 2) }}</td>
+                        <td class="text-right font-weight-bold bg-gray-100">${{ number_format($datosVentas['total_ventas'] + $ingresoTotal, 2) }}</td>
                         
                         @php
-                            $totalContado += $item['ventas_contado'];
-                            $totalCredito += $item['ventas_credito'];
-                            $totalRecibidos += $ingresosRecibidos[$index]['total'] ?? 0;
-                            $totalGeneral += $item['total_ventas'] + ($ingresosRecibidos[$index]['total'] ?? 0);
+                            $totalContado += $datosVentas['ventas_contado'];
+                            $totalCredito += $datosVentas['ventas_credito'];
+                            $totalRecibidos += $ingresoTotal;
+                            $totalGeneral += $datosVentas['total_ventas'] + $ingresoTotal;
                         @endphp
                     </tr>
                     @endforeach

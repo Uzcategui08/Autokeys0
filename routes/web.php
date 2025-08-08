@@ -213,3 +213,17 @@ Route::resource('categorias', CategoriaController::class);
 
 // Eliminar un ajuste de inventario (carga/descarga)
 Route::delete('/ajustes/{id}', [InventarioController::class, 'destroyAjuste'])->name('ajustes.destroy');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])
+        ->name('notifications.index');
+        
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])
+        ->name('notifications.read');
+        
+    Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])
+        ->name('notifications.markAllRead');
+        
+    Route::get('/notifications/unread-count', [\App\Http\Controllers\NotificationController::class, 'unreadCount'])
+        ->name('notifications.unreadCount');
+});
