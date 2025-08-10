@@ -3,6 +3,8 @@
 namespace App\Providers;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use App\Models\Inventario;
+use App\Observers\InventarioObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,6 +34,8 @@ class AppServiceProvider extends ServiceProvider
                 return true; 
             }
         });
+
+        Inventario::observe(InventarioObserver::class);
     }
 
     

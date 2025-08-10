@@ -7,7 +7,7 @@ use App\Models\Empleado;
 use App\Models\TiposDePago;
 use App\Models\Costo;
 use App\Models\Gasto;
-use App\Models\Almacene;
+use App\Models\Almacene;  // Add this import at the top with other use statements
 use App\Models\Producto;
 use App\Models\AjusteInventario;
 use App\Http\Controllers\ClienteController;
@@ -151,8 +151,11 @@ class CierreVentasSemanalController extends Controller
         }
         $idsAlmacenes = $idsAlmacenes->unique()->values();
 
-        $almacenesDisponibles = Almacene::whereIn('id_almacen', $idsAlmacenes)
-            ->get()
+        Log::info('Consultando almacenes disponibles');
+        $almacenesDisponibles = Almacene::all();
+        Log::info('Almacenes encontrados:', ['count' => $almacenesDisponibles->count()]);
+
+        $almacenesDisponibles = $almacenesDisponibles
             ->map(function($almacen) {
                 return (object)[
                     'id' => $almacen->id_almacen,
@@ -286,29 +289,6 @@ class CierreVentasSemanalController extends Controller
         
         $trabajos = array_merge($trabajos, $formatosTrabajo);
 
-        $formatosTrabajo = [
-            'duplicado' => 'Duplicado',
-            'perdida' => 'Pérdida',
-            'programacion' => 'Programación',
-            'alarma' => 'Alarma',
-            'airbag' => 'Airbag',
-            'rekey' => 'Rekey',
-            'lishi' => 'Lishi',
-            'remote_start' => 'Remote Start',
-            'control' => 'Control',
-            'venta' => 'Venta',
-            'apertura' => 'Apertura',
-            'cambio_chip' => 'Cambio de Chip',
-            'revision' => 'Revisión',
-            'suiche' => 'Suiche',
-            'llave_puerta' => 'Llave de Puerta',
-            'cinturon' => 'Cinturón',
-            'diag' => 'Diagnóstico',
-            'emuladores' => 'Emuladores',
-            'clonacion' => 'Clonación'
-        ];
-        $trabajos = array_merge($trabajos, $formatosTrabajo);
-
         Log::info('Trabajos disponibles:', ['count' => count($trabajos), 'sample' => array_slice($trabajos, 0, 3)]);
         try {
             Log::info('Inicio de exportPdf');
@@ -339,14 +319,10 @@ class CierreVentasSemanalController extends Controller
 
             Log::info('Consultando métodos de pago');
             $metodosPago = TiposDePago::all();
+            $metodosPagoArray = $metodosPago->pluck('name', 'id')->toArray();
             Log::info('Métodos de pago encontrados:', [
                 'count' => $metodosPago->count(),
-                'data' => $metodosPago->map(function($pago) {
-                    return [
-                        'id' => $pago->id,
-                        'name' => $pago->name
-                    ];
-                })->toArray()
+                'data' => $metodosPagoArray
             ]);
 
             Log::info('Consultando reporte de ventas');
@@ -358,6 +334,46 @@ class CierreVentasSemanalController extends Controller
 
             Log::info('Consultando costos y gastos');
             $reporteCostosGastos = $this->getCostosGastosPorTecnico($startDate, $endDate, $metodosPago);
+            
+            Log::info('Estructura detallada de costos y gastos:', [
+                'total_tecnicos' => $reporteCostosGastos->count(),
+                'sample_tecnico' => $reporteCostosGastos->first() ? [
+                    'tecnico' => $reporteCostosGastos->first()['tecnico'] ?? null,
+                    'total_costos' => count($reporteCostosGastos->first()['costos'] ?? []),
+                    'total_gastos' => count($reporteCostosGastos->first()['gastos'] ?? []),
+                    'sample_costo' => $reporteCostosGastos->first()['costos'][0] ?? null,
+                    'sample_gasto' => $reporteCostosGastos->first()['gastos'][0] ?? null,
+                ] : null,
+                'metodos_pago_format' => 'Array [id => nombre]',
+                'metodos_pago_sample' => array_slice($metodosPagoArray, 0, 3, true) + ['...' => '...']
+            ]);
+            
+            if ($reporteCostosGastos->isNotEmpty() && !empty($reporteCostosGastos->first()['costos'])) {
+                $sampleCostos = collect($reporteCostosGastos->first()['costos'])->take(2)->map(function($costo) {
+                    return [
+                        'descripcion' => $costo['descripcion'] ?? null,
+                        'metodo_pago' => $costo['metodo_pago'] ?? null,
+                        'total' => $costo['total'] ?? null,
+                        'fecha_pago' => $costo['fecha_pago'] ?? null,
+                        'keys' => array_keys($costo)
+                    ];
+                });
+                Log::info('Ejemplo de costos:', ['costos' => $sampleCostos]);
+            }
+            
+            if ($reporteCostosGastos->isNotEmpty() && !empty($reporteCostosGastos->first()['gastos'])) {
+                $sampleGastos = collect($reporteCostosGastos->first()['gastos'])->take(2)->map(function($gasto) {
+                    return [
+                        'descripcion' => $gasto['descripcion'] ?? null,
+                        'metodo_pago' => $gasto['metodo_pago'] ?? null,
+                        'total' => $gasto['total'] ?? null,
+                        'fecha_pago' => $gasto['fecha_pago'] ?? null,
+                        'keys' => array_keys($gasto)
+                    ];
+                });
+                Log::info('Ejemplo de gastos:', ['gastos' => $sampleGastos]);
+            }
+            
             Log::info('Costos y gastos encontrados (antes de convertir):', [
                 'count' => count($reporteCostosGastos),
                 'first' => $reporteCostosGastos->first() ?? null,
@@ -393,10 +409,10 @@ class CierreVentasSemanalController extends Controller
 
             $llavesPorTecnico = $llavesPorTecnico 
                 ? collect($llavesPorTecnico)->filter(function($tecnico) {
-                    return !is_null($tecnico);
-                })
+                    return !is_null($tecnico) && is_array($tecnico) && isset($tecnico['llaves']);
+                })->values()
                 : collect([]);
-            
+
             Log::info('Llaves por técnico (después de filtrar nulls):', [
                 'count' => $llavesPorTecnico->count(),
                 'first' => $llavesPorTecnico->first() ?? null,
@@ -513,10 +529,67 @@ class CierreVentasSemanalController extends Controller
             ]);
 
             Log::info('Consultando ventas por trabajo');
-            $ventasPorTrabajo = $this->getVentasPorTrabajo($startDate, $endDate, $metodosPago);
+            $metodosPagoArray = $metodosPago->pluck('name', 'id')->toArray();
+            Log::info('Métodos de pago para ventas por trabajo:', ['metodos' => $metodosPagoArray]);
+            
+            $ventasPorTrabajo = $this->getVentasPorTrabajo($startDate, $endDate, $metodosPagoArray);
             Log::info('Ventas por trabajo obtenidas:', [
-                'contado_count' => count($ventasPorTrabajo['contado']),
-                'credito_count' => count($ventasPorTrabajo['credito'])
+                'contado_count' => count($ventasPorTrabajo['contado'] ?? []),
+                'credito_count' => count($ventasPorTrabajo['credito'] ?? [])
+            ]);
+
+            Log::info('Procesando ventas por trabajo');
+            Log::info('Estructura de ventasPorTrabajo:', ['sample' => $ventasPorTrabajo['contado']->first() ?? null]);
+            
+            $ventasPorTrabajo['contado'] = collect($ventasPorTrabajo['contado'])->map(function($trabajoData) use ($metodosPagoArray) {
+                $metodos = collect($trabajoData['metodos'])->map(function($metodoData, $metodoKey) use ($metodosPagoArray) {
+                    if (is_numeric($metodoKey)) {
+                        $metodoId = (string)$metodoKey; 
+                        return [
+                            'nombre' => $metodosPagoArray[$metodoId] ?? "Método $metodoId",
+                            'total' => $metodoData['total'],
+                            'count' => $metodoData['count']
+                        ];
+                    }
+                    return [
+                        'nombre' => $metodoKey,
+                        'total' => $metodoData['total'],
+                        'count' => $metodoData['count']
+                    ];
+                })->values();
+                
+                return [
+                    'total' => $trabajoData['total'],
+                    'metodos' => $metodos
+                ];
+            });
+
+            $ventasPorTrabajo['credito'] = collect($ventasPorTrabajo['credito'])->map(function($trabajoData) use ($metodosPagoArray) {
+                $metodos = collect($trabajoData['metodos'])->map(function($metodoData, $metodoKey) use ($metodosPagoArray) {
+                    if (is_numeric($metodoKey)) {
+                        $metodoId = (string)$metodoKey;
+                        return [
+                            'nombre' => $metodosPagoArray[$metodoId] ?? "Método $metodoId",
+                            'total' => $metodoData['total'],
+                            'count' => $metodoData['count']
+                        ];
+                    }
+                    return [
+                        'nombre' => $metodoKey,
+                        'total' => $metodoData['total'],
+                        'count' => $metodoData['count']
+                    ];
+                })->values();
+                
+                return [
+                    'total' => $trabajoData['total'],
+                    'metodos' => $metodos
+                ];
+            });
+
+            Log::info('Ventas por trabajo procesadas:', [
+                'contado_first' => $ventasPorTrabajo['contado']->first(),
+                'credito_first' => $ventasPorTrabajo['credito']->first()
             ]);
 
             Log::info('Consultando resumen de trabajos');
@@ -575,42 +648,6 @@ class CierreVentasSemanalController extends Controller
                     'invalid_clients' => $clientesInvalidos->toArray()
                 ]);
             }
-
-            Log::info('Procesando ventas por trabajo');
-            $ventasPorTrabajo['contado'] = collect($ventasPorTrabajo['contado'])->map(function($trabajoData) use ($metodosPago) {
-                $metodos = collect($trabajoData['metodos'])->map(function($metodoData, $metodoId) use ($metodosPago) {
-                    $metodoNombre = $metodosPago->where('id', $metodoId)->first()?->name ?? 'Desconocido';
-                    return [
-                        'nombre' => $metodoNombre,
-                        'total' => $metodoData['total'],
-                        'count' => $metodoData['count']
-                    ];
-                });
-                return [
-                    'total' => $trabajoData['total'],
-                    'metodos' => $metodos
-                ];
-            });
-
-            $ventasPorTrabajo['credito'] = collect($ventasPorTrabajo['credito'])->map(function($trabajoData) use ($metodosPago) {
-                $metodos = collect($trabajoData['metodos'])->map(function($metodoData, $metodoId) use ($metodosPago) {
-                    $metodoNombre = $metodosPago->where('id', $metodoId)->first()?->name ?? 'Desconocido';
-                    return [
-                        'nombre' => $metodoNombre,
-                        'total' => $metodoData['total'],
-                        'count' => $metodoData['count']
-                    ];
-                });
-                return [
-                    'total' => $trabajoData['total'],
-                    'metodos' => $metodos
-                ];
-            });
-
-            Log::info('Ventas por trabajo procesadas:', [
-                'contado_first' => $ventasPorTrabajo['contado']->first(),
-                'credito_first' => $ventasPorTrabajo['credito']->first()
-            ]);
 
             Log::info('Calculando total de descargas');
             $totalDescargas = $descargasManuales->where('tipo', 'ajuste2')->sum('cantidad');
@@ -688,12 +725,12 @@ class CierreVentasSemanalController extends Controller
                 'ganancia' => $ganancia,
                 'retiroDueño' => $retiroDueño,
                 'gananciaFinal' => $gananciaFinal,
-                'metodosPago' => $metodosPago,
+                'metodosPago' => $metodosPagoArray, 
                 'trabajos' => $trabajos,
                 'ventasDetalladasPorTecnico' => $ventasDetalladasPorTecnico,
-                'tiposDePago' => TiposDePago::all(),
-                'almacenesDisponibles' => Almacene::all(),
-                'cargasDescargas' => $descargasManuales,
+                'tiposDePago' => $metodosPagoArray, 
+                'almacenesDisponibles' => $this->convertToProperArray(Almacene::all()->toArray()),
+                'cargasDescargas' => $this->convertToProperArray($descargasManuales->toArray()),
                 'totalDescargas' => $totalDescargas,
                 'ventasPorTrabajo' => [
                     'contado' => $this->convertToProperArray($ventasPorTrabajo['contado']->toArray()),
@@ -786,7 +823,7 @@ class CierreVentasSemanalController extends Controller
             $endDate = Carbon::parse($endDate);
         }
 
-        $metodosPago = TiposDePago::all();
+        $metodosPago = TiposDePago::pluck('name', 'id')->toArray();
 
         $reporteVentas = $this->getVentasPorTecnico($startDate, $endDate);
         $reporteCostosGastos = $this->getCostosGastosPorTecnico($startDate, $endDate, $metodosPago);
@@ -855,7 +892,12 @@ class CierreVentasSemanalController extends Controller
                   - ($totalCostosLlaves ?? 0) 
                   - ($totales['totalGastos'] ?? 0);
 
-        $retiroDueño = $ganancia * 0.10;
+        $retiroDueño = Nempleado::whereHas('empleado', function($query) {
+            $query->where('cargo', 5); 
+        })
+        ->whereBetween('fecha_pago', [$startDate, $endDate])
+        ->sum('total_pagado');
+
         $gananciaFinal = $ganancia - $retiroDueño;
 
         
@@ -1224,44 +1266,122 @@ class CierreVentasSemanalController extends Controller
 
     private function getIngresosRecibidos($startDate, $endDate, $metodosPago)
     {
-    return Empleado::with(['ventas'])
+        Log::info('Iniciando getIngresosRecibidos', [
+            'startDate' => $startDate->format('Y-m-d H:i:s'),
+            'endDate' => $endDate->format('Y-m-d H:i:s'),
+            'metodosPago_count' => is_countable($metodosPago) ? count($metodosPago) : 0,
+            'metodosPago_sample' => is_array($metodosPago) 
+                ? array_slice($metodosPago, 0, 3, true) + ['...' => '...']
+                : []
+        ]);
+
+        $query = Empleado::with(['ventas' => function($query) use ($startDate, $endDate) {
+            $query->whereNotNull('pagos')
+                  ->whereRaw("json_array_length(pagos) > 0");
+        }])
         ->whereHas('ventas', function($query) {
             $query->whereNotNull('pagos')
-                  ->whereRaw("json_array_length(pagos) > 0"); // PostgreSQL-compatible check
-        })
-            ->get()
-        ->map(function($tecnico) use ($startDate, $endDate, $metodosPago) {
+                  ->whereRaw("json_array_length(pagos) > 0");
+        });
+
+        Log::info('Consulta SQL generada', [
+            'sql' => $query->toSql(),
+            'bindings' => $query->getBindings()
+        ]);
+
+        $empleados = $query->get();
+        
+        Log::info('Empleados encontrados', [
+            'count' => $empleados->count(),
+            'empleados' => $empleados->pluck('nombre', 'id')
+        ]);
+
+        $result = $empleados->map(function($tecnico) use ($startDate, $endDate, $metodosPago) {
+            Log::info('Procesando técnico', [
+                'tecnico_id' => $tecnico->id,
+                'tecnico_nombre' => $tecnico->nombre,
+                'ventas_count' => $tecnico->ventas->count()
+            ]);
+
             $pagosRecibidos = collect();
             
             foreach ($tecnico->ventas as $venta) {
-                $pagos = $this->parsePagos($venta->pagos);
+                $pagos = $this->parsePagos($venta->pagos ?? '[]');
                 
+                Log::debug('Venta procesada', [
+                    'venta_id' => $venta->id,
+                    'fecha_venta' => $venta->fecha_h,
+                    'pagos_count' => count($pagos),
+                    'pagos' => $pagos
+                ]);
+
                 foreach ($pagos as $pago) {
-                if (!isset($pago['fecha'], $pago['metodo_pago'], $pago['monto'])) {
-                    continue;
-                }
-                
-                $fechaPago = Carbon::parse($pago['fecha']);
-                    $fechaVenta = Carbon::parse($venta->fecha_h);                
-                    if ($fechaPago->between($startDate, $endDate) && !$fechaVenta->between($startDate, $endDate)) {
-                    $pagosRecibidos->push([
-                        'metodo_pago' => $metodosPago[$pago['metodo_pago']] ?? 'Desconocido',
-                        'monto' => $pago['monto'],
-                            'fecha_venta' => $venta->fecha_h,
-                        'fecha_pago' => $pago['fecha']
+                    if (!isset($pago['fecha'], $pago['metodo_pago'], $pago['monto'])) {
+                        Log::warning('Pago con formato incorrecto', ['pago' => $pago]);
+                        continue;
+                    }
+                    
+                    $fechaPago = Carbon::parse($pago['fecha']);
+                    
+                    Log::debug('Verificando pago', [
+                        'fecha_pago' => $fechaPago->format('Y-m-d H:i:s'),
+                        'rango_inicio' => $startDate->format('Y-m-d H:i:s'),
+                        'rango_fin' => $endDate->format('Y-m-d H:i:s'),
+                        'dentro_rango' => $fechaPago->between($startDate, $endDate) ? 'Sí' : 'No'
                     ]);
+                    
+                    if ($fechaPago->between($startDate, $endDate)) {
+                        $infoPago = [
+                            'metodo_pago' => $metodosPago[$pago['metodo_pago']] ?? 'Desconocido',
+                            'monto' => $pago['monto'],
+                            'fecha_venta' => $venta->fecha_h,
+                            'fecha_pago' => $pago['fecha']
+                        ];
+                        
+                        Log::debug('Pago válido agregado', $infoPago);
+                        $pagosRecibidos->push($infoPago);
                     }
                 }
             }
     
-            return [
+            $resultado = [
                 'tecnico' => $tecnico->nombre,
                 'pagos' => $pagosRecibidos,
                 'total' => $pagosRecibidos->sum('monto')
             ];
+            
+            Log::info('Resultado del técnico', [
+                'tecnico' => $tecnico->nombre,
+                'pagos_count' => $pagosRecibidos->count(),
+                'total' => $resultado['total']
+            ]);
+            
+            return $resultado;
         });
+
+        $totalPagos = $result->sum(function($item) {
+            return $item['pagos']->count();
+        });
+        $montoTotal = $result->sum('total');
+
+        Log::info('Resultado final de getIngresosRecibidos', [
+            'total_empleados' => $result->count(),
+            'total_pagos' => $totalPagos,
+            'monto_total' => $montoTotal,
+            'empleados_con_pagos' => $result->filter(function($item) {
+                return $item['pagos']->isNotEmpty();
+            })->map(function($item) {
+                return [
+                    'tecnico' => $item['tecnico'],
+                    'total_pagos' => $item['pagos']->count(),
+                    'monto_total' => $item['total']
+                ];
+            })
+        ]);
+
+        return $result;
     }
-    
+
     private function getVentasPorCliente($startDate, $endDate)
     {
         return RegistroV::whereBetween('fecha_h', [$startDate, $endDate])
@@ -1447,6 +1567,18 @@ class CierreVentasSemanalController extends Controller
 
     private function procesarTransacciones($transacciones, $metodosPago)
     {
+        $metodosSample = is_array($metodosPago) 
+            ? array_slice($metodosPago, 0, 3, true) + ['...' => '...']
+            : ($metodosPago instanceof \Illuminate\Support\Collection 
+                ? $metodosPago->take(3)->toArray() + ['...' => '...']
+                : []);
+
+        Log::info('Iniciando procesarTransacciones', [
+            'transacciones_count' => is_countable($transacciones) ? count($transacciones) : 'N/A',
+            'metodos_pago_count' => is_countable($metodosPago) ? count($metodosPago) : 0,
+            'metodos_pago_sample' => $metodosSample
+        ]);
+
         if (!is_array($transacciones)) {
             $transacciones = $transacciones->toArray();
         }
@@ -1454,30 +1586,86 @@ class CierreVentasSemanalController extends Controller
         $resultados = [];
         
         foreach ($transacciones as $transaccion) {
-            if (is_array($transaccion) && isset($transaccion['tipo'])) {
-                $metodoPagoData = json_decode($transaccion['metodo_pago'], true);
+            if (!is_array($transaccion)) {
+                Log::warning('Transacción no es un array', ['transaccion' => $transaccion]);
+                continue;
+            }
+
+            Log::debug('Procesando transacción', ['transaccion' => $transaccion]);
+
+            if (isset($transaccion['tipo'])) {
+                $metodoPagoData = json_decode($transaccion['metodo_pago'] ?? '[]', true);
+                $metodoPago = is_array($metodoPagoData) && isset($metodoPagoData[0]['nombre']) 
+                    ? $metodoPagoData[0]['nombre'] 
+                    : (is_string($transaccion['metodo_pago'] ?? null) 
+                        ? $transaccion['metodo_pago'] 
+                        : 'Desconocido');
+
+                $metodoPago = ucfirst($metodoPago);
                 
-                $metodoPago = $metodoPagoData ? $metodoPagoData[0]['nombre'] ?? 'Desconocido' : 'Desconocido';
-                
-                $resultados[] = [
+                return [
                     'subcategoria' => $transaccion['tipo'] == 1 ? 'Salario Cerrajero' : 'Gastos Personal',
                     'descripcion' => 'Pago a empleado (Nómina)',
-                    'metodo_pago' => $transaccion['metodo_pago'],
-                    'total' => $transaccion['valor'],
-                    'fecha_pago' => $transaccion['fecha']
+                    'metodo_pago' => $metodoPago,
+                    'total' => $transaccion['valor'] ?? 0,
+                    'fecha_pago' => $transaccion['fecha'] ?? null
                 ];
-            } elseif (is_array($transaccion)) {
-                $pagos = isset($transaccion['pagos']) ? 
-                    (is_array($transaccion['pagos']) ? $transaccion['pagos'] : json_decode($transaccion['pagos'], true) ?? []) 
-                    : [];
+                
+                return [
+                    'valor' => $pago->total_pagado,
+                    'metodo_pago' => $metodoPago ? $metodoPago->name : 'Desconocido',
+                    'metodo_pago_id' => $metodoPagoId,
+                    'fecha' => $pago->fecha_pago,
+                    'tipo' => $tecnico->tipo
+                ];
+            } else {
+                $pagos = [];
+
+                if (isset($transaccion['pagos'])) {
+                    if (is_string($transaccion['pagos'])) {
+                        $pagos = json_decode($transaccion['pagos'], true) ?? [];
+                    } elseif (is_array($transaccion['pagos'])) {
+                        $pagos = $transaccion['pagos'];
+                    }
+                } elseif (isset($transaccion['metodo_pago'])) {
+                    $pagos = [[
+                        'metodo_pago' => $transaccion['metodo_pago'],
+                        'monto' => $transaccion['valor'] ?? $transaccion['total'] ?? 0,
+                        'fecha' => $transaccion['fecha'] ?? $transaccion['fecha_pago'] ?? null
+                    ]];
+                }
+
                 foreach ($pagos as $pago) {
                     $metodoPagoKey = $pago['metodo_pago'] ?? null;
+                    $metodoPagoNombre = 'Desconocido';
+
+                    if (is_numeric($metodoPagoKey) && isset($metodosPago[$metodoPagoKey])) {
+                        $metodoPagoNombre = $metodosPago[$metodoPagoKey];
+                    } elseif (is_string($metodoPagoKey)) {
+                        $metodoData = json_decode($metodoPagoKey, true);
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($metodoData)) {
+                            $metodoPagoNombre = $metodoData[0]['nombre'] ?? 'Desconocido';
+                        } else {
+                            $metodoPagoNombre = $metodoPagoKey;
+                        }
+                    }
+                    
                     $resultados[] = [
                         'subcategoria' => $this->formatearSubcategoria($transaccion['subcategoria'] ?? ''),
-                        'descripcion' => $transaccion['descripcion'] ?? '',
-                        'metodo_pago' => $metodosPago[$metodoPagoKey] ?? ucfirst($metodoPagoKey) ?? 'Desconocido',
-                        'total' => $pago['monto'] ?? 0,
-                        'fecha_pago' => $pago['fecha'] ?? null
+                        'descripcion' => $transaccion['descripcion'] ?? ($transaccion['concepto'] ?? ''),
+                        'metodo_pago' => $metodoPagoNombre,
+                        'total' => $pago['monto'] ?? $pago['valor'] ?? 0,
+                        'fecha_pago' => $pago['fecha'] ?? $transaccion['fecha'] ?? null
+                    ];
+                }
+                
+                if (empty($pagos) && (isset($transaccion['valor']) || isset($transaccion['total']))) {
+                    $resultados[] = [
+                        'subcategoria' => $this->formatearSubcategoria($transaccion['subcategoria'] ?? ''),
+                        'descripcion' => $transaccion['descripcion'] ?? ($transaccion['concepto'] ?? ''),
+                        'metodo_pago' => 'Desconocido',
+                        'total' => $transaccion['valor'] ?? $transaccion['total'] ?? 0,
+                        'fecha_pago' => $transaccion['fecha'] ?? $transaccion['fecha_pago'] ?? null
                     ];
                 }
             }
@@ -1485,15 +1673,15 @@ class CierreVentasSemanalController extends Controller
 
         $agrupados = [];
         foreach ($resultados as $item) {
-            $key = $item['subcategoria'].'|'.$item['descripcion'];
+            $key = $item['subcategoria'].'|'.$item['descripcion'].'|'.$item['metodo_pago'];
             
             if (!isset($agrupados[$key])) {
                 $agrupados[$key] = [
                     'subcategoria' => $item['subcategoria'],
                     'descripcion' => $item['descripcion'],
-                    'metodos_pago' => [],
+                    'metodo_pago' => $item['metodo_pago'],
                     'total' => 0,
-                    'fecha_pago' => $item['fecha_pago']
+                    'metodos_pago' => []
                 ];
             }
             
@@ -1504,17 +1692,14 @@ class CierreVentasSemanalController extends Controller
             $agrupados[$key]['total'] += $item['total'];
         }
 
-        foreach ($agrupados as &$item) {
-            $item['metodo_pago'] = implode(', ', $item['metodos_pago']);
-            unset($item['metodos_pago']);
-        }
-        unset($item);
+        $resultados = array_values($agrupados);
+        
+        Log::info('Transacciones procesadas', [
+            'transacciones_procesadas' => count($resultados),
+            'ejemplo_resultado' => !empty($resultados) ? $resultados[0] : 'No hay resultados'
+        ]);
 
-        usort($agrupados, function($a, $b) {
-            return strcmp($a['subcategoria'], $b['subcategoria']);
-        });
-
-        return array_values($agrupados);
+        return $resultados;
     }
     
     private function calcularTotales($reporteVentas, $reporteCostosGastos, $ingresosRecibidos, $llavesData)

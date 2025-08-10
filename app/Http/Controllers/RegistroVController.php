@@ -1508,7 +1508,7 @@ class RegistroVController extends Controller
         ]);
 
         $query = RegistroV::whereBetween('fecha_h', [$fechaDesde, $fechaHasta])
-            ->where('tipo_venta', 'credito');
+            ->whereIn('tipo_venta', ['credito', 'contado']);
 
         if ($request->cliente_id) {
             $query->where('id_cliente', $request->cliente_id);

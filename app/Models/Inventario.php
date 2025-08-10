@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\ChecksLowStock;
 
 /**
  * Class Inventario
@@ -21,6 +22,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Inventario extends Model
 {
+    use ChecksLowStock;
 
     protected $perPage = 20;
     protected $primaryKey = 'id_inventario';
@@ -33,6 +35,15 @@ class Inventario extends Model
      */
     protected $fillable = ['id_inventario', 'id_producto', 'id_almacen', 'cantidad', 'cierre'];
 
+    /**
+     * The "booted" method of the model.
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
+
+    }
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -49,6 +60,10 @@ class Inventario extends Model
     {
         return $this->belongsTo(\App\Models\Producto::class, 'id_producto', 'id_producto');
     }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
     public function user()
     {
         return $this->belongsTo(\App\Models\User::class, 'user_id', 'id');
