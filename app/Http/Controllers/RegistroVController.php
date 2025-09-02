@@ -1595,7 +1595,7 @@ class RegistroVController extends Controller
         $language = $request->language ?? 'es';
 
         $query = RegistroV::whereBetween('fecha_h', [$fechaDesde, $fechaHasta])
-            ->where('tipo_venta', 'credito')
+            ->where('tipo_venta', ['credito', 'contado']);
             ->with(['cliente']);
 
         if ($clienteId) {
