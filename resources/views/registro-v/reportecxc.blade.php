@@ -247,7 +247,7 @@
             </div>
             @endforeach
         </div>
-                            {{-- Detalle del vehículo: mostrar siempre, solo con los campos de la migración/modelo --}}
+            {{-- Detalle del vehículo: mostrar siempre, solo con los campos de la migración/modelo --}}
             <div style="margin: 2mm 0 2mm 0; padding: 2mm; background: #f4f4f4; border-left: 3px solid #c2c2c2; border-radius: 2mm; font-size: 10px;">
                 <h3>Detalles del vehículo:</h3>
                 <span><strong>Marca:</strong> {{ $venta->marca ?? '-' }} - </span><span><strong>Modelo:</strong> {{ $venta->modelo ?? '-' }}</span> - <span><strong>Año:</strong> {{ $venta->año ?? '-' }}</span><br>

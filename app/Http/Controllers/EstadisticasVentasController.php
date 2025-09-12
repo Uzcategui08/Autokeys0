@@ -116,7 +116,7 @@ class EstadisticasVentasController extends Controller
         // Diferencia porcentual
         $diferencia = 0;
         if ($registros_mes_anterior > 0) {
-            $diferencia = (($registros_mes_actual - $registros_mes_anterior) / $registros_mes_anterior) * 100;
+            $diferencia = ($registros_mes_actual / $registros_mes_anterior);
         } elseif ($registros_mes_actual > 0) {
             $diferencia = 100;
         }
