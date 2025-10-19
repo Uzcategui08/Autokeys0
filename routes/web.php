@@ -51,6 +51,9 @@ require __DIR__ . '/auth.php';
 //Route::resource('ajustar-inventarios', AjustarInventarioController::class);
 
 Route::resource('clientes', ClienteController::class);
+Route::post('/clientes/quick-create', [ClienteController::class, 'quickStore'])
+    ->name('clientes.quick-store')
+    ->middleware('auth');
 
 Route::resource('productos', ProductoController::class);
 
@@ -204,12 +207,18 @@ Route::get('/productos-por-almacen/{almacenId}', [InventarioController::class, '
 Route::get('/verificar-stock/{productoId}', [InventarioController::class, 'verificarStock']);
 
 Route::resource('trabajos', TrabajoController::class);
+Route::post('/trabajos/quick-create', [TrabajoController::class, 'quickStore'])
+    ->name('trabajos.quick-store')
+    ->middleware('auth');
 
 Route::get('/obtener-trabajos', [TrabajoController::class, 'obtenerTrabajos'])->name('obtener.trabajos');
 
 Route::get('/obtener-todos-trabajos', [RegistroVController::class, 'obtenerTodosLosTrabajos']);
 
 Route::resource('categorias', CategoriaController::class);
+Route::post('/categorias/quick-create', [CategoriaController::class, 'quickStore'])
+    ->name('categorias.quick-store')
+    ->middleware('auth');
 
 // Eliminar un ajuste de inventario (carga/descarga)
 Route::delete('/ajustes/{id}', [InventarioController::class, 'destroyAjuste'])->name('ajustes.destroy');
@@ -217,13 +226,13 @@ Route::delete('/ajustes/{id}', [InventarioController::class, 'destroyAjuste'])->
 Route::middleware(['auth'])->group(function () {
     Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])
         ->name('notifications.index');
-        
+
     Route::post('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])
         ->name('notifications.read');
-        
+
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])
         ->name('notifications.markAllRead');
-        
+
     Route::get('/notifications/unread-count', [\App\Http\Controllers\NotificationController::class, 'unreadCount'])
         ->name('notifications.unreadCount');
 });

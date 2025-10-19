@@ -33,6 +33,7 @@
                                         <th>Titular</th>
                                         <th>Productos</th>
                                         <th>Deuda</th>
+                                        <th>Descuento</th>
                                         <th>Comisión</th>
                                         <th>Estado</th>
                                         <th>Acciones</th>
@@ -173,6 +174,9 @@
                                                     $saldoPendiente = floatval($registroV->valor_v) - $totalPagado;
                                                 @endphp
                                                 {{ number_format($saldoPendiente, 2) }}
+                                            </td>
+                                            <td class="font-weight-bold text-danger">
+                                                -${{ number_format(floatval(data_get($registroV, 'monto_ce', 0)), 2) }}
                                             </td>
                                             <td class="font-weight-bold text-primary">
                                                 <i class="fas fa-percentage mr-1"></i>

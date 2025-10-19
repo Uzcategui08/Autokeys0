@@ -168,6 +168,7 @@
                                         <th>Cliente</th>
                                         <th>Teléfono</th>
                                         <th class="text-right">Total Ventas</th>
+                                        <th class="text-right">Total Descuento</th>
                                         <th class="text-right">Total Pagado</th>
                                         <th class="text-right">Saldo Pendiente</th>
                                         <th class="text-right">% Pagado</th>
@@ -179,6 +180,7 @@
                                             <td>{{ $cliente->cliente }}</td>
                                             <td>{{ $cliente->telefono }}</td>
                                             <td class="text-right">${{ number_format($cliente->total_ventas_monto, 2) }}</td>
+                                            <td class="text-right">${{ number_format(data_get($cliente, 'total_descuento', 0), 2) }}</td>
                                             <td class="text-right">${{ number_format($cliente->total_pagado, 2) }}</td>
                                             <td class="text-right">${{ number_format($cliente->saldo_pendiente, 2) }}</td>
                                             <td class="text-right">

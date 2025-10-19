@@ -317,7 +317,11 @@ class RegistroVController extends Controller
             $validatedData['items'] = json_encode($trabajos);
             Log::debug('Items procesados', ['items' => $trabajos]);
 
-            $validatedData['valor_v'] = $valorTotal;
+            // Map the discount input (descuento) to the DB field monto_ce and
+            // store the valor_v as the net value after applying the discount.
+            $montoCe = (float) $request->input('descuento', $validatedData['monto_ce'] ?? 0);
+            $validatedData['monto_ce'] = $montoCe;
+            $validatedData['valor_v'] = max(0, $valorTotal - $montoCe);
 
             $costosIds = [];
             Log::info('Procesando costos extras');
@@ -1069,6 +1073,16 @@ class RegistroVController extends Controller
             }
             $validatedData['items'] = json_encode($trabajos);
             Log::debug('Items procesados', ['trabajos' => $trabajos]);
+
+            // Recalculate total and apply descuento (if provided) so update() uses
+            // the same logic as store() and the monto_ce is persisted.
+            $valorTotal = 0;
+            foreach ($trabajos as $t) {
+                $valorTotal += (float) ($t['precio_trabajo'] ?? 0);
+            }
+            $montoCe = (float) $request->input('descuento', $validatedData['monto_ce'] ?? $registroV->monto_ce ?? 0);
+            $validatedData['monto_ce'] = $montoCe;
+            $validatedData['valor_v'] = max(0, $valorTotal - $montoCe);
 
             // Procesamiento de costos extras
             Log::debug('Procesando costos extras');

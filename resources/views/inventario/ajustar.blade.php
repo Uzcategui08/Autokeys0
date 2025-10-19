@@ -114,6 +114,16 @@
                             </div>
                         </div>
 
+                        <div id="precioGroup" class="form-group" style="display: none;">
+                            <label for="precio_llave" class="form-label">Precio unitario de la llave</label>
+                            <input type="number" step="0.01" min="0" name="precio_llave" id="precio_llave"
+                                   class="form-control"
+                                   value="{{ old('precio_llave', optional($inventario->producto)->precio) }}">
+                            <small class="form-text text-muted">
+                                Se usará para los reportes cuando el ajuste sea una salida manual.
+                            </small>
+                        </div>
+
                         <div class="form-group">
                             <label for="descripcion" class="form-label">Descripción (opcional)</label>
                             <textarea name="descripcion" id="descripcion" class="form-control" 
@@ -196,11 +206,25 @@
     function toggleCierreField() {
         const tipoAjuste = document.getElementById('tipo_ajuste').value;
         const cierreGroup = document.getElementById('cierreGroup');
+        const precioGroup = document.getElementById('precioGroup');
+        const precioInput = document.getElementById('precio_llave');
         
         if (tipoAjuste === 'ajuste2') {
             cierreGroup.style.display = 'block';
+            if (precioGroup) {
+                precioGroup.style.display = 'block';
+            }
+            if (precioInput) {
+                precioInput.required = true;
+            }
         } else {
             cierreGroup.style.display = 'none';
+            if (precioGroup) {
+                precioGroup.style.display = 'none';
+            }
+            if (precioInput) {
+                precioInput.required = false;
+            }
         }
     }
 

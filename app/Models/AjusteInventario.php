@@ -18,6 +18,7 @@ class AjusteInventario extends Model
         'cantidad_anterior',
         'cantidad_nueva',
         'descripcion',
+        'precio_llave',
         'user_id',
         'cierre',
         'fecha_ajuste'
@@ -31,6 +32,7 @@ class AjusteInventario extends Model
         'cantidad_anterior' => 'integer',
         'cantidad_nueva' => 'integer',
         'diferencia' => 'integer',
+        'precio_llave' => 'float',
     ];
 
     /**

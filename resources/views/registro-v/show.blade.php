@@ -55,6 +55,9 @@
                     <div class="col-sm-4 invoice-col">
                         <strong><i class="fas fa-file-invoice-dollar mr-1"></i> Factura #{{ $registroV->id }}</strong><br>
                         <b>Valor Total:</b> ${{ number_format($registroV->valor_v, 2) }}<br>
+                        @if(isset($registroV->monto_ce) && $registroV->monto_ce > 0)
+                            <b>Descuento:</b> -${{ number_format($registroV->monto_ce, 2) }}<br>
+                        @endif
                         <b>Total Pagado:</b> ${{ number_format($totalPagado = array_reduce($registroV->pagos ?? [], function($carry, $pago) { return $carry + $pago['monto']; }, 0), 2) }}<br>
                         <b>Saldo Pendiente:</b> ${{ number_format($registroV->valor_v - $totalPagado, 2) }}
                     </div>

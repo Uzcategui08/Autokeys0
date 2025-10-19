@@ -62,8 +62,8 @@ class CierreVentasSemanalController extends Controller
 
     public function index(Request $request)
     {
-            $yearSelected = $request->input('year', now()->year);
-            $weekSelected = $request->input('week', now()->weekOfYear);
+        $yearSelected = $request->input('year', now()->year);
+        $weekSelected = $request->input('week', now()->weekOfYear);
 
         if ($request->has('start_date') && $request->has('end_date')) {
             try {
@@ -76,7 +76,6 @@ class CierreVentasSemanalController extends Controller
 
                 $weekSelected = $startOfWeek->weekOfYear;
                 $yearSelected = $startOfWeek->year;
-                
             } catch (\Exception $e) {
                 $startOfWeek = now()->startOfWeek();
                 $endOfWeek = now()->endOfWeek();
@@ -102,17 +101,16 @@ class CierreVentasSemanalController extends Controller
 
         $descargasManualesFormato = [
             'tecnico' => 'Manual',
-            'llaves' => collect($descargasManuales)->map(function($item) {
+            'llaves' => $descargasManuales->map(function ($item) {
                 $idProducto = $item['id_producto'] ?? null;
-                $almacenId = $item['id_almacen'] ?? null;
-                
-                $producto = Producto::where('id_producto', $idProducto)->first();
-                
-                $diferencia = abs($item['cantidad_nueva'] - $item['cantidad_anterior']);
-                $precio = $producto ? $producto->precio : 0;
-                
+                $almacenId = $item['id_almacen'] ?? 'manual';
+                $cantidadAnterior = $item['cantidad_anterior'] ?? 0;
+                $cantidadNueva = $item['cantidad_nueva'] ?? 0;
+                $diferencia = abs($cantidadNueva - $cantidadAnterior);
+                $precio = $item['precio'] ?? 0;
+
                 return [
-                    'nombre' => $producto ? $producto->item : 'Producto no encontrado',
+                    'nombre' => $item['producto'] ?? 'Producto no encontrado',
                     'id_producto' => $idProducto,
                     'almacenes' => [
                         $almacenId => [
@@ -126,12 +124,16 @@ class CierreVentasSemanalController extends Controller
                     'id_producto' => $idProducto
                 ];
             }),
-            'total_llaves' => $descargasManuales->map(function($item) {
-                return abs($item['cantidad_nueva'] - $item['cantidad_anterior']);
+            'total_llaves' => $descargasManuales->map(function ($item) {
+                $cantidadAnterior = $item['cantidad_anterior'] ?? 0;
+                $cantidadNueva = $item['cantidad_nueva'] ?? 0;
+                return abs($cantidadNueva - $cantidadAnterior);
             })->sum(),
-            'total_valor' => $descargasManuales->map(function($item) {
-                $diferencia = abs($item['cantidad_nueva'] - $item['cantidad_anterior']);
-                $precio = Producto::where('id_producto', $item['id_producto'])->value('precio') ?? 0;
+            'total_valor' => $descargasManuales->map(function ($item) {
+                $cantidadAnterior = $item['cantidad_anterior'] ?? 0;
+                $cantidadNueva = $item['cantidad_nueva'] ?? 0;
+                $diferencia = abs($cantidadNueva - $cantidadAnterior);
+                $precio = $item['precio'] ?? 0;
                 return $diferencia * $precio;
             })->sum()
         ];
@@ -156,7 +158,7 @@ class CierreVentasSemanalController extends Controller
         Log::info('Almacenes encontrados:', ['count' => $almacenesDisponibles->count()]);
 
         $almacenesDisponibles = $almacenesDisponibles
-            ->map(function($almacen) {
+            ->map(function ($almacen) {
                 return (object)[
                     'id' => $almacen->id_almacen,
                     'nombre' => $almacen->nombre
@@ -170,24 +172,24 @@ class CierreVentasSemanalController extends Controller
         $cargasDescargas = $this->getCargasDescargas($startOfWeek, $endOfWeek);
 
         $totales = $this->calcularTotales(
-            $reporteVentas, 
-            $reporteCostosGastos, 
+            $reporteVentas,
+            $reporteCostosGastos,
             $ingresosRecibidos,
             $llavesPorTecnico
         );
-        
-        $totalCostosLlaves = $llavesPorTecnico->sum('total_valor');
-        
-        $ganancia = ($totales['totalVentas'] ?? 0) 
-                  - ($totales['totalCostos'] ?? 0) 
-                  - ($totalCostosLlaves ?? 0) 
-                  - ($totales['totalGastos'] ?? 0);
 
-        $retiroDueño = Nempleado::whereHas('empleado', function($query) {
-            $query->where('cargo', 5); 
+        $totalCostosLlaves = $llavesPorTecnico->sum('total_valor');
+
+        $ganancia = ($totales['totalVentas'] ?? 0)
+            - ($totales['totalCostos'] ?? 0)
+            - ($totalCostosLlaves ?? 0)
+            - ($totales['totalGastos'] ?? 0);
+
+        $retiroDueño = Nempleado::whereHas('empleado', function ($query) {
+            $query->where('cargo', 5);
         })
-        ->whereBetween('fecha_pago', [$startOfWeek, $endOfWeek])
-        ->sum('total_pagado');
+            ->whereBetween('fecha_pago', [$startOfWeek, $endOfWeek])
+            ->sum('total_pagado');
 
         $gananciaFinal = $ganancia - $retiroDueño;
 
@@ -232,7 +234,7 @@ class CierreVentasSemanalController extends Controller
     public function convertToProperArray($data)
     {
         if (is_array($data)) {
-            return array_map(function($item) {
+            return array_map(function ($item) {
                 if (is_object($item)) {
                     try {
                         $array = (array) $item;
@@ -244,7 +246,7 @@ class CierreVentasSemanalController extends Controller
                         if (is_object($item) && property_exists($item, 'metodo_pago')) {
                             return $item;
                         }
-                        return array_map(function($value) {
+                        return array_map(function ($value) {
                             return is_object($value) ? (array) $value : $value;
                         }, $array);
                     } catch (\Exception $e) {
@@ -286,7 +288,7 @@ class CierreVentasSemanalController extends Controller
             'emuladores' => 'Emuladores',
             'clonacion' => 'Clonación'
         ];
-        
+
         $trabajos = array_merge($trabajos, $formatosTrabajo);
 
         Log::info('Trabajos disponibles:', ['count' => count($trabajos), 'sample' => array_slice($trabajos, 0, 3)]);
@@ -334,7 +336,7 @@ class CierreVentasSemanalController extends Controller
 
             Log::info('Consultando costos y gastos');
             $reporteCostosGastos = $this->getCostosGastosPorTecnico($startDate, $endDate, $metodosPago);
-            
+
             Log::info('Estructura detallada de costos y gastos:', [
                 'total_tecnicos' => $reporteCostosGastos->count(),
                 'sample_tecnico' => $reporteCostosGastos->first() ? [
@@ -347,9 +349,9 @@ class CierreVentasSemanalController extends Controller
                 'metodos_pago_format' => 'Array [id => nombre]',
                 'metodos_pago_sample' => array_slice($metodosPagoArray, 0, 3, true) + ['...' => '...']
             ]);
-            
+
             if ($reporteCostosGastos->isNotEmpty() && !empty($reporteCostosGastos->first()['costos'])) {
-                $sampleCostos = collect($reporteCostosGastos->first()['costos'])->take(2)->map(function($costo) {
+                $sampleCostos = collect($reporteCostosGastos->first()['costos'])->take(2)->map(function ($costo) {
                     return [
                         'descripcion' => $costo['descripcion'] ?? null,
                         'metodo_pago' => $costo['metodo_pago'] ?? null,
@@ -360,9 +362,9 @@ class CierreVentasSemanalController extends Controller
                 });
                 Log::info('Ejemplo de costos:', ['costos' => $sampleCostos]);
             }
-            
+
             if ($reporteCostosGastos->isNotEmpty() && !empty($reporteCostosGastos->first()['gastos'])) {
-                $sampleGastos = collect($reporteCostosGastos->first()['gastos'])->take(2)->map(function($gasto) {
+                $sampleGastos = collect($reporteCostosGastos->first()['gastos'])->take(2)->map(function ($gasto) {
                     return [
                         'descripcion' => $gasto['descripcion'] ?? null,
                         'metodo_pago' => $gasto['metodo_pago'] ?? null,
@@ -373,14 +375,14 @@ class CierreVentasSemanalController extends Controller
                 });
                 Log::info('Ejemplo de gastos:', ['gastos' => $sampleGastos]);
             }
-            
+
             Log::info('Costos y gastos encontrados (antes de convertir):', [
                 'count' => count($reporteCostosGastos),
                 'first' => $reporteCostosGastos->first() ?? null,
                 'sample_costos' => $reporteCostosGastos->first()?->costos ?? [],
                 'sample_gastos' => $reporteCostosGastos->first()?->gastos ?? []
             ]);
-            
+
             $reporteCostosGastosArray = $reporteCostosGastos->toArray();
             Log::info('Costos y gastos después de convertir a array:', [
                 'count' => count($reporteCostosGastosArray),
@@ -407,8 +409,8 @@ class CierreVentasSemanalController extends Controller
                 'is_false' => $llavesPorTecnico === false
             ]);
 
-            $llavesPorTecnico = $llavesPorTecnico 
-                ? collect($llavesPorTecnico)->filter(function($tecnico) {
+            $llavesPorTecnico = $llavesPorTecnico
+                ? collect($llavesPorTecnico)->filter(function ($tecnico) {
                     return !is_null($tecnico) && is_array($tecnico) && isset($tecnico['llaves']);
                 })->values()
                 : collect([]);
@@ -437,30 +439,30 @@ class CierreVentasSemanalController extends Controller
             $descargasManuales = collect($descargasManuales);
 
             if ($descargasManuales->isNotEmpty()) {
-                $descargasManuales->groupBy('producto')->each(function($grupo, $producto) use (&$llavesPorTecnico) {
+                $descargasManuales->groupBy('producto')->each(function ($grupo, $producto) use (&$llavesPorTecnico) {
                     $primerRegistro = $grupo->first();
                     $idProducto = $primerRegistro['id_producto'] ?? null;
                     $nombreProducto = Producto::where('id_producto', $primerRegistro['id_producto'])->value('item') ?? 'Producto no encontrado';
-                    
+
                     $llavesPorTecnico->push([
                         'tecnico' => 'Manual',
-                        'llaves' => collect([$grupo])->map(function($grupo) use ($primerRegistro, $idProducto, $nombreProducto) {
+                        'llaves' => collect([$grupo])->map(function ($grupo) use ($primerRegistro, $idProducto, $nombreProducto) {
                             return [
                                 'nombre' => $nombreProducto,
                                 'id_producto' => $idProducto,
-                                'total_cantidad' => $grupo->map(function($item) {
+                                'total_cantidad' => $grupo->map(function ($item) {
                                     return abs($item['cantidad_nueva'] - $item['cantidad_anterior']);
                                 })->sum(),
-                                'total_valor' => $grupo->map(function($item) {
+                                'total_valor' => $grupo->map(function ($item) {
                                     $diferencia = abs($item['cantidad_nueva'] - $item['cantidad_anterior']);
                                     $precio = Producto::where('id_producto', $item['id_producto'])->value('precio') ?? 0;
                                     return $diferencia * $precio;
                                 })->sum(),
-                                'almacenes' => collect($grupo)->groupBy('id_almacen')->map(function($almacenGrupo) use ($idProducto) {
-                                    $diferencias = $almacenGrupo->map(function($item) {
+                                'almacenes' => collect($grupo)->groupBy('id_almacen')->map(function ($almacenGrupo) use ($idProducto) {
+                                    $diferencias = $almacenGrupo->map(function ($item) {
                                         return abs($item['cantidad_nueva'] - $item['cantidad_anterior']);
                                     });
-                                    
+
                                     $cantidad = $diferencias->sum();
                                     $precio = Producto::where('id_producto', $almacenGrupo->first()['id_producto'])->value('precio') ?? 0;
                                     return [
@@ -477,41 +479,41 @@ class CierreVentasSemanalController extends Controller
 
             Log::info('Calculando totales');
             $totales = $this->calcularTotales(
-                $reporteVentas, 
-                $reporteCostosGastos, 
+                $reporteVentas,
+                $reporteCostosGastos,
                 $ingresosRecibidos,
                 $llavesPorTecnico
             );
             Log::info('Totales calculados:', $totales);
-            
+
             Log::info('Calculando costos de llaves');
             $totalCostosLlaves = $llavesPorTecnico->sum('total_valor');
             Log::info('Total costos llaves:', ['valor' => $totalCostosLlaves]);
-            
+
             Log::info('Calculando ganancia');
-            $ganancia = ($totales['totalVentas'] ?? 0) 
-                      - ($totales['totalCostos'] ?? 0) 
-                      - ($totalCostosLlaves ?? 0) 
-                      - ($totales['totalGastos'] ?? 0);
+            $ganancia = ($totales['totalVentas'] ?? 0)
+                - ($totales['totalCostos'] ?? 0)
+                - ($totalCostosLlaves ?? 0)
+                - ($totales['totalGastos'] ?? 0);
             Log::info('Ganancia calculada:', ['valor' => $ganancia]);
 
             Log::info('Consultando retiro del dueño');
-            $retiroDueño = Nempleado::whereHas('empleado', function($query) {
-                $query->where('cargo', 5); 
+            $retiroDueño = Nempleado::whereHas('empleado', function ($query) {
+                $query->where('cargo', 5);
             })
-            ->where(function($query) use ($startDate, $endDate) {
-                $query->whereBetween('fecha_pago', [$startDate, $endDate])
-                     ->orWhereBetween('fecha_desde', [$startDate, $endDate])
-                     ->orWhereBetween('fecha_hasta', [$startDate, $endDate]);
-            })
-            ->sum('total_pagado');
-            
+                ->where(function ($query) use ($startDate, $endDate) {
+                    $query->whereBetween('fecha_pago', [$startDate, $endDate])
+                        ->orWhereBetween('fecha_desde', [$startDate, $endDate])
+                        ->orWhereBetween('fecha_hasta', [$startDate, $endDate]);
+                })
+                ->sum('total_pagado');
+
             Log::info('Retiro del dueño encontrado:', [
                 'valor' => $retiroDueño,
                 'fecha_inicio' => $startDate->format('Y-m-d'),
                 'fecha_fin' => $endDate->format('Y-m-d')
             ]);
-            
+
             Log::info('Calculando ganancia final');
             $gananciaFinal = $ganancia - $retiroDueño;
             Log::info('Ganancia final calculada:', [
@@ -531,7 +533,7 @@ class CierreVentasSemanalController extends Controller
             Log::info('Consultando ventas por trabajo');
             $metodosPagoArray = $metodosPago->pluck('name', 'id')->toArray();
             Log::info('Métodos de pago para ventas por trabajo:', ['metodos' => $metodosPagoArray]);
-            
+
             $ventasPorTrabajo = $this->getVentasPorTrabajo($startDate, $endDate, $metodosPagoArray);
             Log::info('Ventas por trabajo obtenidas:', [
                 'contado_count' => count($ventasPorTrabajo['contado'] ?? []),
@@ -540,32 +542,9 @@ class CierreVentasSemanalController extends Controller
 
             Log::info('Procesando ventas por trabajo');
             Log::info('Estructura de ventasPorTrabajo:', ['sample' => $ventasPorTrabajo['contado']->first() ?? null]);
-            
-            $ventasPorTrabajo['contado'] = collect($ventasPorTrabajo['contado'])->map(function($trabajoData) use ($metodosPagoArray) {
-                $metodos = collect($trabajoData['metodos'])->map(function($metodoData, $metodoKey) use ($metodosPagoArray) {
-                    if (is_numeric($metodoKey)) {
-                        $metodoId = (string)$metodoKey; 
-                        return [
-                            'nombre' => $metodosPagoArray[$metodoId] ?? "Método $metodoId",
-                            'total' => $metodoData['total'],
-                            'count' => $metodoData['count']
-                        ];
-                    }
-                    return [
-                        'nombre' => $metodoKey,
-                        'total' => $metodoData['total'],
-                        'count' => $metodoData['count']
-                    ];
-                })->values();
-                
-                return [
-                    'total' => $trabajoData['total'],
-                    'metodos' => $metodos
-                ];
-            });
 
-            $ventasPorTrabajo['credito'] = collect($ventasPorTrabajo['credito'])->map(function($trabajoData) use ($metodosPagoArray) {
-                $metodos = collect($trabajoData['metodos'])->map(function($metodoData, $metodoKey) use ($metodosPagoArray) {
+            $ventasPorTrabajo['contado'] = collect($ventasPorTrabajo['contado'])->map(function ($trabajoData) use ($metodosPagoArray) {
+                $metodos = collect($trabajoData['metodos'])->map(function ($metodoData, $metodoKey) use ($metodosPagoArray) {
                     if (is_numeric($metodoKey)) {
                         $metodoId = (string)$metodoKey;
                         return [
@@ -580,7 +559,30 @@ class CierreVentasSemanalController extends Controller
                         'count' => $metodoData['count']
                     ];
                 })->values();
-                
+
+                return [
+                    'total' => $trabajoData['total'],
+                    'metodos' => $metodos
+                ];
+            });
+
+            $ventasPorTrabajo['credito'] = collect($ventasPorTrabajo['credito'])->map(function ($trabajoData) use ($metodosPagoArray) {
+                $metodos = collect($trabajoData['metodos'])->map(function ($metodoData, $metodoKey) use ($metodosPagoArray) {
+                    if (is_numeric($metodoKey)) {
+                        $metodoId = (string)$metodoKey;
+                        return [
+                            'nombre' => $metodosPagoArray[$metodoId] ?? "Método $metodoId",
+                            'total' => $metodoData['total'],
+                            'count' => $metodoData['count']
+                        ];
+                    }
+                    return [
+                        'nombre' => $metodoKey,
+                        'total' => $metodoData['total'],
+                        'count' => $metodoData['count']
+                    ];
+                })->values();
+
                 return [
                     'total' => $trabajoData['total'],
                     'metodos' => $metodos
@@ -601,7 +603,7 @@ class CierreVentasSemanalController extends Controller
                 'total_trabajos' => $resumenTrabajos->sum('cantidad')
             ]);
 
-            $trabajosInvalidos = $resumenTrabajos->filter(function($trabajo) {
+            $trabajosInvalidos = $resumenTrabajos->filter(function ($trabajo) {
                 return !is_string($trabajo['nombre']) || empty(trim($trabajo['nombre']));
             });
             if ($trabajosInvalidos->count() > 0) {
@@ -620,7 +622,7 @@ class CierreVentasSemanalController extends Controller
                 'total_ventas' => $ventasPorLugarVenta->sum('total_ventas')
             ]);
 
-            $lugaresInvalidos = $ventasPorLugarVenta->filter(function($lugar) {
+            $lugaresInvalidos = $ventasPorLugarVenta->filter(function ($lugar) {
                 return !is_string($lugar['nombre']) || empty(trim($lugar['nombre']));
             });
             if ($lugaresInvalidos->count() > 0) {
@@ -639,7 +641,7 @@ class CierreVentasSemanalController extends Controller
                 'total_ventas' => $ventasPorCliente->sum('total_ventas')
             ]);
 
-            $clientesInvalidos = $ventasPorCliente->filter(function($cliente) {
+            $clientesInvalidos = $ventasPorCliente->filter(function ($cliente) {
                 return !is_string($cliente['cliente']) || empty(trim($cliente['cliente']));
             });
             if ($clientesInvalidos->count() > 0) {
@@ -652,9 +654,9 @@ class CierreVentasSemanalController extends Controller
             Log::info('Calculando total de descargas');
             $totalDescargas = $descargasManuales->where('tipo', 'ajuste2')->sum('cantidad');
             Log::info('Total de descargas:', ['valor' => $totalDescargas]);
-            
+
             Log::info('Generando vista PDF');
-            
+
             Log::info('Tipos de datos antes de la conversión:', [
                 'ventasPorCliente' => gettype($ventasPorCliente),
                 'resumenTrabajos' => gettype($resumenTrabajos),
@@ -677,17 +679,17 @@ class CierreVentasSemanalController extends Controller
                 'credito_sample' => $ventasPorTrabajo['credito']->first() ?? null
             ]);
 
-            $reporteCostosGastosResolved = $reporteCostosGastos->map(function($item) use ($metodosPago) {
-                $item['costos'] = collect($item['costos'])->map(function($costo) use ($metodosPago) {
+            $reporteCostosGastosResolved = $reporteCostosGastos->map(function ($item) use ($metodosPago) {
+                $item['costos'] = collect($item['costos'])->map(function ($costo) use ($metodosPago) {
                     $costo['metodo_pago'] = $metodosPago->where('id', $costo['metodo_pago'])->first()?->name ?? 'Desconocido';
                     return $costo;
                 })->toArray();
-                
-                $item['gastos'] = collect($item['gastos'])->map(function($gasto) use ($metodosPago) {
+
+                $item['gastos'] = collect($item['gastos'])->map(function ($gasto) use ($metodosPago) {
                     $gasto['metodo_pago'] = $metodosPago->where('id', $gasto['metodo_pago'])->first()?->name ?? 'Desconocido';
                     return $gasto;
                 })->toArray();
-                
+
                 return $item;
             })->toArray();
 
@@ -701,16 +703,16 @@ class CierreVentasSemanalController extends Controller
                 'reporteCostosGastos' => $reporteCostosGastosResolved,
                 'ingresosRecibidos' => $this->convertToProperArray($ingresosRecibidos->toArray()),
 
-                'llavesPorTecnico' => $llavesPorTecnico->map(function($tecnico) {
+                'llavesPorTecnico' => $llavesPorTecnico->map(function ($tecnico) {
                     return [
                         'tecnico' => $tecnico['tecnico'],
-                        'llaves' => collect($tecnico['llaves'])->map(function($llave) {
+                        'llaves' => collect($tecnico['llaves'])->map(function ($llave) {
                             return [
                                 'nombre' => $llave['nombre'],
                                 'id_producto' => $llave['id_producto'],
                                 'total_cantidad' => $llave['total_cantidad'],
                                 'total_valor' => $llave['total_valor'],
-                                'almacenes' => collect($llave['almacenes'])->map(function($almacen, $id) {
+                                'almacenes' => collect($llave['almacenes'])->map(function ($almacen, $id) {
                                     return [
                                         'cantidad' => $almacen['cantidad'],
                                         'total' => $almacen['total']
@@ -725,10 +727,10 @@ class CierreVentasSemanalController extends Controller
                 'ganancia' => $ganancia,
                 'retiroDueño' => $retiroDueño,
                 'gananciaFinal' => $gananciaFinal,
-                'metodosPago' => $metodosPagoArray, 
+                'metodosPago' => $metodosPagoArray,
                 'trabajos' => $trabajos,
                 'ventasDetalladasPorTecnico' => $ventasDetalladasPorTecnico,
-                'tiposDePago' => $metodosPagoArray, 
+                'tiposDePago' => $metodosPagoArray,
                 'almacenesDisponibles' => $this->convertToProperArray(Almacene::all()->toArray()),
                 'cargasDescargas' => $this->convertToProperArray($descargasManuales->toArray()),
                 'totalDescargas' => $totalDescargas,
@@ -737,9 +739,9 @@ class CierreVentasSemanalController extends Controller
                     'credito' => $this->convertToProperArray($ventasPorTrabajo['credito']->toArray())
                 ]
             ];
-            
 
-            $datosInvalidos = collect($data)->filter(function($value, $key) {
+
+            $datosInvalidos = collect($data)->filter(function ($value, $key) {
                 if (is_array($value)) {
                     return empty($value);
                 } elseif ($value instanceof \Illuminate\Support\Collection) {
@@ -758,7 +760,7 @@ class CierreVentasSemanalController extends Controller
             Log::info('Datos para vista PDF:', [
                 'count' => count($data),
                 'keys' => array_keys($data),
-                'sample_data' => collect($data)->map(function($value, $key) {
+                'sample_data' => collect($data)->map(function ($value, $key) {
                     if (is_array($value)) {
                         return reset($value) ?? null;
                     } elseif ($value instanceof \Illuminate\Support\Collection) {
@@ -834,44 +836,59 @@ class CierreVentasSemanalController extends Controller
 
         $descargasManualesFormato = [
             'tecnico' => 'Manual',
-            'llaves' => collect($descargasManuales)->groupBy('producto')->map(function($grupo, $producto) {
+            'llaves' => collect($descargasManuales)->groupBy('id_producto')->map(function ($grupo) {
                 $primerRegistro = $grupo->first();
                 $idProducto = $primerRegistro['id_producto'] ?? null;
-                
-                $llave = [
-                    'nombre' => Producto::where('id_producto', $primerRegistro['id_producto'])->value('item') ?? 'Producto no encontrado',
+                $nombreProducto = $primerRegistro['producto'] ?? 'Producto no encontrado';
+
+                $almacenes = $grupo->groupBy('id_almacen')->map(function ($almacenGrupo, $almacenId) use ($idProducto) {
+                    $cantidad = $almacenGrupo->map(function ($item) {
+                        $cantidadAnterior = $item['cantidad_anterior'] ?? 0;
+                        $cantidadNueva = $item['cantidad_nueva'] ?? 0;
+                        return abs($cantidadNueva - $cantidadAnterior);
+                    })->sum();
+
+                    $precio = $almacenGrupo->first()['precio'] ?? 0;
+
+                    return [
+                        'cantidad' => $cantidad,
+                        'total' => $cantidad * $precio,
+                        'id_producto' => $idProducto,
+                        'id_almacen' => $almacenId
+                    ];
+                })->toArray();
+
+                $totalCantidad = $grupo->map(function ($item) {
+                    $cantidadAnterior = $item['cantidad_anterior'] ?? 0;
+                    $cantidadNueva = $item['cantidad_nueva'] ?? 0;
+                    return abs($cantidadNueva - $cantidadAnterior);
+                })->sum();
+
+                $totalValor = $grupo->map(function ($item) {
+                    $cantidadAnterior = $item['cantidad_anterior'] ?? 0;
+                    $cantidadNueva = $item['cantidad_nueva'] ?? 0;
+                    $precio = $item['precio'] ?? 0;
+                    return abs($cantidadNueva - $cantidadAnterior) * $precio;
+                })->sum();
+
+                return [
+                    'nombre' => $nombreProducto,
                     'id_producto' => $idProducto,
-                    'almacenes' => collect($grupo)->groupBy('id_almacen')->map(function($almacenGrupo) use ($idProducto) {
-                        $diferencias = $almacenGrupo->map(function($item) {
-                            return abs($item['cantidad_nueva'] - $item['cantidad_anterior']);
-                        });
-                        
-                        $cantidad = $diferencias->sum();
-                        $precio = Producto::where('id_producto', $almacenGrupo->first()['id_producto'])->value('precio') ?? 0;
-                        return [
-                            'cantidad' => $cantidad,
-                            'total' => $cantidad * $precio,
-                            'id_producto' => $idProducto
-                        ];
-                    }),
-                    'total_cantidad' => $grupo->map(function($item) {
-                        return abs($item['cantidad_nueva'] - $item['cantidad_anterior']);
-                    })->sum(),
-                    'total_valor' => $grupo->map(function($item) {
-                        $diferencia = abs($item['cantidad_nueva'] - $item['cantidad_anterior']);
-                        $precio = Producto::where('id_producto', $item['id_producto'])->value('precio') ?? 0;
-                        return $diferencia * $precio;
-                    })->sum(),
-                    'id_producto' => $idProducto
+                    'almacenes' => $almacenes,
+                    'total_cantidad' => $totalCantidad,
+                    'total_valor' => $totalValor,
                 ];
-                return $llave;
-            }),
-            'total_llaves' => $descargasManuales->map(function($item) {
-                return $item['cantidad'];
+            })->values()->toArray(),
+            'total_llaves' => collect($descargasManuales)->map(function ($item) {
+                $cantidadAnterior = $item['cantidad_anterior'] ?? 0;
+                $cantidadNueva = $item['cantidad_nueva'] ?? 0;
+                return abs($cantidadNueva - $cantidadAnterior);
             })->sum(),
-            'total_valor' => $descargasManuales->map(function($item) {
-                $diferencia = abs($item['cantidad_nueva'] - $item['cantidad_anterior']);
-                return $diferencia * ($item['precio'] ?? 0);
+            'total_valor' => collect($descargasManuales)->map(function ($item) {
+                $cantidadAnterior = $item['cantidad_anterior'] ?? 0;
+                $cantidadNueva = $item['cantidad_nueva'] ?? 0;
+                $precio = $item['precio'] ?? 0;
+                return abs($cantidadNueva - $cantidadAnterior) * $precio;
             })->sum()
         ];
 
@@ -879,40 +896,40 @@ class CierreVentasSemanalController extends Controller
         $llavesPorTecnico->push($descargasManualesFormato);
 
         $totales = $this->calcularTotales(
-            $reporteVentas, 
-            $reporteCostosGastos, 
+            $reporteVentas,
+            $reporteCostosGastos,
             $ingresosRecibidos,
             $llavesPorTecnico
         );
-        
-        $totalCostosLlaves = $llavesPorTecnico->sum('total_valor');
-        
-        $ganancia = ($totales['totalVentas'] ?? 0) 
-                  - ($totales['totalCostos'] ?? 0) 
-                  - ($totalCostosLlaves ?? 0) 
-                  - ($totales['totalGastos'] ?? 0);
 
-        $retiroDueño = Nempleado::whereHas('empleado', function($query) {
-            $query->where('cargo', 5); 
+        $totalCostosLlaves = $llavesPorTecnico->sum('total_valor');
+
+        $ganancia = ($totales['totalVentas'] ?? 0)
+            - ($totales['totalCostos'] ?? 0)
+            - ($totalCostosLlaves ?? 0)
+            - ($totales['totalGastos'] ?? 0);
+
+        $retiroDueño = Nempleado::whereHas('empleado', function ($query) {
+            $query->where('cargo', 5);
         })
-        ->whereBetween('fecha_pago', [$startDate, $endDate])
-        ->sum('total_pagado');
+            ->whereBetween('fecha_pago', [$startDate, $endDate])
+            ->sum('total_pagado');
 
         $gananciaFinal = $ganancia - $retiroDueño;
 
-        
+
         $ventasPorLugarVenta = $this->getVentasPorLugarVenta($startDate, $endDate);
-        
-        
+
+
         $ventasPorTrabajo = $this->getVentasPorTrabajo($startDate, $endDate, $metodosPago);
-        
-        
+
+
         $ventasPorCliente = $this->getVentasPorCliente($startDate, $endDate);
-        
+
 
         $resumenTrabajos = $this->getResumenTrabajos($startDate, $endDate);
 
-    
+
         $data = [
             'startDate' => $startDate->format('d/m/Y'),
             'endDate' => $endDate->format('d/m/Y'),
@@ -938,77 +955,76 @@ class CierreVentasSemanalController extends Controller
     private function getLlavesPorTecnico($startDate, $endDate)
     {
         return Empleado::with([
-            'ventas' => function($query) use ($startDate, $endDate) {
+            'ventas' => function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('fecha_h', [$startDate, $endDate]);
             }
         ])
-        ->whereHas('ventas', function($query) use ($startDate, $endDate) {
-            $query->whereBetween('fecha_h', [$startDate, $endDate]);
-        })
-        ->get()
-        ->map(function($tecnico) {
-            $llavesInfo = collect();
-            $totalLlaves = 0;
-            $totalValor = 0;
+            ->whereHas('ventas', function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('fecha_h', [$startDate, $endDate]);
+            })
+            ->get()
+            ->map(function ($tecnico) {
+                $llavesInfo = collect();
+                $totalLlaves = 0;
+                $totalValor = 0;
 
-            foreach ($tecnico->ventas as $venta) {
-                $items = json_decode($venta->items, true) ?? [];
-                
-                foreach ($items as $item) {
-                    if (isset($item['productos']) && is_array($item['productos'])) {
-                        foreach ($item['productos'] as $producto) {
-                            if (isset($producto['almacen'], $producto['cantidad'], $producto['precio'])) {
-                                $llaveNombre = $producto['nombre_producto'] ?? 'Llave sin nombre';
-                                $almacenId = $producto['almacen'];
-                                $cantidad = $producto['cantidad'];
-                                $precio = $producto['precio'] ?? 0;
+                foreach ($tecnico->ventas as $venta) {
+                    $items = json_decode($venta->items, true) ?? [];
 
-                                if (!$llavesInfo->has($llaveNombre)) {
-                                    $llavesInfo->put($llaveNombre, [
-                                        'nombre' => $llaveNombre,
-                                        'id_producto' => $producto['producto'] ?? null,
-                                        'almacenes' => collect(),
-                                        'total_cantidad' => 0,
-                                        'total_valor' => 0
-                                    ]);
+                    foreach ($items as $item) {
+                        if (isset($item['productos']) && is_array($item['productos'])) {
+                            foreach ($item['productos'] as $producto) {
+                                if (isset($producto['almacen'], $producto['cantidad'], $producto['precio'])) {
+                                    $llaveNombre = $producto['nombre_producto'] ?? 'Llave sin nombre';
+                                    $almacenId = $producto['almacen'];
+                                    $cantidad = $producto['cantidad'];
+                                    $precio = $producto['precio'] ?? 0;
+
+                                    if (!$llavesInfo->has($llaveNombre)) {
+                                        $llavesInfo->put($llaveNombre, [
+                                            'nombre' => $llaveNombre,
+                                            'id_producto' => $producto['producto'] ?? null,
+                                            'almacenes' => collect(),
+                                            'total_cantidad' => 0,
+                                            'total_valor' => 0
+                                        ]);
+                                    }
+
+                                    $llaveData = $llavesInfo->get($llaveNombre);
+
+                                    if (!$llaveData['almacenes']->has($almacenId)) {
+                                        $llaveData['almacenes']->put($almacenId, [
+                                            'cantidad' => 0,
+                                            'total' => 0
+                                        ]);
+                                    }
+
+                                    $almacenData = $llaveData['almacenes'][$almacenId];
+                                    $almacenData['cantidad'] += $cantidad;
+                                    $almacenData['total'] += ($cantidad * $precio);
+
+                                    $llaveData['almacenes'][$almacenId] = $almacenData;
+                                    $llaveData['total_cantidad'] += $cantidad;
+                                    $llaveData['total_valor'] += ($cantidad * $precio);
+
+                                    $llavesInfo->put($llaveNombre, $llaveData);
+
+                                    $totalLlaves += $cantidad;
+                                    $totalValor += ($cantidad * $precio);
                                 }
-
-                                $llaveData = $llavesInfo->get($llaveNombre);
-
-                                if (!$llaveData['almacenes']->has($almacenId)) {
-                                    $llaveData['almacenes']->put($almacenId, [
-                                        'cantidad' => 0,
-                                        'total' => 0
-                                    ]);
-                                }
-
-                                $almacenData = $llaveData['almacenes'][$almacenId];
-                                $almacenData['cantidad'] += $cantidad;
-                                $almacenData['total'] += ($cantidad * $precio);
-                                
-                                $llaveData['almacenes'][$almacenId] = $almacenData;
-                                $llaveData['total_cantidad'] += $cantidad;
-                                $llaveData['total_valor'] += ($cantidad * $precio);
-
-                                $llavesInfo->put($llaveNombre, $llaveData);
-                                
-                                $totalLlaves += $cantidad;
-                                $totalValor += ($cantidad * $precio);
                             }
                         }
                     }
                 }
-            }
 
-            return $totalLlaves > 0 ? [
-                'tecnico' => $tecnico->nombre,
-                'llaves' => $llavesInfo->values(),
-                'total_llaves' => $totalLlaves,
-                'total_valor' => $totalValor
-            ] : null;
-        })
-        ->filter();
-    
+                return $totalLlaves > 0 ? [
+                    'tecnico' => $tecnico->nombre,
+                    'llaves' => $llavesInfo->values(),
+                    'total_llaves' => $totalLlaves,
+                    'total_valor' => $totalValor
+                ] : null;
+            })
+            ->filter();
     }
 
     private function getWeeksWithDates($year)
@@ -1019,21 +1035,21 @@ class CierreVentasSemanalController extends Controller
         if ($date->weekOfYear > 1) {
             $date->subWeek();
         }
-        
+
         for ($i = 1; $i <= 52; $i++) {
             $start = $date->copy();
             $end = $date->copy()->endOfWeek();
-            
+
             $weeks[$i] = [
                 'number' => $i,
                 'start' => $start->format('d M'),
                 'end' => $end->format('d M'),
                 'full' => $start->format('d M') . ' - ' . $end->format('d M Y')
             ];
-            
+
             $date->addWeek();
         }
-        
+
         return $weeks;
     }
 
@@ -1047,17 +1063,17 @@ class CierreVentasSemanalController extends Controller
 
     private function getVentasPorTecnico($startDate, $endDate)
     {
-        return Empleado::with(['ventas' => function($query) use ($startDate, $endDate) {
-                $query->whereBetween('fecha_h', [$startDate, $endDate]);
-            }])
-            ->whereHas('ventas', function($query) use ($startDate, $endDate) {
+        return Empleado::with(['ventas' => function ($query) use ($startDate, $endDate) {
+            $query->whereBetween('fecha_h', [$startDate, $endDate]);
+        }])
+            ->whereHas('ventas', function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('fecha_h', [$startDate, $endDate]);
             })
             ->get()
-            ->map(function($tecnico) {
+            ->map(function ($tecnico) {
                 $ventasContado = $tecnico->ventas->where('tipo_venta', 'contado')->sum('valor_v');
                 $ventasCredito = $tecnico->ventas->where('tipo_venta', 'credito')->sum('valor_v');
-                
+
                 return [
                     'tecnico' => $tecnico->nombre,
                     'ventas_contado' => $ventasContado,
@@ -1070,59 +1086,60 @@ class CierreVentasSemanalController extends Controller
     private function getCostosGastosPorTecnico($startDate, $endDate, $metodosPago)
     {
         return Empleado::with([
-                'costos' => function($query) use ($startDate, $endDate) {
-                    $query->whereBetween('f_costos', [$startDate, $endDate]);
-                },
-                'gastos' => function($query) use ($startDate, $endDate) {
-                    $query->whereBetween('f_gastos', [$startDate, $endDate]);
-                },
-                'pagosEmpleados' => function($query) use ($startDate, $endDate) {
-                    $query->whereBetween('fecha_pago', [$startDate, $endDate]);
-                }
-            ])
-            ->where(function($query) use ($startDate, $endDate) {
-                $query->where('cargo', '!=', 5) 
-                ->where(function($q) use ($startDate, $endDate) {
-                    $q->whereHas('costos', function($q) use ($startDate, $endDate) {
-                        $q->whereBetween('f_costos', [$startDate, $endDate]);
-                    })
-                    ->orWhereHas('gastos', function($q) use ($startDate, $endDate) {
-                        $q->whereBetween('f_gastos', [$startDate, $endDate]);
-                    })
-                    ->orWhereHas('pagosEmpleados', function($q) use ($startDate, $endDate) {
-                        $q->whereBetween('fecha_pago', [$startDate, $endDate]);
+            'costos' => function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('f_costos', [$startDate, $endDate]);
+            },
+            'gastos' => function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('f_gastos', [$startDate, $endDate]);
+            },
+            'pagosEmpleados' => function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('fecha_pago', [$startDate, $endDate]);
+            }
+        ])
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->where('cargo', '!=', 5)
+                    ->where(function ($q) use ($startDate, $endDate) {
+                        $q->whereHas('costos', function ($q) use ($startDate, $endDate) {
+                            $q->whereBetween('f_costos', [$startDate, $endDate]);
+                        })
+                            ->orWhereHas('gastos', function ($q) use ($startDate, $endDate) {
+                                $q->whereBetween('f_gastos', [$startDate, $endDate]);
+                            })
+                            ->orWhereHas('pagosEmpleados', function ($q) use ($startDate, $endDate) {
+                                $q->whereBetween('fecha_pago', [$startDate, $endDate]);
+                            });
                     });
-                });
             })
             ->get()
-            ->map(function($tecnico) use ($metodosPago) {
-                $pagosEmpleado = $tecnico->pagosEmpleados->map(function($pago) use ($tecnico, $metodosPago) {
-                    // Para pagos de nómina, el método de pago está en formato JSON
-                    $metodoPago = is_string($pago->metodo_pago) 
-                        ? json_decode($pago->metodo_pago, true)[0]['nombre'] ?? 'Desconocido'
-                        : ($pago->metodo_pago[0]['nombre'] ?? 'Desconocido');
-                    
-                    // Convertir a mayúscula inicial
-                    $metodoPago = ucfirst($metodoPago);
-                    
+            ->map(function ($tecnico) use ($metodosPago) {
+                $pagosEmpleado = $tecnico->pagosEmpleados->map(function ($pago) use ($tecnico) {
+                    $metodoPagoOrigen = $pago->metodo_pago;
+                    $metodoPagoNombre = 'Desconocido';
+
+                    if (is_string($metodoPagoOrigen)) {
+                        $metodoDecodificado = json_decode($metodoPagoOrigen, true);
+                        if (is_array($metodoDecodificado) && isset($metodoDecodificado[0]['nombre'])) {
+                            $metodoPagoNombre = $metodoDecodificado[0]['nombre'];
+                        } elseif (!empty($metodoPagoOrigen)) {
+                            $metodoPagoNombre = $metodoPagoOrigen;
+                        }
+                    } elseif (is_array($metodoPagoOrigen) && isset($metodoPagoOrigen[0]['nombre'])) {
+                        $metodoPagoNombre = $metodoPagoOrigen[0]['nombre'];
+                    }
+
+                    $tipoEmpleado = (int) ($tecnico->tipo ?? 1);
+                    $tipoClasificado = $tipoEmpleado === 1 ? 1 : 2;
+
                     return [
-                        'valor' => $pago->total_pagado,
-                        'metodo_pago' => $metodoPago,
+                        'valor' => (float) $pago->total_pagado,
+                        'metodo_pago' => ucfirst(strtolower($metodoPagoNombre)),
                         'fecha' => $pago->fecha_pago,
-                        'tipo' => $tecnico->tipo
-                    ];
-                    
-                    return [
-                        'valor' => $pago->total_pagado,
-                        'metodo_pago' => $metodoPago ? $metodoPago->name : 'Desconocido',
-                        'metodo_pago_id' => $metodoPagoId,
-                        'fecha' => $pago->fecha_pago,
-                        'tipo' => $tecnico->tipo
+                        'tipo' => $tipoClasificado
                     ];
                 })->toArray();
 
-                $costosEmpleado = array_filter($pagosEmpleado, fn($pago) => $pago['tipo'] == 1);
-                $gastosEmpleado = array_filter($pagosEmpleado, fn($pago) => $pago['tipo'] == 2);
+                $costosEmpleado = array_filter($pagosEmpleado, fn($pago) => ($pago['tipo'] ?? 1) === 1);
+                $gastosEmpleado = array_filter($pagosEmpleado, fn($pago) => ($pago['tipo'] ?? 1) === 2);
 
                 $costosCombinados = $tecnico->costos->toArray();
                 $gastosCombinados = $tecnico->gastos->toArray();
@@ -1130,7 +1147,7 @@ class CierreVentasSemanalController extends Controller
                 if (!empty($costosEmpleado)) {
                     $costosCombinados = array_merge($costosCombinados, $costosEmpleado);
                 }
-                
+
                 if (!empty($gastosEmpleado)) {
                     $gastosCombinados = array_merge($gastosCombinados, $gastosEmpleado);
                 }
@@ -1145,32 +1162,32 @@ class CierreVentasSemanalController extends Controller
 
     private function getVentasDetalladasPorTecnico($startDate, $endDate)
     {
-        return Empleado::with(['ventas' => function($query) use ($startDate, $endDate) {
-                $query->whereBetween('fecha_h', [$startDate, $endDate])
-                    ->with(['costosAsociados', 'gastosAsociados']);
-            }])
-            ->whereHas('ventas', function($query) use ($startDate, $endDate) {
+        return Empleado::with(['ventas' => function ($query) use ($startDate, $endDate) {
+            $query->whereBetween('fecha_h', [$startDate, $endDate])
+                ->with(['costosAsociados', 'gastosAsociados']);
+        }])
+            ->whereHas('ventas', function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('fecha_h', [$startDate, $endDate]);
             })
             ->get()
-            ->map(function($tecnico) {
+            ->map(function ($tecnico) {
                 return [
                     'tecnico' => $tecnico->nombre,
-                    'ventas' => $tecnico->ventas->map(function($venta) {
+                    'ventas' => $tecnico->ventas->map(function ($venta) {
                         $items = json_decode($venta->items, true) ?? [];
-                        $pagos = $this->parsePagos($venta->pagos ?? '[]'); 
+                        $pagos = $this->parsePagos($venta->pagos ?? '[]');
 
-                        $trabajos = collect($items)->map(function($item) {
+                        $trabajos = collect($items)->map(function ($item) {
                             // Obtener el nombre del trabajo usando el trabajo_id si está presente
-                            $nombreTrabajo = $item['trabajo_id'] 
+                            $nombreTrabajo = $item['trabajo_id']
                                 ? $this->getNombreTrabajoPorId($item['trabajo_id'])
                                 : ($this->formatosTrabajo[$item['trabajo'] ?? 'Sin especificar'] ?? ($item['trabajo'] ?? 'Sin especificar'));
-                            
+
                             return [
                                 'trabajo' => $nombreTrabajo,
                                 'precio_trabajo' => $item['precio_trabajo'] ?? 0,
                                 'descripcion' => $item['descripcion'] ? $this->decodeUnicode($item['descripcion']) : null,
-                                'productos' => isset($item['productos']) ? array_map(function($producto) {
+                                'productos' => isset($item['productos']) ? array_map(function ($producto) {
                                     return [
                                         'producto' => $producto['producto'] ?? null,
                                         'nombre' => $producto['nombre_producto'] ?? 'Producto sin nombre',
@@ -1180,11 +1197,11 @@ class CierreVentasSemanalController extends Controller
                                     ];
                                 }, $item['productos']) : []
                             ];
-                    });
+                        });
 
-                    $costos = $venta->costosAsociados->map(function($costo) {
+                        $costos = $venta->costosAsociados->map(function ($costo) {
                             $pagosCosto = $this->parsePagos($costo->pagos ?? '[]');
-                        return [
+                            return [
                                 'id' => $costo->id_costos,
                                 'descripcion' => $costo->descripcion,
                                 'subcategoria' => $this->formatearSubcategoria($costo->subcategoria),
@@ -1192,12 +1209,12 @@ class CierreVentasSemanalController extends Controller
                                 'metodo_pago_id' => $pagosCosto[0]['metodo_pago'] ?? null,
                                 'metodos_pago' => collect($pagosCosto)->pluck('metodo_pago')->unique()->implode(', '),
                                 'fecha' => $costo->f_costos
-                        ];
-                    });
+                            ];
+                        });
 
-                    $gastos = $venta->gastosAsociados->map(function($gasto) {
+                        $gastos = $venta->gastosAsociados->map(function ($gasto) {
                             $pagosGasto = $this->parsePagos($gasto->pagos ?? '[]');
-                        return [
+                            return [
                                 'id' => $gasto->id_gastos,
                                 'descripcion' => $gasto->descripcion,
                                 'subcategoria' => $this->formatearSubcategoria($gasto->subcategoria),
@@ -1205,63 +1222,63 @@ class CierreVentasSemanalController extends Controller
                                 'metodo_pago_id' => $pagosGasto[0]['metodo_pago'] ?? null,
                                 'metodos_pago' => collect($pagosGasto)->pluck('metodo_pago')->unique()->implode(', '),
                                 'fecha' => $gasto->f_gastos
-                        ];
-                    });
+                            ];
+                        });
 
-                    $metodosPago = collect($pagos)->pluck('metodo_pago')->unique()->implode(', ');
-                    $totalPagado = collect($pagos)->sum('monto');
-                    
-                    return [
-                        'id' => $venta->id,
-                        'fecha' => $venta->fecha_h,
-                        'cliente' => $venta->cliente ? $venta->cliente->nombre : $venta->id_cliente,
-                        'valor_total' => $venta->valor_v,
-                        'tipo_venta' => $venta->tipo_venta,
-                        'estatus' => $venta->estatus,
-                        'pagos' => $pagos,
-                        'metodos_pago' => $metodosPago,
-                        'total_pagado' => $totalPagado,
-                        'trabajos' => $trabajos->map(function($trabajo) use ($trabajos) {
-                            // Si el trabajo no está en la base de datos, mantener el nombre original
-                            if (!isset($trabajos[$trabajo['trabajo']])) {
+                        $metodosPago = collect($pagos)->pluck('metodo_pago')->unique()->implode(', ');
+                        $totalPagado = collect($pagos)->sum('monto');
+
+                        return [
+                            'id' => $venta->id,
+                            'fecha' => $venta->fecha_h,
+                            'cliente' => $venta->cliente ? $venta->cliente->nombre : $venta->id_cliente,
+                            'valor_total' => $venta->valor_v,
+                            'tipo_venta' => $venta->tipo_venta,
+                            'estatus' => $venta->estatus,
+                            'pagos' => $pagos,
+                            'metodos_pago' => $metodosPago,
+                            'total_pagado' => $totalPagado,
+                            'trabajos' => $trabajos->map(function ($trabajo) use ($trabajos) {
+                                // Si el trabajo no está en la base de datos, mantener el nombre original
+                                if (!isset($trabajos[$trabajo['trabajo']])) {
+                                    return [
+                                        'trabajo' => $trabajo['trabajo'],
+                                        'nombre' => $trabajo['trabajo'],
+                                        'precio_trabajo' => $trabajo['precio_trabajo'],
+                                        'descripcion' => $trabajo['descripcion'],
+                                        'productos' => $trabajo['productos'] ?? []
+                                    ];
+                                }
+
                                 return [
                                     'trabajo' => $trabajo['trabajo'],
-                                    'nombre' => $trabajo['trabajo'],
+                                    'nombre' => $trabajos[$trabajo['trabajo']],
                                     'precio_trabajo' => $trabajo['precio_trabajo'],
                                     'descripcion' => $trabajo['descripcion'],
                                     'productos' => $trabajo['productos'] ?? []
                                 ];
-                            }
-                            
-                            return [
-                                'trabajo' => $trabajo['trabajo'],
-                                'nombre' => $trabajos[$trabajo['trabajo']],
-                                'precio_trabajo' => $trabajo['precio_trabajo'],
-                                'descripcion' => $trabajo['descripcion'],
-                                'productos' => $trabajo['productos'] ?? []
-                            ];
-                        }),
-                        'costos' => $costos,
-                        'total_costos' => $costos->sum('valor'),
-                        'gastos' => $gastos,
-                        'total_gastos' => $gastos->sum('valor'),
-                        'ganancia_bruta' => $venta->valor_v - $costos->sum('valor') - $gastos->sum('valor')
-                    ];
-                }),
-                'total_ventas' => $tecnico->ventas->sum('valor_v'),
-                'total_costos' => $tecnico->ventas->sum(function($venta) {
-                    return $venta->costosAsociados->sum('valor');
-                }),
-                'total_gastos' => $tecnico->ventas->sum(function($venta) {
-                    return $venta->gastosAsociados->sum('valor');
-                }),
-                'ganancia_total' => $tecnico->ventas->sum('valor_v') - 
-                                $tecnico->ventas->sum(function($venta) {
-                                    return $venta->costosAsociados->sum('valor') + 
-                                            $venta->gastosAsociados->sum('valor');
-                                })
-            ];
-        });
+                            }),
+                            'costos' => $costos,
+                            'total_costos' => $costos->sum('valor'),
+                            'gastos' => $gastos,
+                            'total_gastos' => $gastos->sum('valor'),
+                            'ganancia_bruta' => $venta->valor_v - $costos->sum('valor') - $gastos->sum('valor')
+                        ];
+                    }),
+                    'total_ventas' => $tecnico->ventas->sum('valor_v'),
+                    'total_costos' => $tecnico->ventas->sum(function ($venta) {
+                        return $venta->costosAsociados->sum('valor');
+                    }),
+                    'total_gastos' => $tecnico->ventas->sum(function ($venta) {
+                        return $venta->gastosAsociados->sum('valor');
+                    }),
+                    'ganancia_total' => $tecnico->ventas->sum('valor_v') -
+                        $tecnico->ventas->sum(function ($venta) {
+                            return $venta->costosAsociados->sum('valor') +
+                                $venta->gastosAsociados->sum('valor');
+                        })
+                ];
+            });
     }
 
     private function getIngresosRecibidos($startDate, $endDate, $metodosPago)
@@ -1270,19 +1287,19 @@ class CierreVentasSemanalController extends Controller
             'startDate' => $startDate->format('Y-m-d H:i:s'),
             'endDate' => $endDate->format('Y-m-d H:i:s'),
             'metodosPago_count' => is_countable($metodosPago) ? count($metodosPago) : 0,
-            'metodosPago_sample' => is_array($metodosPago) 
+            'metodosPago_sample' => is_array($metodosPago)
                 ? array_slice($metodosPago, 0, 3, true) + ['...' => '...']
                 : []
         ]);
 
-        $query = Empleado::with(['ventas' => function($query) use ($startDate, $endDate) {
+        $query = Empleado::with(['ventas' => function ($query) use ($startDate, $endDate) {
             $query->whereNotNull('pagos')
-                  ->whereRaw("json_array_length(pagos) > 0");
+                ->whereRaw("json_array_length(pagos) > 0");
         }])
-        ->whereHas('ventas', function($query) {
-            $query->whereNotNull('pagos')
-                  ->whereRaw("json_array_length(pagos) > 0");
-        });
+            ->whereHas('ventas', function ($query) {
+                $query->whereNotNull('pagos')
+                    ->whereRaw("json_array_length(pagos) > 0");
+            });
 
         Log::info('Consulta SQL generada', [
             'sql' => $query->toSql(),
@@ -1290,13 +1307,13 @@ class CierreVentasSemanalController extends Controller
         ]);
 
         $empleados = $query->get();
-        
+
         Log::info('Empleados encontrados', [
             'count' => $empleados->count(),
             'empleados' => $empleados->pluck('nombre', 'id')
         ]);
 
-        $result = $empleados->map(function($tecnico) use ($startDate, $endDate, $metodosPago) {
+        $result = $empleados->map(function ($tecnico) use ($startDate, $endDate, $metodosPago) {
             Log::info('Procesando técnico', [
                 'tecnico_id' => $tecnico->id,
                 'tecnico_nombre' => $tecnico->nombre,
@@ -1304,10 +1321,10 @@ class CierreVentasSemanalController extends Controller
             ]);
 
             $pagosRecibidos = collect();
-            
+
             foreach ($tecnico->ventas as $venta) {
                 $pagos = $this->parsePagos($venta->pagos ?? '[]');
-                
+
                 Log::debug('Venta procesada', [
                     'venta_id' => $venta->id,
                     'fecha_venta' => $venta->fecha_h,
@@ -1320,46 +1337,63 @@ class CierreVentasSemanalController extends Controller
                         Log::warning('Pago con formato incorrecto', ['pago' => $pago]);
                         continue;
                     }
-                    
+
                     $fechaPago = Carbon::parse($pago['fecha']);
-                    
+                    $fechaVenta = $venta->fecha_h ? Carbon::parse($venta->fecha_h) : null;
+
                     Log::debug('Verificando pago', [
                         'fecha_pago' => $fechaPago->format('Y-m-d H:i:s'),
                         'rango_inicio' => $startDate->format('Y-m-d H:i:s'),
                         'rango_fin' => $endDate->format('Y-m-d H:i:s'),
                         'dentro_rango' => $fechaPago->between($startDate, $endDate) ? 'Sí' : 'No'
                     ]);
-                    
+
                     if ($fechaPago->between($startDate, $endDate)) {
+                        // Solo mostramos pagos de créditos antiguas: excluir ventas al contado
+                        // y pagos correspondientes al mismo mes del trabajo.
+                        if ($venta->tipo_venta === 'contado') {
+                            Log::debug('Pago descartado por ser venta al contado', ['venta_id' => $venta->id]);
+                            continue;
+                        }
+
+                        if ($fechaVenta && $fechaVenta->format('Ym') >= $fechaPago->format('Ym')) {
+                            Log::debug('Pago descartado por ser del mismo mes que la venta', [
+                                'venta_id' => $venta->id,
+                                'fecha_venta' => $fechaVenta->format('Y-m-d'),
+                                'fecha_pago' => $fechaPago->format('Y-m-d')
+                            ]);
+                            continue;
+                        }
+
                         $infoPago = [
                             'metodo_pago' => $metodosPago[$pago['metodo_pago']] ?? 'Desconocido',
                             'monto' => $pago['monto'],
                             'fecha_venta' => $venta->fecha_h,
                             'fecha_pago' => $pago['fecha']
                         ];
-                        
+
                         Log::debug('Pago válido agregado', $infoPago);
                         $pagosRecibidos->push($infoPago);
                     }
                 }
             }
-    
+
             $resultado = [
                 'tecnico' => $tecnico->nombre,
                 'pagos' => $pagosRecibidos,
                 'total' => $pagosRecibidos->sum('monto')
             ];
-            
+
             Log::info('Resultado del técnico', [
                 'tecnico' => $tecnico->nombre,
                 'pagos_count' => $pagosRecibidos->count(),
                 'total' => $resultado['total']
             ]);
-            
+
             return $resultado;
         });
 
-        $totalPagos = $result->sum(function($item) {
+        $totalPagos = $result->sum(function ($item) {
             return $item['pagos']->count();
         });
         $montoTotal = $result->sum('total');
@@ -1368,9 +1402,9 @@ class CierreVentasSemanalController extends Controller
             'total_empleados' => $result->count(),
             'total_pagos' => $totalPagos,
             'monto_total' => $montoTotal,
-            'empleados_con_pagos' => $result->filter(function($item) {
+            'empleados_con_pagos' => $result->filter(function ($item) {
                 return $item['pagos']->isNotEmpty();
-            })->map(function($item) {
+            })->map(function ($item) {
                 return [
                     'tecnico' => $item['tecnico'],
                     'total_pagos' => $item['pagos']->count(),
@@ -1390,13 +1424,13 @@ class CierreVentasSemanalController extends Controller
             ->groupBy('id_cliente')
             ->map(function ($ventas, $idCliente) {
                 $cliente = $ventas->first()->cliente;
-        return [
+                return [
                     'id_cliente' => $idCliente,
                     'cliente' => $cliente ? $cliente->nombre : $idCliente,
                     'ventas_contado' => $ventas->where('tipo_venta', 'contado')->sum('valor_v'),
                     'ventas_credito' => $ventas->where('tipo_venta', 'credito')->sum('valor_v'),
                     'total_ventas' => $ventas->sum('valor_v')
-        ];
+                ];
             })
             ->values()
             ->sortByDesc('total_ventas');
@@ -1406,24 +1440,24 @@ class CierreVentasSemanalController extends Controller
     {
         $ventas = RegistroV::whereBetween('fecha_h', [$startDate, $endDate])
             ->get(['id', 'tipo_venta', 'valor_v', 'pagos', 'items']);
-        
+
         $contado = collect();
         $credito = collect();
-        
+
         foreach ($ventas as $venta) {
             $items = json_decode($venta->items, true) ?? [];
             $pagosVenta = $this->parsePagos($venta->pagos);
 
             $totalItems = count($items);
             $valorPorItem = $totalItems > 0 ? $venta->valor_v / $totalItems : $venta->valor_v;
-            
+
             foreach ($items as $item) {
                 // Obtener el nombre del trabajo usando el trabajo_id si existe
-                $trabajoNombre = $item['trabajo_id'] 
+                $trabajoNombre = $item['trabajo_id']
                     ? $this->getNombreTrabajoPorId($item['trabajo_id'])
                     : ($this->formatosTrabajo[$item['trabajo'] ?? 'Sin especificar'] ?? ($item['trabajo'] ?? 'Sin especificar'));
                 $trabajoKey = $trabajoNombre;
-                
+
                 if ($venta->tipo_venta === 'contado') {
                     if (!$contado->has($trabajoNombre)) {
                         $contado->put($trabajoNombre, [
@@ -1432,14 +1466,14 @@ class CierreVentasSemanalController extends Controller
                             'trabajo_id' => $item['trabajo_id'] ?? null
                         ]);
                     }
-                    
+
                     $trabajoData = $contado->get($trabajoNombre);
                     $trabajoData['total'] += $valorPorItem;
 
                     foreach ($pagosVenta as $pago) {
-                        $metodoNombre = $metodosPago[$pago['metodo_pago']] ?? 'Método '.$pago['metodo_pago'];
+                        $metodoNombre = $metodosPago[$pago['metodo_pago']] ?? 'Método ' . $pago['metodo_pago'];
                         $montoProporcional = $pago['monto'] / $totalItems;
-                        
+
                         if (!$trabajoData['metodos']->has($metodoNombre)) {
                             $trabajoData['metodos']->put($metodoNombre, [
                                 'total' => 0,
@@ -1447,13 +1481,13 @@ class CierreVentasSemanalController extends Controller
                                 'metodo_id' => $pago['metodo_pago'] ?? null
                             ]);
                         }
-                        
+
                         $metodoData = $trabajoData['metodos']->get($metodoNombre);
                         $metodoData['total'] += $montoProporcional;
                         $metodoData['count'] += 1;
                         $trabajoData['metodos']->put($metodoNombre, $metodoData);
                     }
-                    
+
                     $contado->put($trabajoNombre, $trabajoData);
                 } else {
                     if (!$credito->has($trabajoNombre)) {
@@ -1463,14 +1497,14 @@ class CierreVentasSemanalController extends Controller
                             'trabajo_id' => $item['trabajo_id'] ?? null
                         ]);
                     }
-                    
+
                     $trabajoData = $credito->get($trabajoNombre);
                     $trabajoData['total'] += $valorPorItem;
 
                     foreach ($pagosVenta as $pago) {
-                        $metodoNombre = $metodosPago[$pago['metodo_pago']] ?? 'Método '.$pago['metodo_pago'];
+                        $metodoNombre = $metodosPago[$pago['metodo_pago']] ?? 'Método ' . $pago['metodo_pago'];
                         $montoProporcional = $pago['monto'] / $totalItems;
-                        
+
                         if (!$trabajoData['metodos']->has($metodoNombre)) {
                             $trabajoData['metodos']->put($metodoNombre, [
                                 'total' => 0,
@@ -1478,18 +1512,18 @@ class CierreVentasSemanalController extends Controller
                                 'metodo_id' => $pago['metodo_pago'] ?? null
                             ]);
                         }
-                        
+
                         $metodoData = $trabajoData['metodos']->get($metodoNombre);
                         $metodoData['total'] += $montoProporcional;
                         $metodoData['count'] += 1;
                         $trabajoData['metodos']->put($metodoNombre, $metodoData);
                     }
-                    
+
                     $credito->put($trabajoNombre, $trabajoData);
                 }
             }
         }
-        
+
         return [
             'contado' => $contado->sortByDesc('total'),
             'credito' => $credito->sortByDesc('total'),
@@ -1507,22 +1541,22 @@ class CierreVentasSemanalController extends Controller
 
         foreach ($ventas as $venta) {
             $items = json_decode($venta->items, true) ?? [];
-            
+
             foreach ($items as $item) {
                 // Obtener el nombre del trabajo usando el trabajo_id si existe
-                $trabajoNombre = $item['trabajo_id'] 
+                $trabajoNombre = $item['trabajo_id']
                     ? $this->getNombreTrabajoPorId($item['trabajo_id'])
                     : ($this->formatosTrabajo[$item['trabajo'] ?? 'Sin especificar'] ?? ($item['trabajo'] ?? 'Sin especificar'));
                 $trabajoKey = $trabajoNombre;
                 $trabajoId = $item['trabajo_id'] ?? null;
-                
+
                 if (!$trabajos->has($trabajoKey)) {
                     $trabajos->put($trabajoKey, [
                         'cantidad' => 0,
                         'trabajo_id' => $trabajoId
                     ]);
                 }
-                
+
                 $trabajoData = $trabajos->get($trabajoKey);
                 $trabajoData['cantidad']++;
                 $trabajos->put($trabajoKey, $trabajoData);
@@ -1543,7 +1577,7 @@ class CierreVentasSemanalController extends Controller
         return RegistroV::whereBetween('fecha_h', [$startDate, $endDate])
             ->get(['id', 'lugarventa', 'valor_v'])
             ->groupBy('lugarventa')
-            ->map(function($ventas, $lugarVenta) {
+            ->map(function ($ventas, $lugarVenta) {
                 return [
                     'nombre' => $lugarVenta ?? 'Sin especificar',
                     'cantidad' => $ventas->count(),
@@ -1557,19 +1591,19 @@ class CierreVentasSemanalController extends Controller
         if (is_string($pagosData)) {
             return json_decode($pagosData, true) ?? [];
         }
-        
+
         if (is_array($pagosData)) {
             return $pagosData;
         }
-        
+
         return [];
     }
 
     private function procesarTransacciones($transacciones, $metodosPago)
     {
-        $metodosSample = is_array($metodosPago) 
+        $metodosSample = is_array($metodosPago)
             ? array_slice($metodosPago, 0, 3, true) + ['...' => '...']
-            : ($metodosPago instanceof \Illuminate\Support\Collection 
+            : ($metodosPago instanceof \Illuminate\Support\Collection
                 ? $metodosPago->take(3)->toArray() + ['...' => '...']
                 : []);
 
@@ -1584,7 +1618,7 @@ class CierreVentasSemanalController extends Controller
         }
 
         $resultados = [];
-        
+
         foreach ($transacciones as $transaccion) {
             if (!is_array($transaccion)) {
                 Log::warning('Transacción no es un array', ['transaccion' => $transaccion]);
@@ -1595,29 +1629,23 @@ class CierreVentasSemanalController extends Controller
 
             if (isset($transaccion['tipo'])) {
                 $metodoPagoData = json_decode($transaccion['metodo_pago'] ?? '[]', true);
-                $metodoPago = is_array($metodoPagoData) && isset($metodoPagoData[0]['nombre']) 
-                    ? $metodoPagoData[0]['nombre'] 
-                    : (is_string($transaccion['metodo_pago'] ?? null) 
-                        ? $transaccion['metodo_pago'] 
+                $metodoPago = is_array($metodoPagoData) && isset($metodoPagoData[0]['nombre'])
+                    ? $metodoPagoData[0]['nombre']
+                    : (is_string($transaccion['metodo_pago'] ?? null)
+                        ? $transaccion['metodo_pago']
                         : 'Desconocido');
 
                 $metodoPago = ucfirst($metodoPago);
-                
-                return [
+
+                $resultados[] = [
                     'subcategoria' => $transaccion['tipo'] == 1 ? 'Salario Cerrajero' : 'Gastos Personal',
                     'descripcion' => 'Pago a empleado (Nómina)',
                     'metodo_pago' => $metodoPago,
-                    'total' => $transaccion['valor'] ?? 0,
-                    'fecha_pago' => $transaccion['fecha'] ?? null
+                    'total' => $transaccion['valor'] ?? $transaccion['total'] ?? 0,
+                    'fecha_pago' => $transaccion['fecha'] ?? $transaccion['fecha_pago'] ?? null
                 ];
-                
-                return [
-                    'valor' => $pago->total_pagado,
-                    'metodo_pago' => $metodoPago ? $metodoPago->name : 'Desconocido',
-                    'metodo_pago_id' => $metodoPagoId,
-                    'fecha' => $pago->fecha_pago,
-                    'tipo' => $tecnico->tipo
-                ];
+
+                continue;
             } else {
                 $pagos = [];
 
@@ -1649,7 +1677,7 @@ class CierreVentasSemanalController extends Controller
                             $metodoPagoNombre = $metodoPagoKey;
                         }
                     }
-                    
+
                     $resultados[] = [
                         'subcategoria' => $this->formatearSubcategoria($transaccion['subcategoria'] ?? ''),
                         'descripcion' => $transaccion['descripcion'] ?? ($transaccion['concepto'] ?? ''),
@@ -1658,7 +1686,7 @@ class CierreVentasSemanalController extends Controller
                         'fecha_pago' => $pago['fecha'] ?? $transaccion['fecha'] ?? null
                     ];
                 }
-                
+
                 if (empty($pagos) && (isset($transaccion['valor']) || isset($transaccion['total']))) {
                     $resultados[] = [
                         'subcategoria' => $this->formatearSubcategoria($transaccion['subcategoria'] ?? ''),
@@ -1673,8 +1701,8 @@ class CierreVentasSemanalController extends Controller
 
         $agrupados = [];
         foreach ($resultados as $item) {
-            $key = $item['subcategoria'].'|'.$item['descripcion'].'|'.$item['metodo_pago'];
-            
+            $key = $item['subcategoria'] . '|' . $item['descripcion'] . '|' . $item['metodo_pago'];
+
             if (!isset($agrupados[$key])) {
                 $agrupados[$key] = [
                     'subcategoria' => $item['subcategoria'],
@@ -1684,16 +1712,16 @@ class CierreVentasSemanalController extends Controller
                     'metodos_pago' => []
                 ];
             }
-            
+
             if (!in_array($item['metodo_pago'], $agrupados[$key]['metodos_pago'])) {
                 $agrupados[$key]['metodos_pago'][] = $item['metodo_pago'];
             }
-            
+
             $agrupados[$key]['total'] += $item['total'];
         }
 
         $resultados = array_values($agrupados);
-        
+
         Log::info('Transacciones procesadas', [
             'transacciones_procesadas' => count($resultados),
             'ejemplo_resultado' => !empty($resultados) ? $resultados[0] : 'No hay resultados'
@@ -1701,7 +1729,7 @@ class CierreVentasSemanalController extends Controller
 
         return $resultados;
     }
-    
+
     private function calcularTotales($reporteVentas, $reporteCostosGastos, $ingresosRecibidos, $llavesData)
     {
         $costosLlaves = $llavesData->sum('total_valor');
@@ -1721,9 +1749,9 @@ class CierreVentasSemanalController extends Controller
     private function getCargasDescargas($startDate, $endDate)
     {
         return AjusteInventario::with(['producto', 'almacene', 'user'])
-            ->where(function($query) use ($startDate, $endDate) {
+            ->where(function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('fecha_ajuste', [$startDate, $endDate])
-                    ->orWhere(function($query) use ($startDate, $endDate) {
+                    ->orWhere(function ($query) use ($startDate, $endDate) {
                         $query->whereNull('fecha_ajuste')
                             ->whereBetween('created_at', [$startDate, $endDate]);
                     });
@@ -1731,24 +1759,44 @@ class CierreVentasSemanalController extends Controller
             ->where('tipo_ajuste', 'ajuste2')
             ->where('cierre', true)
             ->get()
-            ->map(function($ajuste) {
-                $fecha = $ajuste->fecha_ajuste ? 
-                    \Carbon\Carbon::parse($ajuste->fecha_ajuste) : 
+            ->map(function ($ajuste) {
+                $fecha = $ajuste->fecha_ajuste ?
+                    \Carbon\Carbon::parse($ajuste->fecha_ajuste) :
                     \Carbon\Carbon::parse($ajuste->created_at);
+
+                $producto = $ajuste->producto;
+                $almacen = $ajuste->almacene;
+                $usuario = $ajuste->user;
+
+                $productoNombre = 'Producto no encontrado';
+                if ($producto) {
+                    $productoNombre = !empty($producto->item)
+                        ? $producto->item
+                        : (!empty($producto->nombre) ? $producto->nombre : $productoNombre);
+                }
+
+                $precioProducto = 0;
+                if ($producto && isset($producto->precio)) {
+                    $precioProducto = $producto->precio;
+                }
+
+                $precio = $ajuste->precio_llave ?? $precioProducto;
+
                 return [
-                    'usuario' => $ajuste->user->name,
-                    'producto' => $ajuste->producto->nombre,
-                    'id_producto' => $ajuste->producto->id_producto,
-                    'almacen' => $ajuste->almacene->nombre,
-                    'id_almacen' => $ajuste->almacene->id_almacen,
+                    'usuario' => $usuario->name ?? 'Sistema',
+                    'producto' => $productoNombre,
+                    'id_producto' => $producto->id_producto ?? null,
+                    'almacen' => $almacen->nombre ?? 'Sin almacén',
+                    'id_almacen' => $almacen->id_almacen ?? null,
                     'tipo' => $ajuste->tipo_ajuste,
-                    'cantidad' => abs($ajuste->diferencia), 
+                    'cantidad' => abs($ajuste->diferencia),
                     'cantidad_anterior' => $ajuste->cantidad_anterior,
                     'cantidad_nueva' => $ajuste->cantidad_nueva,
                     'motivo' => $ajuste->descripcion,
                     'fecha' => $fecha->format('d/m/Y'),
                     'es_carga' => false,
-                    'precio' => $ajuste->producto->precio ?? 0
+                    'precio' => (float) $precio,
+                    'precio_llave' => $ajuste->precio_llave
                 ];
             });
     }
@@ -1759,7 +1807,7 @@ class CierreVentasSemanalController extends Controller
             ->where('metodo_pce', 'contado')
             ->get(['id', 'lugarventa', 'valor_v'])
             ->groupBy('lugarventa')
-            ->map(function($ventas, $lugarVenta) {
+            ->map(function ($ventas, $lugarVenta) {
                 return [
                     'nombre' => $lugarVenta ?? 'Sin especificar',
                     'cantidad' => $ventas->count(),
@@ -1774,7 +1822,7 @@ class CierreVentasSemanalController extends Controller
             ->where('metodo_pce', 'credito')
             ->get(['id', 'lugarventa', 'valor_v'])
             ->groupBy('lugarventa')
-            ->map(function($ventas, $lugarVenta) {
+            ->map(function ($ventas, $lugarVenta) {
                 return [
                     'nombre' => $lugarVenta ?? 'Sin especificar',
                     'cantidad' => $ventas->count(),

@@ -298,256 +298,262 @@ return [
     |
     */
 
-   'menu' => [
-    // ========================================
-    // ITEMS DE NAVBAR (PARTE SUPERIOR DERECHA)
-    // ========================================
-    [
-        'type' => 'navbar-search',
-        'text' => 'Buscar',
-        'topnav_right' => true,
-    ],
-    [
-        'type' => 'fullscreen-widget',
-        'topnav_right' => true,
-    ],
-
-    // ========================================
-    // ITEMS DE SIDEBAR
-    // ========================================
-    [
-        'text' => 'Dashboard',
-        'url' => 'dashboard',
-        'icon' => 'fas fa-fw fa-tachometer-alt',
-        'can' => ['admin', 'limited_user'], // Accesible para ambos roles
-    ],
-
-    // ========================================
-    // SECCIÓN INVENTARIO
-    // ========================================
-    [
-        'header' => 'INVENTARIO',
-        'can' => ['admin', 'inventario_limited'],
-    ],
-    [
-        'text' => 'Almacenes',
-        'url' => 'almacenes',
-        'icon' => 'fas fa-fw fa-warehouse',
-        'can' => 'admin', // Solo admin
-    ],
-    [
-        'text' => 'Productos',
-        'url' => 'productos',
-        'icon' => 'fas fa-fw fa-box-open',
-        'can' => 'admin', // Solo admin
-    ],
-    [
-        'text' => 'Inventario',
-        'icon' => 'fas fa-fw fa-boxes',
-        'can' => ['admin', 'inventario_limited'],
-        'submenu' => [
-            [
-                'text' => 'Inventario',
-                'url' => 'inventarios',
-                'icon' => 'fas fa-fw fa-clipboard-check',
-                'can' => ['admin', 'inventario_limited'],
-            ],
-            [
-                'text' => 'Transferencias',
-                'url' => 'transferencias',
-                'icon' => 'fas fa-fw fa-exchange-alt',
-                'can' => ['admin', 'inventario_limited'],
-            ],
-            
-    [
-        'text' => 'Carga/Descarga',
-        'url' => 'cargas',
-        'icon' => 'fas fa-fw fa-angle-double-down',
-        'can' => ['admin', 'inventario_limited'],
-    ],
-
+    'menu' => [
+        // ========================================
+        // ITEMS DE NAVBAR (PARTE SUPERIOR DERECHA)
+        // ========================================
+        [
+            'type' => 'navbar-search',
+            'text' => 'Buscar',
+            'topnav_right' => true,
         ],
-    ],
+        [
+            'type' => 'fullscreen-widget',
+            'topnav_right' => true,
+        ],
 
+        // ========================================
+        // ITEMS DE SIDEBAR
+        // ========================================
+        [
+            'text' => 'Dashboard',
+            'url' => 'dashboard',
+            'icon' => 'fas fa-fw fa-tachometer-alt',
+            'can' => ['admin', 'limited_user'], // Accesible para ambos roles
+        ],
 
-    // ========================================
-    // SECCIÓN VENTAS (para usuarios limitados)
-    // ========================================
-    [
-        'header' => 'VENTAS',
-        'can' => ['admin', 'presupuestos_limited', 'ordenes_limited', 'ventas_limited'],
-    ],
-    [
-        'text' => 'Clientes',
-        'url' => 'clientes',
-        'icon' => 'fas fa-fw fa-user-friends',
-        'can' => ['admin', 'ventas_limited'],
-    ],
-    [
-        'text' => 'Trabajos',
-        'url' => 'trabajos',
-        'icon' => 'fas fa-fw fa-tasks',
-        'can' => ['admin', 'ventas_limited'],
-    ],
-    [
-        'text' => 'Presupuestos',
-        'url' => 'presupuestos',
-        'icon' => 'fas fa-fw fa-file-invoice',
-        'can' => ['admin', 'presupuestos_limited'],
-    ],
-    [
-        'text' => 'Órdenes de Trabajo',
-        'url' => 'ordens',
-        'icon' => 'fas fa-fw fa-tasks',
-        'can' => ['admin', 'ordenes_limited'],
-    ],
-    [
-        'text' => 'Registro de Ventas',
-        'url' => 'registro-vs',
-        'icon' => 'fas fa-fw fa-shopping-cart',
-        'can' => ['admin', 'ventas_limited'],
-    ],
-    [
-        'text' => 'Cuentas por Cobrar',
-        'url' => 'cxc',
-        'icon' => 'fas fa-fw fa-file-invoice-dollar',
-        'can' => [  'admin','ventas_limited' ]
-    ],
+        // ========================================
+        // SECCIÓN INVENTARIO
+        // ========================================
+        [
+            'header' => 'INVENTARIO',
+            'can' => ['admin', 'inventario_limited'],
+        ],
+        [
+            'text' => 'Almacenes',
+            'url' => 'almacenes',
+            'icon' => 'fas fa-fw fa-warehouse',
+            'can' => 'admin', // Solo admin
+        ],
+        [
+            'text' => 'Productos',
+            'url' => 'productos',
+            'icon' => 'fas fa-fw fa-box-open',
+            'can' => 'admin', // Solo admin
+        ],
+        [
+            'text' => 'Inventario',
+            'icon' => 'fas fa-fw fa-boxes',
+            'can' => ['admin', 'inventario_limited'],
+            'submenu' => [
+                [
+                    'text' => 'Inventario',
+                    'url' => 'inventarios',
+                    'icon' => 'fas fa-fw fa-clipboard-check',
+                    'can' => ['admin', 'inventario_limited'],
+                ],
+                [
+                    'text' => 'Transferencias',
+                    'url' => 'transferencias',
+                    'icon' => 'fas fa-fw fa-exchange-alt',
+                    'can' => ['admin', 'inventario_limited'],
+                ],
 
-    // ========================================
-    // SECCIÓN NÓMINA (solo admin)
-    // ========================================
-    [
-        'header' => 'NÓMINA',
-        'can' => 'admin',
-    ],
-    [
-        'text' => 'Empleados',
-        'url' => 'empleados',
-        'icon' => 'fas fa-fw fa-id-badge',
-        'can' => 'admin',
-    ],
-    [
-        'text' => 'Movimientos',
-        'icon' => 'fas fa-fw fa-random',
-        'can' => 'admin',
-        'submenu' => [
-            [
-                'text' => 'Préstamos',
-                'url' => 'prestamos',
-                'can' => 'admin',
-            ],
-            [
-                'text' => 'Descuentos',
-                'url' => 'descuentos',
-                'can' => 'admin',
-            ],
-            [
-                'text' => 'Abonos',
-                'url' => 'abonos',
-                'can' => 'admin',
+                [
+                    'text' => 'Carga/Descarga',
+                    'url' => 'cargas',
+                    'icon' => 'fas fa-fw fa-angle-double-down',
+                    'can' => ['admin', 'inventario_limited'],
+                ],
+
             ],
         ],
-    ],
-    [
-        'text' => 'Procesos de Nómina',
-        'icon' => 'fas fa-fw fa-calculator',
-        'can' => 'admin',
-        'submenu' => [
-            [
-                'text' => 'Generar Pagos',
-                'url' => 'nempleados',
-                'can' => 'admin',
-            ],
-            [
-                'text' => 'Reportes',
-                'url' => 'nempleados/generar-reporte',
-                'can' => 'admin',
+
+
+        // ========================================
+        // SECCIÓN VENTAS (para usuarios limitados)
+        // ========================================
+        [
+            'header' => 'VENTAS',
+            'can' => ['admin', 'presupuestos_limited', 'ordenes_limited', 'ventas_limited'],
+        ],
+        [
+            'text' => 'Clientes',
+            'url' => 'clientes',
+            'icon' => 'fas fa-fw fa-user-friends',
+            'can' => ['admin', 'ventas_limited'],
+        ],
+        [
+            'text' => 'Trabajos',
+            'url' => 'trabajos',
+            'icon' => 'fas fa-fw fa-tasks',
+            'can' => ['admin', 'ventas_limited'],
+        ],
+        [
+            'text' => 'Presupuestos',
+            'url' => 'presupuestos',
+            'icon' => 'fas fa-fw fa-file-invoice',
+            'can' => ['admin', 'presupuestos_limited'],
+        ],
+        [
+            'text' => 'Órdenes de Trabajo',
+            'url' => 'ordens',
+            'icon' => 'fas fa-fw fa-tasks',
+            'can' => ['admin', 'ordenes_limited'],
+        ],
+        [
+            'text' => 'Registro de Ventas',
+            'url' => 'registro-vs',
+            'icon' => 'fas fa-fw fa-shopping-cart',
+            'can' => ['admin', 'ventas_limited'],
+        ],
+        [
+            'text' => 'Cuentas por Cobrar',
+            'url' => 'cxc',
+            'icon' => 'fas fa-fw fa-file-invoice-dollar',
+            'can' => ['admin', 'ventas_limited']
+        ],
+
+        // ========================================
+        // SECCIÓN NÓMINA (solo admin)
+        // ========================================
+        [
+            'header' => 'NÓMINA',
+            'can' => 'admin',
+        ],
+        [
+            'text' => 'Empleados',
+            'url' => 'empleados',
+            'icon' => 'fas fa-fw fa-id-badge',
+            'can' => 'admin',
+        ],
+        [
+            'text' => 'Movimientos',
+            'icon' => 'fas fa-fw fa-random',
+            'can' => 'admin',
+            'submenu' => [
+                [
+                    'text' => 'Préstamos',
+                    'url' => 'prestamos',
+                    'can' => 'admin',
+                ],
+                [
+                    'text' => 'Descuentos',
+                    'url' => 'descuentos',
+                    'can' => 'admin',
+                ],
+                [
+                    'text' => 'Abonos',
+                    'url' => 'abonos',
+                    'can' => 'admin',
+                ],
             ],
         ],
-    ],
-
-    // ========================================
-    // SECCIÓN CONTABILIDAD
-    // ========================================
-    [
-        'header' => 'CONTABILIDAD',
-        'can' => ['admin'],
-    ],
-    [
-        'text' => 'Registro de Costos',
-        'url' => 'costos',
-        'icon' => 'fas fa-fw fa-money-bill-wave',
-        'can' => ['admin'],
-    ],
-    [
-        'text' => 'Registro de Gastos',
-        'url' => 'gastos',
-        'icon' => 'fas fa-fw fa-receipt',
-        'can' => ['admin'],
-    ],
-    [
-        'text' => 'Tipos de Pago',
-        'url' => 'tipos-de-pagos',
-        'icon' => 'fas fa-fw fa-credit-card',
-        'can' => 'admin',
-    ],
-    [
-        'text' => 'Subcategorías',
-        'url' => 'categorias',
-        'icon' => 'fas fa-fw fa-tags',
-        'can' => 'admin',
-    ],
-    [  
-        'header' => 'REPORTES',
-        'can' => 'admin',
-    ],
-    [
-        'text' => 'Reportes',
-        'icon' => 'fas fa-fw fa-chart-area',
-        'can' => 'admin',
-        'submenu' => [
-            [
-                'text' => 'Estado de Resultados',
-                'url' => 'estadisticas-ventas',
-                'icon' => 'fas fa-fw fa-chart-line',
-                'can' => 'admin',
-            ],
-            [
-                'text' => 'Reporte de Ventas Vanes',
-                'url' => 'estadisticas-vanes',
-                'icon' => 'fas fa-fw fa-chart-bar',
-                'can' => 'admin',
-            ],
-            [
-                'text' => 'Cierre Semanal',
-                'url' => 'cierre-ventas-semanal',
-                'icon' => 'fas fa-fw fa-chart-line',
-                'can' => 'admin',
-            ],
-            [
-                'text' => 'Reporte de CXC',
-                'url' => 'reportes/cxc',
-                'icon' => 'fas fa-fw fa-chart-line',
-                'can' => 'admin',
+        [
+            'text' => 'Procesos de Nómina',
+            'icon' => 'fas fa-fw fa-calculator',
+            'can' => 'admin',
+            'submenu' => [
+                [
+                    'text' => 'Generar Pagos',
+                    'url' => 'nempleados',
+                    'can' => 'admin',
+                ],
+                [
+                    'text' => 'Reportes',
+                    'url' => 'nempleados/generar-reporte',
+                    'can' => 'admin',
+                ],
             ],
         ],
-    ],
-    // ========================================
-    // SECCIÓN ADMINISTRACIÓN (solo admin)
-    // ========================================
-    [
-        'header' => 'ADMINISTRACIÓN',
-        'can' => 'admin',
-    ],
-    [
-        'text' => 'Perfil',
-        'url' => 'profile',
-        'icon' => 'fas fa-fw fa-users-cog',
-        'can' => 'admin',
-    ],
 
-],
+        // ========================================
+        // SECCIÓN CONTABILIDAD
+        // ========================================
+        [
+            'header' => 'CONTABILIDAD',
+            'can' => ['admin'],
+        ],
+        [
+            'text' => 'Registro de Costos',
+            'url' => 'costos',
+            'icon' => 'fas fa-fw fa-money-bill-wave',
+            'can' => ['admin'],
+        ],
+        [
+            'text' => 'Registro de Gastos',
+            'url' => 'gastos',
+            'icon' => 'fas fa-fw fa-receipt',
+            'can' => ['admin'],
+        ],
+        [
+            'text' => 'Tipos de Pago',
+            'url' => 'tipos-de-pagos',
+            'icon' => 'fas fa-fw fa-credit-card',
+            'can' => 'admin',
+        ],
+        [
+            'text' => 'Subcategorías',
+            'url' => 'categorias',
+            'icon' => 'fas fa-fw fa-tags',
+            'can' => 'admin',
+        ],
+        [
+            'header' => 'REPORTES',
+            'can' => 'admin',
+        ],
+        [
+            'text' => 'Reportes',
+            'icon' => 'fas fa-fw fa-chart-area',
+            'can' => 'admin',
+            'submenu' => [
+                [
+                    'text' => 'Estado de Resultados',
+                    'url' => 'estadisticas-ventas',
+                    'icon' => 'fas fa-fw fa-chart-line',
+                    'can' => 'admin',
+                ],
+                [
+                    'text' => 'Reporte de Ventas Vanes',
+                    'url' => 'estadisticas-vanes',
+                    'icon' => 'fas fa-fw fa-chart-bar',
+                    'can' => 'admin',
+                ],
+                [
+                    'text' => 'Cierre Semanal',
+                    'url' => 'cierre-ventas-semanal',
+                    'icon' => 'fas fa-fw fa-chart-line',
+                    'can' => 'admin',
+                ],
+                [
+                    'text' => 'Reporte de CXC',
+                    'url' => 'reportes/cxc',
+                    'icon' => 'fas fa-fw fa-chart-line',
+                    'can' => 'admin',
+                ],
+                [
+                    'text' => 'Notificaciones',
+                    'url' => 'notifications',
+                    'icon' => 'fas fa-fw fa-bell',
+                    'can' => 'admin', // Solo admin
+                ],
+            ],
+        ],
+        // ========================================
+        // SECCIÓN ADMINISTRACIÓN (solo admin)
+        // ========================================
+        [
+            'header' => 'ADMINISTRACIÓN',
+            'can' => 'admin',
+        ],
+        [
+            'text' => 'Perfil',
+            'url' => 'profile',
+            'icon' => 'fas fa-fw fa-users-cog',
+            'can' => 'admin',
+        ],
+
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -704,7 +710,7 @@ return [
             'files' => [
                 [
                     'type' => 'js',
-                    'asset' => true, 
+                    'asset' => true,
                     'location' => '/custom/script.js',
                 ],
                 [

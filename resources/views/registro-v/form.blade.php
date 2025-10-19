@@ -120,6 +120,15 @@
                         <div class="form-group" id="items-container">
 
                         </div>
+                               
+                                 <div class="row mt-3">
+                            <div class="col-md-4 offset-md-8">
+                                    <label for="descuento" class="form-label">{{ __('Descuento') }}</label>
+                                    <input type="number" step="0.01" name="descuento" id="descuento" class="form-control" 
+                                        value="{{ old('descuento', $registroV?->monto_ce ?? 0) }}" placeholder="0.00">
+                                </div>
+                                 </div>
+                           
                         <div class="row mt-3">
                             <div class="col-md-4 offset-md-8">
                                 <div class="input-group">
@@ -434,10 +443,253 @@
 <script>
 $(document).ready(function() {
 
-    $('.select2').select2({
-        width: '100%',
-        dropdownAutoWidth: true,
-    });
+    const isEditMode = {{ isset($registroV) && $registroV->id ? 'true' : 'false' }};
+    const csrfToken = $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}';
+    const quickCreateRoutes = {
+        cliente: '{{ route('clientes.quick-store') }}',
+        categoria: '{{ route('categorias.quick-store') }}',
+        trabajo: '{{ route('trabajos.quick-store') }}',
+    };
+
+    let trabajosCache = null;
+    let trabajosRequest = null;
+
+    function createTagOption(params) {
+        const term = $.trim(params.term || '');
+        if (term === '') {
+            return null;
+        }
+
+        return {
+            id: `__new__${term}`,
+            text: term,
+            newOption: true
+        };
+    }
+
+    function handleAjaxCreation({ url, payload, onSuccess, onError }) {
+        $.ajax({
+            url,
+            type: 'POST',
+            data: payload,
+            success: function(response) {
+                if (typeof onSuccess === 'function') {
+                    onSuccess(response);
+                }
+            },
+            error: function(xhr) {
+                if (typeof onError === 'function') {
+                    onError(xhr);
+                    return;
+                }
+
+                Swal.fire({
+                    title: 'Error',
+                    text: 'No se pudo crear el registro. Inténtalo nuevamente.',
+                    icon: 'error'
+                });
+            }
+        });
+    }
+
+    function initializeClienteSelect() {
+        const $clienteSelect = $('#id_cliente');
+        if (!$clienteSelect.length) {
+            return;
+        }
+
+        if ($clienteSelect.hasClass('select2-hidden-accessible')) {
+            $clienteSelect.off('select2:select.quickCreateCliente');
+            $clienteSelect.select2('destroy');
+        }
+
+        $clienteSelect.select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Seleccione o agregue un cliente',
+            allowClear: true,
+            tags: true,
+            createTag: createTagOption,
+            width: '100%'
+        });
+
+        $clienteSelect.on('select2:select.quickCreateCliente', function (e) {
+            const data = e.params.data;
+
+            if (!data || !data.newOption) {
+                return;
+            }
+
+            const $select = $(this);
+            handleAjaxCreation({
+                url: quickCreateRoutes.cliente,
+                payload: {
+                    _token: csrfToken,
+                    nombre: data.text
+                },
+                onSuccess(response) {
+                    const option = new Option(response.nombre, response.id, true, true);
+                    $select.append(option).trigger('change');
+                    $select.find(`option[value="${data.id}"]`).remove();
+                },
+                onError() {
+                    $select.find(`option[value="${data.id}"]`).remove();
+                    $select.val(null).trigger('change');
+                }
+            });
+        });
+    }
+
+    function initializeSubcategoriaSelect($select) {
+        if (!$select || !$select.length) {
+            return;
+        }
+
+        const parent = $select.closest('.costo-group, .gasto-group');
+
+        if ($select.hasClass('select2-hidden-accessible')) {
+            $select.off('select2:select.quickCreateCategoria');
+            $select.select2('destroy');
+        }
+
+        $select.select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Seleccione o agregue una subcategoría',
+            allowClear: true,
+            dropdownParent: parent.length ? parent : $(document.body),
+            tags: true,
+            createTag: createTagOption,
+            width: '100%'
+        });
+
+        $select.on('select2:select.quickCreateCategoria', function (e) {
+            const data = e.params.data;
+
+            if (!data || !data.newOption) {
+                return;
+            }
+
+            const $element = $(this);
+            handleAjaxCreation({
+                url: quickCreateRoutes.categoria,
+                payload: {
+                    _token: csrfToken,
+                    nombre: data.text
+                },
+                onSuccess(response) {
+                    categoriasData.push({ id: response.id, nombre: response.nombre });
+
+                    const option = new Option(response.nombre, response.id, true, true);
+                    $element.append(option).trigger('change');
+                    $element.find(`option[value="${data.id}"]`).remove();
+
+                    $('.select2-subcategoria').not($element).each(function () {
+                        const $other = $(this);
+                        if (!$other.find(`option[value="${response.id}"]`).length) {
+                            $other.append(new Option(response.nombre, response.id));
+                        }
+                    });
+                },
+                onError() {
+                    $element.find(`option[value="${data.id}"]`).remove();
+                    $element.val(null).trigger('change');
+                }
+            });
+        });
+    }
+
+    function fetchTrabajos() {
+        if (trabajosCache) {
+            return $.Deferred().resolve(trabajosCache).promise();
+        }
+
+        if (trabajosRequest) {
+            return trabajosRequest;
+        }
+
+        trabajosRequest = $.ajax({
+            url: '{{ url('/obtener-todos-trabajos') }}',
+            type: 'GET',
+            dataType: 'json'
+        }).then(function(response) {
+            trabajosCache = response;
+            trabajosRequest = null;
+            return trabajosCache;
+        }).fail(function() {
+            trabajosRequest = null;
+        });
+
+        return trabajosRequest;
+    }
+
+    function initializeTrabajoSelect($select) {
+        if (!$select || !$select.length) {
+            return;
+        }
+
+        const parent = $select.closest('.item-group');
+
+        if ($select.hasClass('select2-hidden-accessible')) {
+            $select.off('select2:select.quickCreateTrabajo');
+            $select.select2('destroy');
+        }
+
+        $select.select2({
+            placeholder: 'Seleccione o agregue un trabajo',
+            width: '100%',
+            dropdownParent: parent.length ? parent : $(document.body),
+            tags: true,
+            createTag: createTagOption
+        });
+
+        $select.on('select2:select.quickCreateTrabajo', function (e) {
+            const data = e.params.data;
+
+            if (!data || !data.newOption) {
+                return;
+            }
+
+            const $element = $(this);
+            handleAjaxCreation({
+                url: quickCreateRoutes.trabajo,
+                payload: {
+                    _token: csrfToken,
+                    nombre: data.text
+                },
+                onSuccess(response) {
+                    trabajosCache = null;
+
+                    const option = new Option(response.nombre, response.id, true, true);
+                    $element.append(option).trigger('change');
+                    $element.find(`option[value="${data.id}"]`).remove();
+
+                    actualizarTrabajosEnTodosLosSelects(response.id);
+                },
+                onError() {
+                    $element.find(`option[value="${data.id}"]`).remove();
+                    $element.val(null).trigger('change');
+                }
+            });
+        });
+    }
+
+    function actualizarTrabajosEnTodosLosSelects(seleccionadoId = null) {
+        $('.select2-trabajo').each(function() {
+            const $select = $(this);
+            const valorActual = seleccionadoId && $select.is(':focus') ? seleccionadoId : ($select.val() || null);
+            const textoActual = $select.find('option:selected').text();
+            cargarTrabajosEnSelect($select, valorActual, textoActual);
+        });
+    }
+
+    $('.select2')
+        .not('#id_cliente')
+        .not('.select2-subcategoria')
+        .not('.select2-trabajo')
+        .not('.select2-producto')
+        .select2({
+            width: '100%',
+            dropdownAutoWidth: true,
+        });
 
     $(document).on('input', '.precio-trabajo', function() {
         actualizarValoresTrabajo();
@@ -464,9 +716,10 @@ $(document).ready(function() {
             const $trabajoSelect = $(this).find('.select2-trabajo');
             const $precioTrabajo = $(this).find('.precio-trabajo');
             const trabajoId = $trabajoSelect.val();
+            const trabajoTexto = $trabajoSelect.find('option:selected').text();
             
             if (trabajoId) {
-                cargarTrabajosEnSelect($trabajoSelect, trabajoId).then(function() {
+                cargarTrabajosEnSelect($trabajoSelect, trabajoId, trabajoTexto).then(function() {
                     const precio = $trabajoSelect.find('option:selected').data('precio');
                     $precioTrabajo.val(precio || '0');
                     $precioTrabajo.trigger('input');
@@ -685,6 +938,23 @@ $(document).ready(function() {
         $('#pago_cobrador').val('').trigger('change');
     });
 
+        // Cuando cambie el descuento, recalcula y propaga el cambio a todo el flujo existente
+        $(document).on('input change', '#descuento', function() {
+            const totalTrabajos = calcularTotalTrabajos();
+            const descuento = parseFloat($(this).val()) || 0;
+            const discounted = Math.max(0, totalTrabajos - descuento);
+
+            // Actualiza la visualización formateada y el valor real que se envía al servidor
+            $('#total-trabajos').val('$' + discounted.toFixed(2));
+            $('#valor_v').val(discounted.toFixed(2));
+
+            // Propagar cambio para que resumén/porcentajes/pagos se actualicen
+            $('#valor_v').trigger('change');
+            calcularPorcentajeCerrajero();
+            actualizarResumen();
+            actualizarMaximoPago();
+        });
+
     function actualizarListaPagos() {
         const pagosJson = $('#pagos_json').val() || '[]';
         $('#lista-pagos').empty();
@@ -754,11 +1024,7 @@ $(document).ready(function() {
     /**************************************
      * SECCIÓN DE CLIENTES (SELECT2)
      **************************************/
-    $('#id_cliente').select2({
-        theme: 'bootstrap-5',
-        placeholder: 'Seleccione un cliente',
-        allowClear: true
-    });
+    initializeClienteSelect();
 
     // Código relacionado con teléfono eliminado
 
@@ -768,6 +1034,9 @@ $(document).ready(function() {
      **************************************/
     let costoIndex = {{ count($costosExtras ?? []) }};
     const costosExistentes = @json($costosExtras ?? []);
+    let categoriasData = @json(($categorias ?? collect())->map(function ($categoria) {
+        return ['id' => $categoria->id_categoria, 'nombre' => $categoria->nombre];
+    })->values());
 
     function addNewCostoGroup(costoData = null) {
         const currentIndex = costoIndex;
@@ -779,9 +1048,10 @@ $(document).ready(function() {
         @endforeach
 
         let subcategoriaOptions = '<option value="">Seleccione subcategoría</option>';
-        @foreach($categorias as $categoria)
-            subcategoriaOptions += `<option value="{{ $categoria->id_categoria }}" ${isExisting && costoData.subcategoria == '{{ $categoria->id_categoria }}' ? 'selected' : ''}>{{ $categoria->nombre }}</option>`;
-        @endforeach
+        categoriasData.forEach(categoria => {
+            const seleccionado = isExisting && (costoData.subcategoria == categoria.id || costoData.id_categoria == categoria.id);
+            subcategoriaOptions += `<option value="${categoria.id}" ${seleccionado ? 'selected' : ''}>${categoria.nombre}</option>`;
+        });
 
         const newCostoGroup = $(`
             <div class="costo-group mb-4 p-3 border rounded" data-index="${currentIndex}">
@@ -849,10 +1119,7 @@ $(document).ready(function() {
             dropdownAutoWidth: true
         });
 
-        newCostoGroup.find('.select2-subcategoria').select2({
-            width: '100%',
-            dropdownAutoWidth: true
-        });
+        initializeSubcategoriaSelect(newCostoGroup.find('.select2-subcategoria'));
         
         costoIndex++;
     }
@@ -953,9 +1220,10 @@ $(document).ready(function() {
         @endforeach
 
         let subcategoriaOptions = '<option value="">Seleccione subcategoría</option>';
-        @foreach($categorias as $categoria)
-            subcategoriaOptions += `<option value="{{ $categoria->id_categoria }}" ${isExisting && gastoData.subcategoria == '{{ $categoria->id_categoria }}' ? 'selected' : ''}>{{ $categoria->nombre }}</option>`;
-        @endforeach
+        categoriasData.forEach(categoria => {
+            const seleccionado = isExisting && (gastoData.subcategoria == categoria.id || gastoData.id_categoria == categoria.id);
+            subcategoriaOptions += `<option value="${categoria.id}" ${seleccionado ? 'selected' : ''}>${categoria.nombre}</option>`;
+        });
 
         const newGastoGroup = $(`
             <div class="gasto-group mb-4 p-3 border rounded" data-index="${currentIndex}">
@@ -1023,12 +1291,7 @@ $(document).ready(function() {
             dropdownAutoWidth: true
         });
 
-        newGastoGroup.find('.select2-subcategoria').select2({
-            width: '100%',
-            dropdownAutoWidth: true
-        });
-        
-        gastoIndex++;
+        initializeSubcategoriaSelect(newGastoGroup.find('.select2-subcategoria'));
     }
 
     function calcularTotalGastos() {
@@ -1309,17 +1572,11 @@ $(document).ready(function() {
         }
     });
 
-    function cargarTrabajosEnSelect($select, trabajoSeleccionado = null) {
-        return $.ajax({
-            url: '/obtener-todos-trabajos',
-            type: 'GET',
-            dataType: 'json'
-        }).then(function(response) {
+    function cargarTrabajosEnSelect($select, trabajoSeleccionado = null, textoManual = '') {
+        return fetchTrabajos().then(function(trabajos) {
             let options = '<option value="">{{ __("Seleccionar Trabajo") }}</option>';
-                
-            response.forEach(trabajo => {
-                const selected = trabajoSeleccionado == trabajo.id_trabajo ? 'selected' : '';
-                
+
+            trabajos.forEach(trabajo => {
                 let nombreIngles = '';
                 try {
                     const traducciones = JSON.parse(trabajo.traducciones || '{}');
@@ -1329,19 +1586,26 @@ $(document).ready(function() {
                 }
 
                 const textoOpcion = nombreIngles ? `${trabajo.nombre} - ${nombreIngles}` : trabajo.nombre;
-                
+                const selected = trabajoSeleccionado == trabajo.id_trabajo ? 'selected' : '';
+
                 options += `<option value="${trabajo.id_trabajo}" ${selected} data-precio="${trabajo.precio || 0}">${textoOpcion}</option>`;
             });
-            
+
+            const valorActual = trabajoSeleccionado ?? $select.val();
+
             $select.html(options);
+            initializeTrabajoSelect($select);
 
-            $select.select2({
-                placeholder: "Seleccione un trabajo",
-                width: '100%',
-                dropdownParent: $select.closest('.item-group')
-            });
+            if (valorActual) {
+                if (!$select.find(`option[value="${valorActual}"]`).length && textoManual) {
+                    $select.append(new Option(textoManual, valorActual, true, true));
+                }
+                $select.val(valorActual).trigger('change');
+            } else {
+                $select.val('').trigger('change');
+            }
 
-            return $select; 
+            return $select;
         });
     }
 
@@ -1493,9 +1757,10 @@ $(document).ready(function() {
     function addNewProductRow(itemGroup, productoData = null) {
         const productoIndex = itemGroup.find('.producto-row').length;
         const itemGroupIndex = itemGroup.data('index');
+        const isExistingProducto = productoData !== null;
 
         const newProductoRow = `
-            <div class="row mb-2 producto-row">
+            <div class="row mb-2 producto-row" data-existing="${isExistingProducto ? '1' : '0'}">
                 <div class="col-md-4">
                     <label class="form-label">{{ __("Producto") }}</label>
                     <select name="items[${itemGroupIndex}][productos][${productoIndex}][producto]"
@@ -1547,6 +1812,10 @@ $(document).ready(function() {
 
         itemGroup.find('.productos-container').append(newProductoRow);
         const $newRow = itemGroup.find('.producto-row').last();
+
+        if (isExistingProducto) {
+            $newRow.find('.precio-producto').data('preserve-price', true);
+        }
 
         if (productoData) {
             const $selectAlmacen = $newRow.find('.select-almacen');
@@ -1616,10 +1885,12 @@ $(document).ready(function() {
         $('#items-container').append(newItemGroup);
         
         const $selectTrabajo = newItemGroup.find('.select2-trabajo');
+        let requiereInicializacionManual = true;
 
         if (!itemData || itemData.trabajo_id) {
             itemGroupIndex++;
-            cargarTrabajosEnSelect($selectTrabajo, trabajoValue);
+            cargarTrabajosEnSelect($selectTrabajo, trabajoValue, trabajoNombre);
+            requiereInicializacionManual = false;
         }
 
         if (itemData && itemData.trabajo && !itemData.trabajo_id) {
@@ -1627,11 +1898,12 @@ $(document).ready(function() {
             newItemGroup.find('input[name$="[trabajo_nombre]"]').val(itemData.trabajo);
         }
 
-        $selectTrabajo.select2({
-            placeholder: "Seleccione un trabajo",
-            width: '100%',
-            dropdownParent: $selectTrabajo.closest('.item-group')
-        });
+        if (requiereInicializacionManual) {
+            initializeTrabajoSelect($selectTrabajo);
+            if (trabajoValue) {
+                $selectTrabajo.val(trabajoValue).trigger('change');
+            }
+        }
 
         if (itemData && itemData.productos) {
             itemData.productos.forEach(producto => {
@@ -1690,7 +1962,11 @@ $(document).ready(function() {
         const $row = $(this).closest('.producto-row');
         const precioInput = $row.find('.precio-producto');
         const precio = $(this).find('option:selected').data('precio') || '0';
-        precioInput.val(precio);
+        const preserveExistingPrice = isEditMode && !!precioInput.data('preserve-price') && precioInput.val() !== '';
+
+        if (!preserveExistingPrice) {
+            precioInput.val(precio);
+        }
 
         const nombreCompleto = $(this).find('option:selected').text();
         const nombreProducto = nombreCompleto.includes('-') 
@@ -1828,41 +2104,49 @@ $(document).ready(function() {
                 
                 const $selectTrabajo = newItemGroup.find('.select2-trabajo');
                 const $precioTrabajo = newItemGroup.find('.precio-trabajo');
+                const trabajoNombre = item.trabajo_nombre || item.trabajo || '';
 
-                $selectTrabajo.select2({
-                    placeholder: "Seleccione un trabajo",
-                    width: '100%',
-                    dropdownParent: $selectTrabajo.closest('.item-group')
-                });
+                initializeTrabajoSelect($selectTrabajo);
 
                 if (item.trabajo_id) {
-                    $selectTrabajo.off('change');
-                    
-                    cargarTrabajosEnSelect($selectTrabajo, item.trabajo_id).then(() => {
-                        $selectTrabajo.val(item.trabajo_id);
+                    cargarTrabajosEnSelect($selectTrabajo, item.trabajo_id, trabajoNombre).then(() => {
+                        const $opcionSeleccionada = $selectTrabajo.find(`option[value="${item.trabajo_id}"]`);
 
-                        $selectTrabajo.trigger('change.select2');
+                        if ($opcionSeleccionada.length && item.precio_trabajo) {
+                            $opcionSeleccionada.attr('data-precio', item.precio_trabajo).data('precio', item.precio_trabajo);
+                        }
 
-                        $precioTrabajo.val(item.precio_trabajo || '0');
+                        $selectTrabajo.val(item.trabajo_id).trigger('change.select2').trigger('change');
 
-                        setTimeout(() => {
-                            $selectTrabajo.on('change', function() {
-                                const precio = $(this).find('option:selected').data('precio') || 0;
-                                $(this).closest('.item-group').find('.precio-trabajo').val(precio);
-                                calcularTotalTrabajos();
-                            });
-                        }, 100);
+                        const textoSeleccionado = $selectTrabajo.find('option:selected').text() || trabajoNombre;
+                        const precioSeleccionado = item.precio_trabajo || $selectTrabajo.find('option:selected').data('precio') || 0;
+
+                        newItemGroup.find('input[name$="[trabajo_id]"]').val(item.trabajo_id);
+                        newItemGroup.find('input[name$="[trabajo_nombre]"]').val(textoSeleccionado);
+                        $precioTrabajo.val(precioSeleccionado);
+                        calcularTotalTrabajos();
                     });
-                } 
-                else if (item.trabajo) {
-                    $selectTrabajo.append(`<option value="${item.trabajo}" selected>${item.trabajo}</option>`);
-                    newItemGroup.find('input[name$="[trabajo_nombre]"]').val(item.trabajo);
+                } else if (trabajoNombre) {
+                    const nuevaOpcion = new Option(trabajoNombre, trabajoNombre, true, true);
+                    const $nuevaOpcion = $(nuevaOpcion);
+
+                    $nuevaOpcion.attr('data-precio', item.precio_trabajo || 0).data('precio', item.precio_trabajo || 0);
+                    $selectTrabajo.append($nuevaOpcion).trigger('change.select2').trigger('change');
+
+                    newItemGroup.find('input[name$="[trabajo_id]"]').val('');
+                    newItemGroup.find('input[name$="[trabajo_nombre]"]').val(trabajoNombre);
                     $precioTrabajo.val(item.precio_trabajo || '0');
+                    calcularTotalTrabajos();
                 }
 
-                $selectTrabajo.on('change', function() {
+                $selectTrabajo.off('change.actualizarPrecio').on('change.actualizarPrecio', function() {
+                    const $group = $(this).closest('.item-group');
                     const precio = $(this).find('option:selected').data('precio') || 0;
-                    $(this).closest('.item-group').find('.precio-trabajo').val(precio);
+                    const textoSeleccionado = $(this).find('option:selected').text();
+
+                    $group.find('.precio-trabajo').val(precio);
+                    $group.find('input[name$="[trabajo_id]"]').val($(this).val());
+                    $group.find('input[name$="[trabajo_nombre]"]').val(textoSeleccionado);
                     calcularTotalTrabajos();
                 });
 

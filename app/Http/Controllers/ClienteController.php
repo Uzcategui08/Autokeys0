@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\ClienteRequest;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use Illuminate\Http\JsonResponse;
 
 class ClienteController extends Controller
 {
@@ -71,6 +72,26 @@ class ClienteController extends Controller
 
         return Redirect::route('clientes.index')
             ->with('success', 'Cliente actualizado satisfactoriamente.');
+    }
+
+    public function quickStore(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'nombre' => ['required', 'string', 'max:255'],
+            'telefono' => ['nullable', 'string', 'max:255'],
+            'direccion' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $cliente = Cliente::create([
+            'nombre' => trim($validated['nombre']),
+            'telefono' => $validated['telefono'] ?? '',
+            'direccion' => $validated['direccion'] ?? '',
+        ]);
+
+        return response()->json([
+            'id' => $cliente->id_cliente,
+            'nombre' => $cliente->nombre,
+        ]);
     }
 
     public function destroy($id): RedirectResponse

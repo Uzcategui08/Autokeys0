@@ -304,6 +304,12 @@
 
         
             <div class="total-row total-grande">
+                @if(isset($registroV->monto_ce) && $registroV->monto_ce > 0)
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <span>Descuento:</span>
+                        <span style="color:#c62828;">- ${{ number_format($registroV->monto_ce, 2) }}</span>
+                    </div>
+                @endif
                 <span>TOTAL:</span>
                 <span>${{ number_format($registroV->valor_v, 2) }}</span>
             </div>

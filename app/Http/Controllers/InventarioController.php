@@ -153,6 +153,7 @@ class InventarioController extends Controller
             'tipo_ajuste' => 'required|in:compra,resta,ajuste,ajuste2',
             'cantidad_ajuste' => 'required|integer|min:1',
             'descripcion' => 'nullable|string|max:500',
+            'precio_llave' => 'required_if:tipo_ajuste,ajuste2|numeric|min:0',
             'cierre' => 'required_if:tipo_ajuste,ajuste2|boolean',
             'fecha_ajuste' => 'required|date',
         ]);
@@ -187,6 +188,7 @@ class InventarioController extends Controller
             'cantidad_anterior' => $cantidadAnterior,
             'cantidad_nueva' => $nuevaCantidad,
             'descripcion' => $request->descripcion,
+            'precio_llave' => $request->precio_llave,
             'cierre' => $request->tipo_ajuste === 'ajuste2' ? (bool)$request->cierre : false,
             'fecha_ajuste' => $request->fecha_ajuste,
             'user_id' => Auth::id(),

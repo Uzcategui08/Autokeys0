@@ -157,19 +157,31 @@
                     @php
                         $ingreso = collect($ingresosRecibidos)->firstWhere('tecnico', $tecnicoNombre);
                         $ingresoTotal = $ingreso['total'] ?? 0;
+
+                        $ventasContado = $datosVentas['ventas_contado'] instanceof \Illuminate\Support\Collection
+                            ? $datosVentas['ventas_contado']->sum()
+                            : ($datosVentas['ventas_contado'] ?? 0);
+
+                        $ventasCredito = $datosVentas['ventas_credito'] instanceof \Illuminate\Support\Collection
+                            ? $datosVentas['ventas_credito']->sum()
+                            : ($datosVentas['ventas_credito'] ?? 0);
+
+                        $ventasTotales = $datosVentas['total_ventas'] instanceof \Illuminate\Support\Collection
+                            ? $datosVentas['total_ventas']->sum()
+                            : ($datosVentas['total_ventas'] ?? ($ventasContado + $ventasCredito));
                     @endphp
                     <tr>
                         <td class="font-weight-bold">{{ $tecnicoNombre }}</td>
-                        <td class="text-right bg-ventas">${{ number_format($datosVentas['ventas_contado'], 2) }}</td>
-                        <td class="text-right bg-ventas">${{ number_format($datosVentas['ventas_credito'], 2) }}</td>
+                        <td class="text-right bg-ventas">${{ number_format($ventasContado, 2) }}</td>
+                        <td class="text-right bg-ventas">${{ number_format($ventasCredito, 2) }}</td>
                         <td class="text-right bg-ventas">${{ number_format($ingresoTotal, 2) }}</td>
-                        <td class="text-right font-weight-bold bg-gray-100">${{ number_format($datosVentas['total_ventas'] + $ingresoTotal, 2) }}</td>
+                        <td class="text-right font-weight-bold bg-gray-100">${{ number_format($ventasTotales + $ingresoTotal, 2) }}</td>
                         
                         @php
-                            $totalContado += $datosVentas['ventas_contado'];
-                            $totalCredito += $datosVentas['ventas_credito'];
+                            $totalContado += $ventasContado;
+                            $totalCredito += $ventasCredito;
                             $totalRecibidos += $ingresoTotal;
-                            $totalGeneral += $datosVentas['total_ventas'] + $ingresoTotal;
+                            $totalGeneral += $ventasTotales + $ingresoTotal;
                         @endphp
                     </tr>
                     @endforeach

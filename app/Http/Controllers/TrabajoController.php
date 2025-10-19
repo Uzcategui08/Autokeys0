@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\TrabajoRequest;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use Illuminate\Http\JsonResponse;
 
 class TrabajoController extends Controller
 {
@@ -43,7 +44,7 @@ class TrabajoController extends Controller
         $data['traducciones']['es'] = $data['nombre'];
 
         $data['traducciones'] = json_encode($data['traducciones']);
-        
+
         Trabajo::create($data);
 
         return Redirect::route('trabajos.index')
@@ -82,7 +83,7 @@ class TrabajoController extends Controller
         $data['traducciones']['es'] = $data['nombre'];
 
         $data['traducciones'] = json_encode($data['traducciones']);
-        
+
         $trabajo->update($data);
 
         return Redirect::route('trabajos.index')
@@ -95,5 +96,24 @@ class TrabajoController extends Controller
 
         return Redirect::route('trabajos.index')
             ->with('success', 'Trabajo eliminado satisfactoriamente.');
+    }
+
+    public function quickStore(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'nombre' => ['required', 'string', 'max:255'],
+        ]);
+
+        $nombre = trim($validated['nombre']);
+
+        $trabajo = Trabajo::create([
+            'nombre' => $nombre,
+            'traducciones' => json_encode(['es' => $nombre]),
+        ]);
+
+        return response()->json([
+            'id' => $trabajo->id_trabajo,
+            'nombre' => $trabajo->nombre,
+        ]);
     }
 }

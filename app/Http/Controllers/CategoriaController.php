@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\CategoriaRequest;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use Illuminate\Http\JsonResponse;
 
 class CategoriaController extends Controller
 {
@@ -71,6 +72,22 @@ class CategoriaController extends Controller
 
         return Redirect::route('categorias.index')
             ->with('success', 'Subcategoría actualizada satisfactoriamente.');
+    }
+
+    public function quickStore(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'nombre' => ['required', 'string', 'max:255'],
+        ]);
+
+        $categoria = Categoria::create([
+            'nombre' => trim($validated['nombre']),
+        ]);
+
+        return response()->json([
+            'id' => $categoria->id_categoria,
+            'nombre' => $categoria->nombre,
+        ]);
     }
 
     public function destroy($id): RedirectResponse
