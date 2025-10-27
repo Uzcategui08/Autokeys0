@@ -1642,6 +1642,14 @@ class RegistroVController extends Controller
                 'telefono' => $ventasGrupo->first()->telefono,
                 'total_ventas' => $ventasGrupo->count(),
                 'total_ventas_monto' => $ventasGrupo->sum('valor_v'),
+                'total_descuento' => $ventasGrupo->sum(function ($venta) {
+                    return (float) ($venta->monto_ce ?? 0);
+                }),
+                'total_bruto' => $ventasGrupo->sum(function ($venta) {
+                    $valor = (float) ($venta->valor_v ?? 0);
+                    $descuento = (float) ($venta->monto_ce ?? 0);
+                    return $valor + $descuento;
+                }),
                 'total_pagado' => $totalPagado,
                 'saldo_pendiente' => $ventasGrupo->sum('valor_v') - $totalPagado,
                 'ventas' => $ventasGrupo->map(function ($venta) use ($language) {
@@ -1681,6 +1689,8 @@ class RegistroVController extends Controller
                         'id_empleado' => $venta->id_empleado,
                         'fecha_h' => $venta->fecha_h,
                         'valor_v' => $venta->valor_v,
+                        'descuento' => (float) ($venta->monto_ce ?? 0),
+                        'monto_total' => (float) ($venta->valor_v ?? 0) + (float) ($venta->monto_ce ?? 0),
                         'total_pagado' => $totalPagadoVenta,
                         'pagos' => $pagos,
                         'items' => $items,

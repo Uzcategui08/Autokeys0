@@ -187,12 +187,14 @@
             <table>
                 <thead>
                     <tr>
-                        <th width="15%">Invoice #{{ $venta->id }}</th>
+                        <th width="12%">Invoice #{{ $venta->id }}</th>
                         <th width="15%">Technician</th>
-                        <th width="15%">Date</th>
-                        <th width="20%" class="text-right">Amount</th>
-                        <th width="20%" class="text-right">Paid</th>
-                        <th width="20%" class="text-right">Balance</th>
+                        <th width="12%">Date</th>
+                        <th width="16%" class="text-right">Gross Amount</th>
+                        <th width="13%" class="text-right">Discount</th>
+                        <th width="16%" class="text-right">Net Amount</th>
+                        <th width="16%" class="text-right">Paid</th>
+                        <th width="16%" class="text-right">Balance</th>
                         <th width="10%">Status</th>
                     </tr>
                 </thead>
@@ -206,6 +208,19 @@
                             }}
                         </td>
                         <td>{{ \Carbon\Carbon::parse($venta->fecha_h)->format('m/d/Y') }}</td>
+                        <td class="text-right">
+                            ${{ number_format($venta->monto_total ?? ($venta->valor_v + ($venta->descuento ?? 0)), 2) }}
+                        </td>
+                        <td class="text-right">
+                            @php
+                                $discount = $venta->descuento ?? 0;
+                            @endphp
+                            @if($discount > 0)
+                                -${{ number_format($discount, 2) }}
+                            @else
+                                $0.00
+                            @endif
+                        </td>
                         <td class="text-right">${{ number_format($venta->valor_v, 2) }}</td>
                         <td class="text-right">${{ number_format($venta->total_pagado, 2) }}</td>
                         <td class="text-right">${{ number_format($venta->valor_v - $venta->total_pagado, 2) }}</td>
@@ -258,7 +273,9 @@
         <table>
             <tfoot>
                 <tr class="total-row">
-                    <td colspan="2">CUSTOMER TOTAL</td>
+                    <td colspan="3">CUSTOMER TOTAL</td>
+                    <td class="text-right">${{ number_format($item->total_bruto ?? ($item->total_ventas_monto + ($item->total_descuento ?? 0)), 2) }}</td>
+                    <td class="text-right">- ${{ number_format($item->total_descuento ?? 0, 2) }}</td>
                     <td class="text-right">${{ number_format($item->total_ventas_monto, 2) }}</td>
                     <td class="text-right">${{ number_format($item->total_pagado, 2) }}</td>
                     <td class="text-right">${{ number_format($item->saldo_pendiente, 2) }}</td>
@@ -277,7 +294,15 @@
         <div class="resumen-section">
             <div class="section-title">SUMMARY</div>
             <div class="resumen-row">
-                <span>Total Sales:</span>
+                <span>Total Gross:</span>
+                <span>${{ number_format($data->sum('total_bruto'), 2) }}</span>
+            </div>
+            <div class="resumen-row">
+                <span>Total Discounts:</span>
+                <span>- ${{ number_format($data->sum('total_descuento'), 2) }}</span>
+            </div>
+            <div class="resumen-row">
+                <span>Total Net Sales:</span>
                 <span>${{ number_format($data->sum('total_ventas_monto'), 2) }}</span>
             </div>
             <div class="resumen-row">
