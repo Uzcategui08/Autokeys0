@@ -20,7 +20,11 @@ class InventarioObserver
         if ($inventario->isDirty('cantidad')) {
             $this->checkAndNotifyLowStock(
                 $inventario->producto,
-                $inventario->cantidad
+                $inventario->cantidad,
+                [
+                    'almacen' => $inventario->almacene ? $inventario->almacene->nombre : null,
+                    'inventario_id' => $inventario->id_inventario,
+                ]
             );
         }
     }

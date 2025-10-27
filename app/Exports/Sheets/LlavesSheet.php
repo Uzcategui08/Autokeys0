@@ -43,14 +43,27 @@ class LlavesSheet implements FromCollection, WithHeadings, ShouldAutoSize, WithE
     public function collection()
     {
         $data = [];
-        
+        $almacenesDisponibles = $this->data['almacenesDisponibles'] ?? [];
+
         foreach ($this->data['llavesPorTecnico'] as $tecnico) {
             foreach ($tecnico['llaves'] as $llave) {
                 foreach ($llave['almacenes'] as $almacenId => $datos) {
+                    $almacenNombre = $almacenesDisponibles[$almacenId] ?? null;
+
+                    if (!$almacenNombre) {
+                        if (is_string($almacenId) && $almacenId !== '') {
+                            $almacenNombre = ucwords(str_replace(['_', '-'], ' ', $almacenId));
+                        } elseif (is_numeric($almacenId)) {
+                            $almacenNombre = 'Almacén ' . $almacenId;
+                        } else {
+                            $almacenNombre = 'Sin especificar';
+                        }
+                    }
+
                     $data[] = [
                         'tecnico' => $tecnico['tecnico'],
                         'llave' => $llave['nombre'],
-                        'almacen' => $almacenId,
+                        'almacen' => $almacenNombre,
                         'cantidad' => $datos['cantidad'],
                         'valor' => $datos['total']
                     ];
@@ -64,7 +77,7 @@ class LlavesSheet implements FromCollection, WithHeadings, ShouldAutoSize, WithE
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class => function(AfterSheet $event) {
+            AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet;
                 $highestRow = $sheet->getHighestRow();
 
@@ -169,4 +182,3 @@ class LlavesSheet implements FromCollection, WithHeadings, ShouldAutoSize, WithE
         ];
     }
 }
-

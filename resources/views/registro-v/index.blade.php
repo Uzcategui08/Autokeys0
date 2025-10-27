@@ -64,6 +64,7 @@
                                         <th>Cliente</th>
                                         <th>Tipo de Trabajo</th>
                                         <th>Métodos de Pago</th>
+                                        <th>Fecha de Pago</th>
                                         <th>Cobrado por</th>
                                         <th>Titular</th>
                                         <th>Productos</th>
@@ -178,6 +179,23 @@
                                                             <small class="text-nowrap">
                                                                 <i class="fas fa-credit-card mr-1 text-primary"></i>
                                                                 {{ $nombreMetodo }} <span class="text-success">(${{ $monto }})</span>
+                                                            </small>
+                                                        @endforeach
+                                                    </div>
+                                                @else
+                                                    <span class="badge bg-light text-muted">N/A</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if(!empty($pagos))
+                                                    <div class="d-flex flex-column">
+                                                        @foreach($pagos as $pago)
+                                                            @php
+                                                                $fechaPago = isset($pago['fecha']) ? \Carbon\Carbon::parse($pago['fecha'])->format('m/d/Y') : 'N/A';
+                                                            @endphp
+                                                            <small class="text-nowrap">
+                                                                <i class="far fa-calendar-check mr-1 text-success"></i>
+                                                                {{ $fechaPago }}
                                                             </small>
                                                         @endforeach
                                                     </div>

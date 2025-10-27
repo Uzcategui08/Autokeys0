@@ -59,6 +59,19 @@
 
                             <div class="mt-2">
                                 {!! nl2br(e($notification->data['message'] ?? '')) !!}
+                                @if(!empty($notification->data['almacen']) || !empty($notification->data['id_llave']))
+                                    <div class="text-muted small mt-2">
+                                        @if(!empty($notification->data['almacen']))
+                                            <span>Almacén: {{ $notification->data['almacen'] }}</span>
+                                        @endif
+                                        @if(!empty($notification->data['almacen']) && !empty($notification->data['id_llave']))
+                                            <span class="mx-2">|</span>
+                                        @endif
+                                        @if(!empty($notification->data['id_llave']))
+                                            <span>ID Llave: {{ $notification->data['id_llave'] }}</span>
+                                        @endif
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>

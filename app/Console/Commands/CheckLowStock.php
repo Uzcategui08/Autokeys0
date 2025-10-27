@@ -29,8 +29,8 @@ class CheckLowStock extends Command
     public function handle()
     {
         $threshold = (int) $this->option('threshold');
-        
-        $lowStockItems = Inventario::with('producto')
+
+        $lowStockItems = Inventario::with(['producto', 'almacene'])
             ->where('cantidad', '<=', $threshold)
             ->get();
 
@@ -40,22 +40,27 @@ class CheckLowStock extends Command
         }
 
         $this->info("Found {$lowStockItems->count()} products with low stock.");
-        
+
         $count = 0;
-        
+
         foreach ($lowStockItems as $item) {
             $users = \App\Models\User::role('admin')->get();
-            
+
             foreach ($users as $user) {
-                $user->notify(new LowStockNotification($item->producto, $item->cantidad));
+                $user->notify(new LowStockNotification(
+                    $item->producto,
+                    $item->cantidad,
+                    $item->almacene ? $item->almacene->nombre : null,
+                    $item->id_inventario
+                ));
                 $count++;
             }
-            
+
             $this->line("Notified about: {$item->producto->item} (Stock: {$item->cantidad})");
         }
 
         $this->info("Sent {$count} low stock notifications.");
-        
+
         return 0;
     }
 }

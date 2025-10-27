@@ -500,20 +500,62 @@ $(document).ready(function() {
 
         if ($clienteSelect.hasClass('select2-hidden-accessible')) {
             $clienteSelect.off('select2:select.quickCreateCliente');
+            $clienteSelect.off('select2:closing.quickCreateCliente');
+            $clienteSelect.off('select2:close.quickCreateCliente');
             $clienteSelect.select2('destroy');
         }
+
+        let pendingClienteTerm = '';
 
         $clienteSelect.select2({
             theme: 'bootstrap-5',
             placeholder: 'Seleccione o agregue un cliente',
             allowClear: true,
             tags: true,
+            selectOnClose: true,
             createTag: createTagOption,
             width: '100%'
         });
 
+        $clienteSelect.on('select2:closing.quickCreateCliente', function () {
+            const select2Instance = $(this).data('select2');
+            const $searchField = select2Instance?.dropdown?.$search || select2Instance?.selection?.$search;
+            pendingClienteTerm = $searchField ? $searchField.val().trim() : '';
+        });
+
+        $clienteSelect.on('select2:close.quickCreateCliente', function () {
+            if (!pendingClienteTerm) {
+                return;
+            }
+
+            const $select = $(this);
+            const hasExistingOption = $select.find('option').filter(function () {
+                return $(this).text().trim().toLowerCase() === pendingClienteTerm.toLowerCase();
+            }).length > 0;
+
+            if (hasExistingOption) {
+                pendingClienteTerm = '';
+                return;
+            }
+
+            const newTag = {
+                id: `__new__${pendingClienteTerm}`,
+                text: pendingClienteTerm,
+                newOption: true
+            };
+
+            const option = new Option(newTag.text, newTag.id, true, true);
+            $select.append(option).trigger({
+                type: 'select2:select',
+                params: { data: newTag }
+            });
+
+            pendingClienteTerm = '';
+        });
+
         $clienteSelect.on('select2:select.quickCreateCliente', function (e) {
             const data = e.params.data;
+            pendingClienteTerm = '';
 
             if (!data || !data.newOption) {
                 return;
@@ -524,7 +566,9 @@ $(document).ready(function() {
                 url: quickCreateRoutes.cliente,
                 payload: {
                     _token: csrfToken,
-                    nombre: data.text
+                    nombre: data.text,
+                    telefono: '',
+                    direccion: ''
                 },
                 onSuccess(response) {
                     const option = new Option(response.nombre, response.id, true, true);
@@ -552,7 +596,6 @@ $(document).ready(function() {
         }
 
         $select.select2({
-            theme: 'bootstrap-5',
             placeholder: 'Seleccione o agregue una subcategoría',
             allowClear: true,
             dropdownParent: parent.length ? parent : $(document.body),
@@ -1078,8 +1121,8 @@ $(document).ready(function() {
                     <div class="col-md-2">
                         <div class="form-group mb-3">
                             <label class="form-label">Subcategoría</label>
-                            <select name="costos_extras[${currentIndex}][subcategoria]" 
-                                    class="form-control select2-subcategoria">
+                <select name="costos_extras[${currentIndex}][subcategoria]" 
+                    class="form-control select2 select2-subcategoria">
                                 ${subcategoriaOptions}
                             </select>
                         </div>
@@ -1249,8 +1292,8 @@ $(document).ready(function() {
 
                     <div class="col-md-2">
                         <div class="form-group mb-3">                            <label class="form-label">Subcategoría</label>
-                            <select name="gastos[${currentIndex}][subcategoria]" 
-                                    class="form-control select2-subcategoria">
+                <select name="gastos[${currentIndex}][subcategoria]" 
+                    class="form-control select2 select2-subcategoria">
                                 ${subcategoriaOptions}
                             </select>
                         </div>

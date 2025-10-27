@@ -929,6 +929,8 @@ class CierreVentasSemanalController extends Controller
 
         $resumenTrabajos = $this->getResumenTrabajos($startDate, $endDate);
 
+        $almacenesDisponibles = Almacene::pluck('nombre', 'id_almacen')->toArray();
+
 
         $data = [
             'startDate' => $startDate->format('d/m/Y'),
@@ -946,7 +948,8 @@ class CierreVentasSemanalController extends Controller
             'ventasPorLugarVenta' => $ventasPorLugarVenta,
             'ventasPorTrabajo' => $ventasPorTrabajo,
             'resumenTrabajos' => $resumenTrabajos,
-            'ventasPorCliente' => $ventasPorCliente
+            'ventasPorCliente' => $ventasPorCliente,
+            'almacenesDisponibles' => $almacenesDisponibles
         ];
 
         return Excel::download(new CierreSemanalExport($data), 'cierre-semanal-' . $startDate->format('Y') . '-' . $startDate->format('W') . '.xlsx');
