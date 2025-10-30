@@ -522,13 +522,30 @@ $(document).ready(function() {
             const $searchField = select2Instance?.dropdown?.$search || select2Instance?.selection?.$search;
             pendingClienteTerm = $searchField ? $searchField.val().trim() : '';
         });
-
         $clienteSelect.on('select2:close.quickCreateCliente', function () {
             if (!pendingClienteTerm) {
                 return;
             }
 
             const $select = $(this);
+            const currentValue = $select.val();
+            const selectedValues = Array.isArray(currentValue)
+                ? currentValue
+                : (currentValue ? [currentValue] : []);
+
+            const tieneSeleccionExistente = selectedValues.some(function (valor) {
+                if (!valor) {
+                    return false;
+                }
+
+                return String(valor).indexOf('__new__') !== 0;
+            });
+
+            if (tieneSeleccionExistente) {
+                pendingClienteTerm = '';
+                return;
+            }
+
             const hasExistingOption = $select.find('option').filter(function () {
                 return $(this).text().trim().toLowerCase() === pendingClienteTerm.toLowerCase();
             }).length > 0;
