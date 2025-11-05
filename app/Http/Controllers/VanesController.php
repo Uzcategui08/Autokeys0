@@ -77,6 +77,19 @@ class VanesController extends Controller
         $costosVanGrande = Costo::whereIn('id_costos', $costoIdsGrande)->get();
         $costosVanPequena = Costo::whereIn('id_costos', $costoIdsPequena)->get();
 
+        // Gastos/Costos marcados manualmente para Vanes (no asociados a una venta específica)
+        $gastosExtraVanes = Gasto::where('en_vanes', true)
+            ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
+                $q->whereDate('f_gastos', '>=', $startDate)
+                    ->whereDate('f_gastos', '<=', $endDate);
+            })->orderBy('f_gastos', 'desc')->get();
+
+        $costosExtraVanes = Costo::where('en_vanes', true)
+            ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
+                $q->whereDate('f_costos', '>=', $startDate)
+                    ->whereDate('f_costos', '<=', $endDate);
+            })->orderBy('f_costos', 'desc')->get();
+
         // Obtener porcentajes de cerrajero
         $porcentajeCerrajeroGrande = $ventasVanGrande['ventas']->sum('porcentaje_c');
         $porcentajeCerrajeroPequena = $ventasVanPequena['ventas']->sum('porcentaje_c');
@@ -133,7 +146,9 @@ class VanesController extends Controller
             'porcentajeCerrajeroPequena',
             'totales',
             'startDate',
-            'endDate'
+            'endDate',
+            'gastosExtraVanes',
+            'costosExtraVanes'
         ));
     }
 
@@ -211,6 +226,18 @@ class VanesController extends Controller
         $gastosVanPequena = Gasto::whereIn('id_gastos', $gastoIdsPequena)->get();
         $costosVanGrande = Costo::whereIn('id_costos', $costoIdsGrande)->get();
         $costosVanPequena = Costo::whereIn('id_costos', $costoIdsPequena)->get();
+
+        $gastosExtraVanes = Gasto::where('en_vanes', true)
+            ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
+                $q->whereDate('f_gastos', '>=', $startDate)
+                    ->whereDate('f_gastos', '<=', $endDate);
+            })->orderBy('f_gastos', 'desc')->get();
+
+        $costosExtraVanes = Costo::where('en_vanes', true)
+            ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
+                $q->whereDate('f_costos', '>=', $startDate)
+                    ->whereDate('f_costos', '<=', $endDate);
+            })->orderBy('f_costos', 'desc')->get();
         $porcentajeCerrajeroGrande = $ventasVanGrande['ventas']->sum('porcentaje_c');
         $porcentajeCerrajeroPequena = $ventasVanPequena['ventas']->sum('porcentaje_c');
         $llavesPorTecnico = $this->procesarLlavesPorTecnico($startDate, $endDate, [$vanGrande, $vanPequena]);
@@ -247,6 +274,8 @@ class VanesController extends Controller
             'totales' => $totales,
             'startDate' => $startDate,
             'endDate' => $endDate,
+            'gastosExtraVanes' => $gastosExtraVanes,
+            'costosExtraVanes' => $costosExtraVanes,
         ];
     }
 

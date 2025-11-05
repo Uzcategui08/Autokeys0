@@ -17,9 +17,9 @@ class CostoController extends Controller
     public function index(Request $request): View
     {
         $costos = Costo::with(['empleado', 'categoria'])
-                    ->orderBy('created_at', 'desc')
-                    ->get();
-        
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return view('costo.index', compact('costos'));
     }
 
@@ -31,7 +31,7 @@ class CostoController extends Controller
         $costo->estatus = 'pendiente';
         $metodos = TiposDePago::all();
         $categorias = Categoria::all();
-        return view('costo.create', compact('costo','empleado', 'metodos', 'categorias'));
+        return view('costo.create', compact('costo', 'empleado', 'metodos', 'categorias'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -44,6 +44,7 @@ class CostoController extends Controller
                 'subcategoria' => 'required',
                 'valor' => 'required|numeric|min:0',
                 'estatus' => 'required|in:pendiente,parcialmente_pagado,pagado',
+                'en_vanes' => 'nullable|boolean',
             ]);
 
             $pagosData = [];
@@ -63,7 +64,8 @@ class CostoController extends Controller
                 'subcategoria' => $validated['subcategoria'],
                 'valor' => $validated['valor'],
                 'estatus' => $validated['estatus'],
-                'pagos' => $pagosData
+                'pagos' => $pagosData,
+                'en_vanes' => $request->boolean('en_vanes')
             ]);
 
             if (!$costo->save()) {
@@ -72,7 +74,6 @@ class CostoController extends Controller
 
             return Redirect::route('costos.index')
                 ->with('success', 'Costo creado satisfactoriamente.');
-
         } catch (\Exception $e) {
             return back()
                 ->withInput()
@@ -85,7 +86,7 @@ class CostoController extends Controller
         $costo = Costo::with('empleado')->findOrFail($id);
         $metodos = TiposDePago::all()->pluck('name', 'id');
         $categorias = Categoria::all();
-        
+
         return view('costo.show', [
             'costo' => $costo,
             'metodos' => $metodos,
@@ -113,12 +114,13 @@ class CostoController extends Controller
                 'descripcion' => 'required|string|max:500',
                 'subcategoria' => 'required',
                 'valor' => 'required|numeric|min:0',
-                'pagos' => 'required|json'
+                'pagos' => 'required|json',
+                'en_vanes' => 'nullable|boolean'
             ]);
 
             $pagosJson = trim($validated['pagos'], '"\'');
             $pagos = json_decode($pagosJson, true);
-            
+
             if (json_last_error() !== JSON_ERROR_NONE || !is_array($pagos)) {
                 throw new \Exception("Formato de pagos inválido: " . json_last_error_msg());
             }
@@ -134,12 +136,12 @@ class CostoController extends Controller
                 'subcategoria' => $validated['subcategoria'],
                 'valor' => $validated['valor'],
                 'pagos' => $pagos,
-                'estatus' => $estatus
+                'estatus' => $estatus,
+                'en_vanes' => $request->boolean('en_vanes')
             ]);
 
             return Redirect::route('costos.index')
                 ->with('success', 'Costo actualizado satisfactoriamente.');
-
         } catch (\Exception $e) {
             return back()->withInput()->withErrors(['error' => $e->getMessage()]);
         }
@@ -154,7 +156,7 @@ class CostoController extends Controller
     private function determinarEstatus(float $valor, array $pagos): string
     {
         $totalPagado = $this->calcularTotalPagado($pagos);
-        
+
         if (abs($totalPagado - $valor) < 0.01) {
             return 'pagado';
         } elseif ($totalPagado > 0) {

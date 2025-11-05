@@ -40,6 +40,7 @@ class GastoController extends Controller
                 'subcategoria' => 'required',
                 'valor' => 'required|numeric|min:0',
                 'estatus' => 'required|in:pendiente,parcialmente_pagado,pagado',
+                'en_vanes' => 'nullable|boolean',
             ]);
 
             $pagosData = [];
@@ -59,7 +60,8 @@ class GastoController extends Controller
                 'subcategoria' => $validated['subcategoria'],
                 'valor' => $validated['valor'],
                 'estatus' => $validated['estatus'],
-                'pagos' => $pagosData
+                'pagos' => $pagosData,
+                'en_vanes' => $request->boolean('en_vanes')
             ]);
 
             if (!$gasto->save()) {
@@ -107,7 +109,8 @@ class GastoController extends Controller
                 'descripcion' => 'required|string|max:500',
                 'subcategoria' => 'required',
                 'valor' => 'required|numeric|min:0',
-                'pagos' => 'required|json'
+                'pagos' => 'required|json',
+                'en_vanes' => 'nullable|boolean'
             ]);
 
             $pagosJson = trim($validated['pagos'], '"\'');
@@ -128,7 +131,8 @@ class GastoController extends Controller
                 'subcategoria' => $validated['subcategoria'],
                 'valor' => $validated['valor'],
                 'pagos' => $pagos,
-                'estatus' => $estatus
+                'estatus' => $estatus,
+                'en_vanes' => $request->boolean('en_vanes')
             ]);
 
             return Redirect::route('gastos.index')

@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Costo extends Model
 {
-    
+
     protected $perPage = 20;
     protected $primaryKey = 'id_costos';
 
@@ -41,31 +41,33 @@ class Costo extends Model
         'estatus',
         'pagos',
         'metodo_pago',
-        'id_categoria'
+        'id_categoria',
+        'en_vanes'
     ];
-    
+
     protected $casts = [
         'pagos' => 'array',
         'fecha' => 'date',
-        'metodo_pago' => 'array'
+        'metodo_pago' => 'array',
+        'en_vanes' => 'boolean'
     ];
 
     public function empleado()
     {
         return $this->belongsTo(\App\Models\Empleado::class, 'id_tecnico', 'id_empleado');
     }
-    
+
 
     public function agregarPago($monto, $metodoPago, $fechaPago)
     {
         $pagos = $this->pagos ?? [];
-        
+
         $pagos[] = [
             'monto' => $monto,
             'metodo_pago' => $metodoPago,
             'fecha' => $fechaPago,
         ];
-        
+
         $this->pagos = $pagos;
 
         $totalPagado = collect($pagos)->sum('monto');
@@ -77,7 +79,7 @@ class Costo extends Model
         } else {
             $this->estatus = 'pendiente';
         }
-        
+
         $this->save();
     }
 
@@ -86,10 +88,10 @@ class Costo extends Model
         if (empty($this->pagos)) {
             return 0;
         }
-        
+
         return collect($this->pagos)->sum('monto');
     }
-    
+
     public function saldoPendiente()
     {
         return $this->valor - $this->totalPagado();
@@ -104,5 +106,4 @@ class Costo extends Model
     {
         return $this->belongsTo(Categoria::class, 'subcategoria', 'id_categoria');
     }
-
 }

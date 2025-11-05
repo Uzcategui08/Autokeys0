@@ -67,7 +67,7 @@
                             @enderror
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-3">
                         <div class="form-group mb-3">
                             <label for="estatus" class="form-label">{{ __('Estatus') }}</label>
                             <select name="estatus" id="estatus" class="form-control @error('estatus') is-invalid @enderror">
@@ -76,6 +76,16 @@
                                 <option value="pagado" {{ old('estatus', $gasto?->estatus) == 'pagado' ? 'selected' : '' }}>Pagado</option>
                             </select>
                             {!! $errors->first('estatus', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
+                        </div>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-center">
+                        <div class="form-group mb-3 w-100">
+                            <label class="form-label d-block">Mostrar en Vanes</label>
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input" id="en_vanes" name="en_vanes" value="1" 
+                                    {{ old('en_vanes', $gasto?->en_vanes ?? false) ? 'checked' : '' }}>
+                                <label class="custom-control-label" for="en_vanes">Activar</label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -380,6 +390,26 @@ $(document).ready(function() {
 </script>
 
 <style>
+    /* Toggle switch (AdminLTE custom-switch compatibility) */
+    .custom-control.custom-switch .custom-control-label::before {
+        left: -2.25rem;
+        width: 2rem;
+        pointer-events: all;
+        border-radius: .5rem;
+    }
+    .custom-control.custom-switch .custom-control-label::after {
+        top: .2rem;
+        left: calc(-2.25rem + 2px);
+        width: 1.25rem;
+        height: 1.25rem;
+        background-color: #adb5bd;
+        border-radius: 50%;
+        transition: transform .15s ease-in-out;
+    }
+    .custom-control-input:checked ~ .custom-control-label::after {
+        transform: translateX(.75rem);
+        background-color: #fff;
+    }
     .pago-item {
         transition: all 0.3s ease;
     }

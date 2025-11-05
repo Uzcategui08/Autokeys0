@@ -368,7 +368,7 @@ use Carbon\Carbon;
                 <div class="card-header">
                     <h3 class="card-title">Gastos por Van</h3>
                     <div class="card-tools">
-                        <span class="badge badge-danger">Total: ${{ number_format($totales['gastosGrande'] + $totales['gastosPequena'], 2) }}</span>
+                        <span class="badge badge-danger mr-2">Total: ${{ number_format($totales['gastosGrande'] + $totales['gastosPequena'] + ($gastosExtraVanes ?? collect())->sum('valor'), 2) }}</span>
                     </div>
                 </div>
                 <div class="card-body p-0">
@@ -381,6 +381,11 @@ use Carbon\Carbon;
                         <li class="nav-item">
                             <a class="nav-link" id="pequena-tab" data-toggle="tab" href="#pequena" role="tab">
                                 {{ $vanPequena }} (${{ number_format($totales['gastosPequena'], 2) }})
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="gastos-extra-tab" data-toggle="tab" href="#gastos-extra" role="tab">
+                                Adicionales ( ${{ number_format(($gastosExtraVanes ?? collect())->sum('valor'), 2) }} )
                             </a>
                         </li>
                     </ul>
@@ -449,6 +454,38 @@ use Carbon\Carbon;
                                 </table>
                             </div>
                         </div>
+                        <div class="tab-pane fade" id="gastos-extra" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Descripción</th>
+                                            <th>Valor</th>
+                                            <th>Estatus</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse(($gastosExtraVanes ?? collect()) as $g)
+                                        <tr>
+                                            <td>{{ Carbon::parse($g->f_gastos)->format('m/d/Y') }}</td>
+                                            <td>{{ $g->descripcion }}</td>
+                                            <td>${{ number_format($g->valor, 2) }}</td>
+                                            <td>
+                                                <span class="badge badge-{{ $g->estatus == 'pagado' ? 'success' : ($g->estatus == 'parcialmente_pagado' ? 'warning' : 'danger') }}">
+                                                    {{ ucfirst($g->estatus) }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        @empty
+                                        <tr>
+                                            <td colspan="4" class="text-center">Sin gastos adicionales marcados</td>
+                                        </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -459,7 +496,7 @@ use Carbon\Carbon;
                 <div class="card-header">
                     <h3 class="card-title">Costos por Van</h3>
                     <div class="card-tools">
-                        <span class="badge badge-info">Total: ${{ number_format($totales['costosGrande'] + $totales['costosPequena'], 2) }}</span>
+                        <span class="badge badge-info mr-2">Total: ${{ number_format($totales['costosGrande'] + $totales['costosPequena']+ ($costosExtraVanes ?? collect())->sum('valor'), 2) }}</span>
                     </div>
                 </div>
                 <div class="card-body p-0">
@@ -472,6 +509,11 @@ use Carbon\Carbon;
                         <li class="nav-item">
                             <a class="nav-link" id="costos-pequena-tab" data-toggle="tab" href="#costos-pequena" role="tab">
                                 {{ $vanPequena }} (${{ number_format($totales['costosPequena'], 2) }})
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="costos-extra-tab" data-toggle="tab" href="#costos-extra" role="tab">
+                                Adicionales ( ${{ number_format(($costosExtraVanes ?? collect())->sum('valor'), 2) }} )
                             </a>
                         </li>
                     </ul>
@@ -528,12 +570,39 @@ use Carbon\Carbon;
                                 </table>
                             </div>
                         </div>
+                        <div class="tab-pane fade" id="costos-extra" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Descripción</th>
+                                            <th>Valor</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse(($costosExtraVanes ?? collect()) as $c)
+                                        <tr>
+                                            <td>{{ Carbon::parse($c->f_costos)->format('m/d/Y') }}</td>
+                                            <td>{{ $c->descripcion }}</td>
+                                            <td>${{ number_format($c->valor, 2) }}</td>
+                                        </tr>
+                                        @empty
+                                        <tr>
+                                            <td colspan="3" class="text-center">Sin costos adicionales marcados</td>
+                                        </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                     
                 </div>
             </div>
         </div>
     </div>
+    
 @stop
 
 @section('css')
