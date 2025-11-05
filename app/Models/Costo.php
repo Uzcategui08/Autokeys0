@@ -43,7 +43,8 @@ class Costo extends Model
         'pagos',
         'metodo_pago',
         'id_categoria',
-        'en_vanes'
+        'en_vanes',
+        'van'
     ];
 
     protected $casts = [

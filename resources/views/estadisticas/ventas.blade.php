@@ -193,8 +193,8 @@
                 <tbody>
                     <tr>
                         <td><strong>Costo de Venta</strong></td>
-                        <td>${{ number_format($stats['costos']['total_costos_mes'], 2) }}</td>
-                        <td>{{ number_format($stats['costos']['porcentaje_total_costos'], 2) }}%</td>
+                        <td>${{ number_format($stats['costos']['total_costos_mes']-, 2) }}</td>
+                        <td>{{ number_format($stats['costos']['porcentaje_total_costos'] - ($gastosExtraVanes ?? collect())->sum('valor'), 2) }}%</td>
                     </tr>
                     <tr>
                         <td><strong>Utilidad Bruta</strong></td>

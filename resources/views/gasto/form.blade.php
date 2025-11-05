@@ -88,6 +88,19 @@
                             </div>
                         </div>
                     </div>
+                    <div class="col-md-3" id="van-container" style="display: none;">
+                        <div class="form-group mb-3">
+                            <label for="van" class="form-label">Van</label>
+                            <select name="van" id="van" class="form-control @error('van') is-invalid @enderror">
+                                <option value="">Seleccione una van</option>
+                                <option value="Van Grande-Pulga" {{ old('van', $gasto?->van ?? '') == 'Van Grande-Pulga' ? 'selected' : '' }}>Van Grande-Pulga</option>
+                                <option value="Van Pequeña-Pulga" {{ old('van', $gasto?->van ?? '') == 'Van Pequeña-Pulga' ? 'selected' : '' }}>Van Pequeña-Pulga</option>
+                            </select>
+                            @error('van')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -195,6 +208,17 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 $(document).ready(function() {
+    // Mostrar/ocultar selector de van según el switch
+    function toggleVanSelect() {
+        const show = $('#en_vanes').is(':checked');
+        $('#van-container').toggle(show);
+        if (!show) {
+            $('#van').val('');
+        }
+    }
+    toggleVanSelect();
+    $('#en_vanes').on('change', toggleVanSelect);
+
     const metodosPago = @json($metodos ?? []);
 
     let valorTotal = parseFloat($('#valor').val()) || 0;

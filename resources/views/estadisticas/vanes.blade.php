@@ -34,28 +34,43 @@ use Carbon\Carbon;
                 <div class="card-header bg-info">
                     <h3 class="card-title">Resumen General</h3>
                     <div class="card-tools">
+                        @php
+                            $totalGastosExtra = ($gastosExtraVanes ?? collect())->sum('valor');
+                            $totalCostosExtra = ($costosExtraVanes ?? collect())->sum('valor');
+
+                            // Usar solo la asignación por van si existe un campo 'van'; sin reparto 50/50
+                            $gastosExtraGrande = isset($gastosExtraVanes) ? $gastosExtraVanes->where('van', $vanGrande)->sum('valor') : 0;
+                            $gastosExtraPequena = isset($gastosExtraVanes) ? $gastosExtraVanes->where('van', $vanPequena)->sum('valor') : 0;
+                            
+                            $costosExtraGrande = isset($costosExtraVanes) ? $costosExtraVanes->where('van', $vanGrande)->sum('valor') : 0;
+                            $costosExtraPequena = isset($costosExtraVanes) ? $costosExtraVanes->where('van', $vanPequena)->sum('valor') : 0;
+                            
+
+                            $utilidadGrandeAjustada = ($totales['utilidadGrande'] ?? 0) - $gastosExtraGrande - $costosExtraGrande;
+                            $utilidadPequenaAjustada = ($totales['utilidadPequena'] ?? 0) - $gastosExtraPequena - $costosExtraPequena;
+                        @endphp
                         <span class="badge badge-light mr-2" 
                               data-toggle="tooltip" 
                               title="Utilidad {{ $vanGrande }}">
                             {{ $vanGrande }}: 
-                            <span class="text-{{ $totales['utilidadGrande'] >= 0 ? 'success' : 'danger' }}">
-                                ${{ number_format($totales['utilidadGrande'], 2) }}
+                            <span class="text-{{ $utilidadGrandeAjustada >= 0 ? 'success' : 'danger' }}">
+                                ${{ number_format($utilidadGrandeAjustada, 2) }}
                             </span>
                         </span>
                         <span class="badge badge-light mr-2" 
                               data-toggle="tooltip" 
                               title="Utilidad {{ $vanPequena }}">
                             {{ $vanPequena }}: 
-                            <span class="text-{{ $totales['utilidadPequena'] >= 0 ? 'success' : 'danger' }}">
-                                ${{ number_format($totales['utilidadPequena'], 2) }}
+                            <span class="text-{{ $utilidadPequenaAjustada >= 0 ? 'success' : 'danger' }}">
+                                ${{ number_format($utilidadPequenaAjustada, 2) }}
                             </span>
                         </span>
                         <span class="badge badge-light mr-2" 
                               data-toggle="tooltip" 
                               title="Suma de utilidades">
                             Total: 
-                            <span class="text-{{ ($totales['utilidadGrande'] + $totales['utilidadPequena']) >= 0 ? 'success' : 'danger' }}">
-                                ${{ number_format($totales['utilidadGrande'] + $totales['utilidadPequena'], 2) }}
+                            <span class="text-{{ ($utilidadGrandeAjustada + $utilidadPequenaAjustada) >= 0 ? 'success' : 'danger' }}">
+                                ${{ number_format($utilidadGrandeAjustada + $utilidadPequenaAjustada, 2) }}
                             </span>
                         </span>
                     </div>
@@ -469,7 +484,11 @@ use Carbon\Carbon;
                                         @forelse(($gastosExtraVanes ?? collect()) as $g)
                                         <tr>
                                             <td>{{ Carbon::parse($g->f_gastos)->format('m/d/Y') }}</td>
-                                            <td>{{ $g->descripcion }}</td>
+                                            <td>{{ $g->descripcion }}
+                                                @if(!empty($g->van))
+                                                    <span class="badge badge-secondary ml-2">{{ $g->van }}</span>
+                                                @endif
+                                            </td>
                                             <td>${{ number_format($g->valor, 2) }}</td>
                                             <td>
                                                 <span class="badge badge-{{ $g->estatus == 'pagado' ? 'success' : ($g->estatus == 'parcialmente_pagado' ? 'warning' : 'danger') }}">
@@ -584,7 +603,11 @@ use Carbon\Carbon;
                                         @forelse(($costosExtraVanes ?? collect()) as $c)
                                         <tr>
                                             <td>{{ Carbon::parse($c->f_costos)->format('m/d/Y') }}</td>
-                                            <td>{{ $c->descripcion }}</td>
+                                            <td>{{ $c->descripcion }}
+                                                @if(!empty($c->van))
+                                                    <span class="badge badge-secondary ml-2">{{ $c->van }}</span>
+                                                @endif
+                                            </td>
                                             <td>${{ number_format($c->valor, 2) }}</td>
                                         </tr>
                                         @empty
