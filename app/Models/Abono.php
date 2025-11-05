@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Abono extends Model
 {
-    
+
     protected $perPage = 20;
     protected $primaryKey = 'id_abonos';
 
@@ -30,7 +30,7 @@ class Abono extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['id_abonos', 'id_empleado', 'concepto', 'valor', 'a_fecha', 'fecha_pago', 'status'];
+    protected $fillable = ['id_abonos', 'id_empleado', 'concepto', 'valor', 'a_fecha', 'fecha_pago', 'status', 'registro_v_id'];
 
 
     /**
@@ -43,7 +43,12 @@ class Abono extends Model
 
     public function registroV()
     {
+        // Legacy incorrect relation kept for BC (not used)
         return $this->hasMany(RegistroV::class);
     }
-    
+
+    public function venta()
+    {
+        return $this->belongsTo(\App\Models\RegistroV::class, 'registro_v_id', 'id');
+    }
 }

@@ -131,7 +131,10 @@
                         $totalContado = 0;
                         $totalCredito = 0;
                         $totalRecibidos = 0;
+                        $totalRecibidosParciales = 0;
+                        $totalRecibidosHistoricos = 0;
                         $totalGeneral = 0;
+                        $ingresosRecibidosCollection = collect($ingresosRecibidos);
 
                         $tecnicosMap = [];
                         foreach($reporteVentas as $item) {
@@ -155,8 +158,10 @@
                     
                     @foreach($tecnicosMap as $tecnicoNombre => $datosVentas)
                     @php
-                        $ingreso = collect($ingresosRecibidos)->firstWhere('tecnico', $tecnicoNombre);
+                        $ingreso = $ingresosRecibidosCollection->firstWhere('tecnico', $tecnicoNombre);
                         $ingresoTotal = $ingreso['total'] ?? 0;
+                        $ingresoParcial = $ingreso['total_parciales'] ?? 0;
+                        $ingresoHistorico = $ingreso['total_ingresos'] ?? ($ingresoTotal - $ingresoParcial);
 
                         $ventasContado = $datosVentas['ventas_contado'] instanceof \Illuminate\Support\Collection
                             ? $datosVentas['ventas_contado']->sum()
@@ -174,13 +179,27 @@
                         <td class="font-weight-bold">{{ $tecnicoNombre }}</td>
                         <td class="text-right bg-ventas">${{ number_format($ventasContado, 2) }}</td>
                         <td class="text-right bg-ventas">${{ number_format($ventasCredito, 2) }}</td>
-                        <td class="text-right bg-ventas">${{ number_format($ingresoTotal, 2) }}</td>
+                        <td class="text-right bg-ventas">
+                            ${{ number_format($ingresoTotal, 2) }}
+                            @if(($ingresoHistorico ?? 0) > 0 || ($ingresoParcial ?? 0) > 0)
+                                <div class="text-muted small mt-1">
+                                    @if(($ingresoHistorico ?? 0) > 0)
+                                        <div>Créditos: ${{ number_format($ingresoHistorico, 2) }}</div>
+                                    @endif
+                                    @if(($ingresoParcial ?? 0) > 0)
+                                        <div>Parciales: ${{ number_format($ingresoParcial, 2) }}</div>
+                                    @endif
+                                </div>
+                            @endif
+                        </td>
                         <td class="text-right font-weight-bold bg-gray-100">${{ number_format($ventasTotales + $ingresoTotal, 2) }}</td>
                         
                         @php
                             $totalContado += $ventasContado;
                             $totalCredito += $ventasCredito;
                             $totalRecibidos += $ingresoTotal;
+                            $totalRecibidosParciales += $ingresoParcial;
+                            $totalRecibidosHistoricos += $ingresoHistorico;
                             $totalGeneral += $ventasTotales + $ingresoTotal;
                         @endphp
                     </tr>
@@ -190,7 +209,19 @@
                         <td>TOTAL</td>
                         <td class="text-right bg-ventas">${{ number_format($totalContado, 2) }}</td>
                         <td class="text-right bg-ventas">${{ number_format($totalCredito, 2) }}</td>
-                        <td class="text-right bg-ventas">${{ number_format($totalRecibidos, 2) }}</td>
+                        <td class="text-right bg-ventas">
+                            ${{ number_format($totalRecibidos, 2) }}
+                            @if($totalRecibidosHistoricos > 0 || $totalRecibidosParciales > 0)
+                                <div class="text-muted small mt-1">
+                                    @if($totalRecibidosHistoricos > 0)
+                                        <div>Créditos: ${{ number_format($totalRecibidosHistoricos, 2) }}</div>
+                                    @endif
+                                    @if($totalRecibidosParciales > 0)
+                                        <div>Parciales: ${{ number_format($totalRecibidosParciales, 2) }}</div>
+                                    @endif
+                                </div>
+                            @endif
+                        </td>
                         <td class="text-right bg-gray-200">${{ number_format($totalGeneral, 2) }}</td>
                     </tr>
                 </tbody>

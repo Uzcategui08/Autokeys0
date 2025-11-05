@@ -455,6 +455,9 @@ class RegistroVController extends Controller
 
             $registroV->id_abono = $abono->id_abonos;
             $registroV->save();
+            // vincular abono con la venta para FK y cascade
+            $abono->registro_v_id = $registroV->id;
+            $abono->save();
             Log::debug('Abono creado y asociado', ['abono_id' => $abono->id_abonos]);
 
             DB::commit();
@@ -1294,7 +1297,8 @@ class RegistroVController extends Controller
                     'id_empleado' => $request->input('id_empleado'),
                     'valor' => $registroV->porcentaje_c,
                     'concepto' => 'Abono por venta #' . $registroV->id,
-                    'a_fecha' => $registroV->fecha_h
+                    'a_fecha' => $registroV->fecha_h,
+                    'registro_v_id' => $registroV->id
                 ]);
                 Log::info('Abono actualizado', ['id_abono' => $registroV->id_abono]);
             } else {
@@ -1303,7 +1307,8 @@ class RegistroVController extends Controller
                     'id_empleado' => $request->input('id_empleado'),
                     'valor' => $registroV->porcentaje_c,
                     'concepto' => 'Abono por venta #' . $registroV->id,
-                    'a_fecha' => $registroV->fecha_h
+                    'a_fecha' => $registroV->fecha_h,
+                    'registro_v_id' => $registroV->id
                 ]);
                 $registroV->update(['id_abono' => $abono->id_abonos]);
                 Log::info('Nuevo abono creado', ['id_abono' => $abono->id_abonos]);
@@ -1346,9 +1351,8 @@ class RegistroVController extends Controller
             $costosIds = is_string($registroV->costos) ? json_decode($registroV->costos, true) ?? [] : ($registroV->costos ?: []);
             $gastosIds = is_string($registroV->gastos) ? json_decode($registroV->gastos, true) ?? [] : ($registroV->gastos ?: []);
 
-            if ($registroV->id_abono) {
-                Abono::where('id_abonos', $registroV->id_abono)->delete();
-            }
+            // Abonos: ahora se eliminan automáticamente por FK (cascade) en abonos.registro_v_id
+            // No es necesario eliminarlos manualmente
 
             if (is_array($costosIds) && count($costosIds) > 0) {
                 Costo::whereIn('id_costos', $costosIds)->delete();

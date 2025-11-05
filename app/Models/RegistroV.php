@@ -91,6 +91,11 @@ class RegistroV extends Model
         return $this->hasMany(Abono::class);
     }
 
+    public function abonos()
+    {
+        return $this->hasMany(Abono::class, 'registro_v_id', 'id');
+    }
+
     public function costosRelacionados()
     {
         return $this->hasMany(Costo::class, 'id_costos');

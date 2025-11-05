@@ -725,18 +725,45 @@ $(document).ready(function() {
 
             if (response.abonos?.length > 0) {
                 response.abonos.forEach(abono => {
+                    const detalleRowId = `dv-${abono.id_abonos}`;
+                    const tieneVenta = !!abono.venta_id;
+                    const detalleBtn = tieneVenta ? `
+                        <button type="button" class="btn btn-xs btn-link toggle-detalle-venta" data-target="${detalleRowId}">
+                            <i class="fas fa-chevron-down"></i> Detalles
+                        </button>
+                    ` : '';
+
                     html += `
                     <tr>
                         <td class="text-center">
                             <input type="checkbox" class="check-abono" data-id="${abono.id_abonos}" data-monto="${abono.valor}" checked>
                         </td>
                         <td><span class="badge badge-abono">Abono</span></td>
-                        <td>${abono.concepto || 'Sin concepto'}</td>
+                        <td>${abono.concepto || 'Sin concepto'} ${detalleBtn}</td>
                         <td class="text-right text-success font-weight-bold">
                             $${formatCurrency(abono.valor)}
                         </td>
                         <td>${abono.a_fecha || 'N/A'}</td>
                     </tr>`;
+
+                    if (tieneVenta) {
+                        const vehiculo = [abono.venta_marca, abono.venta_modelo].filter(Boolean).join(' ') || 'N/A';
+                        const trabajos = abono.venta_trabajos ? abono.venta_trabajos : '';
+                        html += `
+                        <tr id="${detalleRowId}" class="detalle-venta" style="display:none;background:#fafafa;">
+                            <td></td>
+                            <td colspan="4">
+                                <div class="row">
+                                    <div class="col-md-3"><strong>Venta #:</strong> ${abono.venta_id}</div>
+                                    <div class="col-md-3"><strong>Cliente:</strong> ${abono.venta_cliente || 'N/A'}</div>
+                                    <div class="col-md-3"><strong>Vehículo:</strong> ${vehiculo}</div>
+                                    <div class="col-md-3"><strong>Total:</strong> $${formatCurrency(abono.venta_valor || 0)}</div>
+                                </div>
+                                ${trabajos ? `<div class="mt-2"><strong>Trabajos:</strong> ${trabajos}</div>` : ''}
+                            </td>
+                        </tr>`;
+                    }
+
                     totalAbonos += parseFloat(abono.valor) || 0;
                 });
             }
@@ -891,6 +918,19 @@ $(document).ready(function() {
         metodosPagoSeleccionados.splice($(this).data('index'), 1);
         renderizarMetodosPago();
         calcularRestante(); 
+    });
+
+    // Toggle detalles de venta en abonos
+    $(document).on('click', '.toggle-detalle-venta', function() {
+        const target = $(this).data('target');
+        const $row = $('#' + target);
+        $row.toggle();
+        const $icon = $(this).find('i.fas');
+        if ($row.is(':visible')) {
+            $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+        } else {
+            $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+        }
     });
 
     init();

@@ -52,7 +52,7 @@ class NempleadoController extends Controller
                 'nombre' => $empleado->nombre,
                 'tipo_pago' => $empleado->tipo_pago
             ]);
-            
+
             if (!$empleado) {
                 Log::error('Empleado no encontrado con ID: ' . $request->id_empleado);
                 throw new \Exception("Empleado no encontrado");
@@ -177,7 +177,7 @@ class NempleadoController extends Controller
                 'trace' => $e->getTraceAsString(),
                 'request' => $request->all()
             ]);
-            
+
             return back()->withInput()
                 ->with('error', 'Error al guardar: ' . $e->getMessage());
         }
@@ -340,7 +340,7 @@ class NempleadoController extends Controller
         try {
             $nominaEmpleado = Nempleado::with(['empleado'])
                 ->findOrFail($idNempleado);
-            
+
             $abonos = $this->procesarRelacion($nominaEmpleado->id_abonos, Abono::class, 'id_abonos', 'a_fecha');
             $descuentos = $this->procesarRelacion($nominaEmpleado->id_descuentos, Descuento::class, 'id_descuentos', 'd_fecha');
             $metodosPago = $this->procesarMetodosPago($nominaEmpleado->metodo_pago);
@@ -622,6 +622,89 @@ class NempleadoController extends Controller
             ->where('status', 0)
             ->whereBetween('a_fecha', [$request->fecha_desde, $request->fecha_hasta])
             ->get();
+
+        // Evitar mostrar abonos derivados de ventas que ya fueron eliminadas
+        // Detectamos el patrón "Abono por venta #<id>" y verificamos que la venta exista
+        if ($abonos->isNotEmpty()) {
+            $abonos = $abonos->filter(function ($abono) {
+                // Si no sigue el patrón, lo dejamos pasar
+                if (!is_string($abono->concepto)) return true;
+
+                // Preferir FK si existe
+                if (!empty($abono->registro_v_id)) {
+                    return \App\Models\RegistroV::where('id', $abono->registro_v_id)->exists();
+                }
+
+                $matches = [];
+                if (preg_match('/^Abono por venta #(\d+)$/', trim($abono->concepto), $matches)) {
+                    $ventaId = (int)($matches[1] ?? 0);
+                    if ($ventaId > 0) {
+                        return \App\Models\RegistroV::where('id', $ventaId)->exists();
+                    }
+                }
+                return true;
+            })->values();
+
+            // Enriquecer abonos con detalles de la venta para mostrarlos en UI
+            $abonos = $abonos->map(function ($abono) {
+                $venta = null;
+                // 1) Buscar por relación directa (registroV.id_abono)
+                if (!empty($abono->registro_v_id)) {
+                    $venta = \App\Models\RegistroV::find($abono->registro_v_id);
+                }
+                if (!$venta) {
+                    $venta = \App\Models\RegistroV::where('id_abono', $abono->id_abonos)->first();
+                }
+                // 2) Fallback: parsear el ID de la venta desde el concepto
+                if (!$venta && is_string($abono->concepto)) {
+                    if (preg_match('/^Abono por venta #(\d+)$/', trim($abono->concepto), $m)) {
+                        $venta = \App\Models\RegistroV::find((int)($m[1] ?? 0));
+                    }
+                }
+
+                $ventaId = $venta?->id;
+                $clienteNombre = null;
+                if ($venta) {
+                    // Preferir nombre por relación Cliente si existe, de lo contrario el campo plano 'cliente'
+                    if (!empty($venta->id_cliente)) {
+                        $cliente = \App\Models\Cliente::find($venta->id_cliente);
+                        $clienteNombre = $cliente?->nombre ?? $venta->cliente;
+                    } else {
+                        $clienteNombre = $venta->cliente;
+                    }
+
+                    // Construir listado de trabajos
+                    $trabajos = [];
+                    $items = is_string($venta->items) ? json_decode($venta->items, true) : ($venta->items ?? []);
+                    if (is_array($items)) {
+                        foreach ($items as $it) {
+                            $trabajos[] = $it['trabajo_nombre'] ?? $it['trabajo'] ?? null;
+                        }
+                    }
+
+                    $abonoExtra = [
+                        'venta_id' => $ventaId,
+                        'venta_cliente' => $clienteNombre,
+                        'venta_marca' => $venta->marca ?? null,
+                        'venta_modelo' => $venta->modelo ?? null,
+                        'venta_valor' => (float)($venta->valor_v ?? 0),
+                        'venta_trabajos' => collect($trabajos)->filter()->implode(' | '),
+                    ];
+                } else {
+                    $abonoExtra = [
+                        'venta_id' => null,
+                        'venta_cliente' => null,
+                        'venta_marca' => null,
+                        'venta_modelo' => null,
+                        'venta_valor' => null,
+                        'venta_trabajos' => null,
+                    ];
+                }
+
+                // Devolver como array manteniendo campos existentes
+                return array_merge($abono->toArray(), $abonoExtra);
+            })->values();
+        }
 
         $descuentos = Descuento::where('id_empleado', $request->id_empleado)
             ->where('status', 0)
