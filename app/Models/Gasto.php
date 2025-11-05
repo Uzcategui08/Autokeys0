@@ -35,6 +35,7 @@ class Gasto extends Model
     protected $fillable = [
         'f_gastos',
         'id_tecnico',
+        'registro_v_id',
         'descripcion',
         'subcategoria',
         'valor',
@@ -107,5 +108,10 @@ class Gasto extends Model
     public function categoria()
     {
         return $this->belongsTo(Categoria::class, 'subcategoria', 'id_categoria');
+    }
+
+    public function venta()
+    {
+        return $this->belongsTo(\App\Models\RegistroV::class, 'registro_v_id', 'id');
     }
 }

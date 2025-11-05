@@ -342,6 +342,7 @@ class RegistroVController extends Controller
                         $costo = Costo::create([
                             'f_costos' => $costoData['f_costos'] ?? $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
                             'id_tecnico' => $request->input('id_empleado'),
+                            'registro_v_id' => null, // se setea tras crear la venta
                             'descripcion' => $costoData['descripcion'],
                             'subcategoria' => $costoData['subcategoria'],
                             'valor' => $monto,
@@ -375,6 +376,7 @@ class RegistroVController extends Controller
                         $gasto = Gasto::create([
                             'f_gastos' => $gastoData['f_gastos'] ?? $validatedData['fecha_h'] ?? now()->format('Y-m-d'),
                             'id_tecnico' => $request->input('id_empleado'),
+                            'registro_v_id' => null, // se setea tras crear la venta
                             'descripcion' => $gastoData['descripcion'],
                             'subcategoria' => $gastoData['subcategoria'],
                             'valor' => $monto,
@@ -459,6 +461,14 @@ class RegistroVController extends Controller
             $abono->registro_v_id = $registroV->id;
             $abono->save();
             Log::debug('Abono creado y asociado', ['abono_id' => $abono->id_abonos]);
+
+            // asociar costos y gastos creados antes de tener el id de venta
+            if (!empty($costosIds)) {
+                Costo::whereIn('id_costos', $costosIds)->update(['registro_v_id' => $registroV->id]);
+            }
+            if (!empty($gastosIds)) {
+                Gasto::whereIn('id_gastos', $gastosIds)->update(['registro_v_id' => $registroV->id]);
+            }
 
             DB::commit();
             Log::info('Transacción completada exitosamente');
@@ -1123,7 +1133,8 @@ class RegistroVController extends Controller
                                         'subcategoria' => $costoData['subcategoria'],
                                         'estatus' => 'pagado',
                                         'pagos' => $pagoCosto,
-                                        'id_tecnico' => $request->input('id_empleado')
+                                        'id_tecnico' => $request->input('id_empleado'),
+                                        'registro_v_id' => $registroV->id
                                     ]);
                                     $costosIds[] = $costo->id_costos;
                                     Log::debug("Costo actualizado", [
@@ -1143,7 +1154,7 @@ class RegistroVController extends Controller
                                 'valor' => (float)($costoData['monto'] ?? 0),
                                 'estatus' => 'pagado',
                                 'pagos' => $pagoCosto,
-                                'id_registro_v' => $registroV->id
+                                'registro_v_id' => $registroV->id
                             ]);
                             $costosIds[] = $nuevoCosto->id_costos;
                             Log::debug("Nuevo costo creado", ['id_costo' => $nuevoCosto->id_costos]);
@@ -1194,7 +1205,7 @@ class RegistroVController extends Controller
                                         'subcategoria' => $gastoData['subcategoria'],
                                         'pagos' => $pagoGasto,
                                         'id_empleado' => $request->input('id_empleado'),
-                                        'id_registro_v' => $registroV->id
+                                        'registro_v_id' => $registroV->id
                                     ]);
                                     $gastosIds[] = $gasto->id_gastos;
                                     Log::debug("Gasto actualizado", [
@@ -1214,7 +1225,7 @@ class RegistroVController extends Controller
                                 'valor' => (float)($gastoData['monto'] ?? 0),
                                 'estatus' => 'pagado',
                                 'pagos' => $pagoGasto,
-                                'id_registro_v' => $registroV->id
+                                'registro_v_id' => $registroV->id
                             ]);
                             $gastosIds[] = $nuevoGasto->id_gastos;
                             Log::debug("Nuevo gasto creado", ['id_gasto' => $nuevoGasto->id_gastos]);
@@ -1354,13 +1365,9 @@ class RegistroVController extends Controller
             // Abonos: ahora se eliminan automáticamente por FK (cascade) en abonos.registro_v_id
             // No es necesario eliminarlos manualmente
 
-            if (is_array($costosIds) && count($costosIds) > 0) {
-                Costo::whereIn('id_costos', $costosIds)->delete();
-            }
-
-            if (is_array($gastosIds) && count($gastosIds) > 0) {
-                Gasto::whereIn('id_gastos', $gastosIds)->delete();
-            }
+            // Costos y Gastos: ahora se pueden eliminar automáticamente por FK (cascade)
+            // Si aún existían registros sueltos sin FK, se podrían eliminar manualmente;
+            // preferimos confiar en la FK después del backfill.
 
             $registroV->delete();
 

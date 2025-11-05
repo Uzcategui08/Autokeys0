@@ -98,6 +98,7 @@ class RegistroV extends Model
 
     public function costosRelacionados()
     {
+        // Legacy method, incorrect FK retained for BC
         return $this->hasMany(Costo::class, 'id_costos');
     }
 
@@ -108,11 +109,23 @@ class RegistroV extends Model
 
     public function costosAsociados()
     {
+        // Legacy method, incorrect FK retained for BC
         return $this->hasMany(Costo::class, 'id_costos');
     }
 
     public function gastosAsociados()
     {
+        // Legacy method, incorrect FK retained for BC
         return $this->hasMany(Gasto::class, 'id_gastos');
+    }
+
+    public function costosVinculados()
+    {
+        return $this->hasMany(\App\Models\Costo::class, 'registro_v_id', 'id');
+    }
+
+    public function gastosVinculados()
+    {
+        return $this->hasMany(\App\Models\Gasto::class, 'registro_v_id', 'id');
     }
 }

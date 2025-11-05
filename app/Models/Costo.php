@@ -35,6 +35,7 @@ class Costo extends Model
     protected $fillable = [
         'f_costos',
         'id_tecnico',
+        'registro_v_id',
         'descripcion',
         'subcategoria',
         'valor',
@@ -105,5 +106,10 @@ class Costo extends Model
     public function categoria()
     {
         return $this->belongsTo(Categoria::class, 'subcategoria', 'id_categoria');
+    }
+
+    public function venta()
+    {
+        return $this->belongsTo(\App\Models\RegistroV::class, 'registro_v_id', 'id');
     }
 }
