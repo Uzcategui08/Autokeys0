@@ -131,6 +131,7 @@
                         $totalContado = 0;
                         $totalCredito = 0;
                         $totalRecibidos = 0;
+                        // Solo mostrar ingresos por créditos históricos (no parciales)
                         $totalRecibidosParciales = 0;
                         $totalRecibidosHistoricos = 0;
                         $totalGeneral = 0;
@@ -160,8 +161,9 @@
                     @php
                         $ingreso = $ingresosRecibidosCollection->firstWhere('tecnico', $tecnicoNombre);
                         $ingresoTotal = $ingreso['total'] ?? 0;
-                        $ingresoParcial = $ingreso['total_parciales'] ?? 0;
-                        $ingresoHistorico = $ingreso['total_ingresos'] ?? ($ingresoTotal - $ingresoParcial);
+                        // Ya no mostramos desglose de parciales; todo ingreso es histórico de créditos
+                        $ingresoParcial = 0;
+                        $ingresoHistorico = $ingresoTotal;
 
                         $ventasContado = $datosVentas['ventas_contado'] instanceof \Illuminate\Support\Collection
                             ? $datosVentas['ventas_contado']->sum()
@@ -175,21 +177,14 @@
                             ? $datosVentas['total_ventas']->sum()
                             : ($datosVentas['total_ventas'] ?? ($ventasContado + $ventasCredito));
                     @endphp
-                    <tr>
+                    <tr data-toggle="collapse" data-target="#ingresos-tecnico-{{ $loop->index }}" class="clickable-row">
                         <td class="font-weight-bold">{{ $tecnicoNombre }}</td>
                         <td class="text-right bg-ventas">${{ number_format($ventasContado, 2) }}</td>
                         <td class="text-right bg-ventas">${{ number_format($ventasCredito, 2) }}</td>
                         <td class="text-right bg-ventas">
                             ${{ number_format($ingresoTotal, 2) }}
-                            @if(($ingresoHistorico ?? 0) > 0 || ($ingresoParcial ?? 0) > 0)
-                                <div class="text-muted small mt-1">
-                                    @if(($ingresoHistorico ?? 0) > 0)
-                                        <div>Créditos: ${{ number_format($ingresoHistorico, 2) }}</div>
-                                    @endif
-                                    @if(($ingresoParcial ?? 0) > 0)
-                                        <div>Parciales: ${{ number_format($ingresoParcial, 2) }}</div>
-                                    @endif
-                                </div>
+                            @if(($ingreso['pagos'] ?? collect())->count() > 0)
+                                <span class="badge badge-secondary ml-2">ver pagos</span>
                             @endif
                         </td>
                         <td class="text-right font-weight-bold bg-gray-100">${{ number_format($ventasTotales + $ingresoTotal, 2) }}</td>
@@ -203,25 +198,43 @@
                             $totalGeneral += $ventasTotales + $ingresoTotal;
                         @endphp
                     </tr>
+                    @if(($ingreso['pagos'] ?? collect())->count() > 0)
+                    <tr id="ingresos-tecnico-{{ $loop->index }}" class="collapse">
+                        <td colspan="5" class="p-0">
+                            <div class="p-2">
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead class="bg-gray-100">
+                                            <tr>
+                                                <th>Venta</th>
+                                                <th>Fecha pago</th>
+                                                <th>Método</th>
+                                                <th class="text-right">Monto</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($ingreso['pagos'] as $p)
+                                            <tr>
+                                                <td>#{{ $p['venta_id'] ?? 'N/A' }}</td>
+                                                <td>{{ \Carbon\Carbon::parse($p['fecha_pago'] ?? now())->format('d/m/Y') }}</td>
+                                                <td>{{ $p['metodo_pago'] ?? 'Desconocido' }}</td>
+                                                <td class="text-right">${{ number_format($p['monto'] ?? 0, 2) }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    @endif
                     @endforeach
 
                     <tr class="font-weight-bold bg-gray-100">
                         <td>TOTAL</td>
                         <td class="text-right bg-ventas">${{ number_format($totalContado, 2) }}</td>
                         <td class="text-right bg-ventas">${{ number_format($totalCredito, 2) }}</td>
-                        <td class="text-right bg-ventas">
-                            ${{ number_format($totalRecibidos, 2) }}
-                            @if($totalRecibidosHistoricos > 0 || $totalRecibidosParciales > 0)
-                                <div class="text-muted small mt-1">
-                                    @if($totalRecibidosHistoricos > 0)
-                                        <div>Créditos: ${{ number_format($totalRecibidosHistoricos, 2) }}</div>
-                                    @endif
-                                    @if($totalRecibidosParciales > 0)
-                                        <div>Parciales: ${{ number_format($totalRecibidosParciales, 2) }}</div>
-                                    @endif
-                                </div>
-                            @endif
-                        </td>
+                        <td class="text-right bg-ventas">${{ number_format($totalRecibidos, 2) }}</td>
                         <td class="text-right bg-gray-200">${{ number_format($totalGeneral, 2) }}</td>
                     </tr>
                 </tbody>

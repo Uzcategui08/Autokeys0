@@ -20,7 +20,8 @@ class VanesExport implements FromView
 
   public function view(): View
   {
-    return view('estadisticas.vanes_export', [
+    // Use a simplified, Excel-friendly view to avoid DOM parsing issues
+    return view('estadisticas.vanes_export_excel', [
       'vanGrande' => $this->data['vanGrande'],
       'vanPequena' => $this->data['vanPequena'],
       'ventasVanGrande' => $this->data['ventasVanGrande'],
@@ -35,6 +36,8 @@ class VanesExport implements FromView
       'totales' => $this->data['totales'],
       'startDate' => $this->startDate,
       'endDate' => $this->endDate,
+      'gastosExtraVanes' => $this->data['gastosExtraVanes'] ?? collect(),
+      'costosExtraVanes' => $this->data['costosExtraVanes'] ?? collect(),
     ]);
   }
 }

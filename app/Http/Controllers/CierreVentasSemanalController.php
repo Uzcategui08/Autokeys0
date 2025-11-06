@@ -20,6 +20,7 @@ use App\Exports\CierreSemanalExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Nempleado;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use App\Models\Trabajo as TrabajoModel;
 
 class CierreVentasSemanalController extends Controller
@@ -92,6 +93,7 @@ class CierreVentasSemanalController extends Controller
 
         $reporteVentas = $this->getVentasPorTecnico($startOfWeek, $endOfWeek);
         $reporteCostosGastos = $this->getCostosGastosPorTecnico($startOfWeek, $endOfWeek, $metodosPago);
+        // Solo mostrar ingresos por créditos (no parciales): usar únicamente pagos históricos por crédito
         $ingresosRecibidos = $this->getIngresosRecibidos($startOfWeek, $endOfWeek, $metodosPago);
         $ventasDetalladasPorTecnico = $this->getVentasDetalladasPorTecnico($startOfWeek, $endOfWeek);
 
@@ -335,7 +337,7 @@ class CierreVentasSemanalController extends Controller
             ]);
 
             Log::info('Consultando costos y gastos');
-            $reporteCostosGastos = $this->getCostosGastosPorTecnico($startDate, $endDate, $metodosPago);
+            $reporteCostosGastos = $this->getCostosGastosPorTecnico($startDate, $endDate, $metodosPagoArray);
 
             Log::info('Estructura detallada de costos y gastos:', [
                 'total_tecnicos' => $reporteCostosGastos->count(),
@@ -391,8 +393,8 @@ class CierreVentasSemanalController extends Controller
                 'sample_gastos' => $reporteCostosGastosArray[0]['gastos'] ?? []
             ]);
 
-            Log::info('Consultando ingresos recibidos');
-            $ingresosRecibidos = $this->getIngresosRecibidos($startDate, $endDate, $metodosPago);
+            Log::info('Consultando ingresos recibidos (solo créditos históricos)');
+            $ingresosRecibidos = $this->getIngresosRecibidos($startDate, $endDate, $metodosPagoArray);
             Log::info('Ingresos encontrados:', [
                 'count' => count($ingresosRecibidos),
                 'first' => $ingresosRecibidos->first() ?? null
@@ -724,6 +726,7 @@ class CierreVentasSemanalController extends Controller
                 })->toArray(),
                 'totales' => $totales,
                 'totalCostosLlaves' => $totalCostosLlaves,
+                'totalPagosParciales' => 0,
                 'ganancia' => $ganancia,
                 'retiroDueño' => $retiroDueño,
                 'gananciaFinal' => $gananciaFinal,
@@ -829,6 +832,7 @@ class CierreVentasSemanalController extends Controller
 
         $reporteVentas = $this->getVentasPorTecnico($startDate, $endDate);
         $reporteCostosGastos = $this->getCostosGastosPorTecnico($startDate, $endDate, $metodosPago);
+        // Solo incluir ingresos por créditos históricos, sin parciales
         $ingresosRecibidos = $this->getIngresosRecibidos($startDate, $endDate, $metodosPago);
         $llavesPorTecnico = $this->getLlavesPorTecnico($startDate, $endDate);
         $descargasManuales = $this->getCargasDescargas($startDate, $endDate);
@@ -941,6 +945,7 @@ class CierreVentasSemanalController extends Controller
             'llavesPorTecnico' => $llavesPorTecnico,
             'totales' => $totales,
             'totalCostosLlaves' => $totalCostosLlaves,
+            'totalPagosParciales' => 0,
             'ganancia' => $ganancia,
             'retiroDueño' => $retiroDueño,
             'gananciaFinal' => $gananciaFinal,
@@ -1352,13 +1357,8 @@ class CierreVentasSemanalController extends Controller
                     ]);
 
                     if ($fechaPago->between($startDate, $endDate)) {
-                        // Solo mostramos pagos de créditos antiguas: excluir ventas al contado
-                        // y pagos correspondientes al mismo mes del trabajo.
-                        if ($venta->tipo_venta === 'contado') {
-                            Log::debug('Pago descartado por ser venta al contado', ['venta_id' => $venta->id]);
-                            continue;
-                        }
-
+                        // Incluir cualquier pago cuya venta sea de un mes anterior al pago
+                        // (independientemente de si la venta fue marcada como contado o crédito)
                         if ($fechaVenta && $fechaVenta->format('Ym') >= $fechaPago->format('Ym')) {
                             Log::debug('Pago descartado por ser del mismo mes que la venta', [
                                 'venta_id' => $venta->id,
@@ -1369,6 +1369,7 @@ class CierreVentasSemanalController extends Controller
                         }
 
                         $infoPago = [
+                            'venta_id' => $venta->id,
                             'metodo_pago' => $metodosPago[$pago['metodo_pago']] ?? 'Desconocido',
                             'monto' => $pago['monto'],
                             'fecha_venta' => $venta->fecha_h,
@@ -1417,6 +1418,172 @@ class CierreVentasSemanalController extends Controller
         ]);
 
         return $result;
+    }
+
+    private function getPagosParcialesRecibidos($startDate, $endDate, $metodosPago)
+    {
+        $metodosPagoCollection = collect($metodosPago);
+
+        $empleados = Empleado::with(['ventas' => function ($query) {
+            $query->whereNotNull('pagos')
+                ->whereRaw('json_array_length(pagos) > 0');
+        }])
+            ->whereHas('ventas', function ($query) {
+                $query->whereNotNull('pagos')
+                    ->whereRaw('json_array_length(pagos) > 0');
+            })
+            ->get();
+
+        return $empleados->map(function ($tecnico) use ($startDate, $endDate, $metodosPagoCollection) {
+            $pagosParciales = collect();
+
+            foreach ($tecnico->ventas as $venta) {
+                $pagos = $this->parsePagos($venta->pagos ?? '[]');
+                $fechaVenta = $venta->fecha_h ? Carbon::parse($venta->fecha_h) : null;
+
+                foreach ($pagos as $pago) {
+                    if (!isset($pago['fecha'], $pago['metodo_pago'], $pago['monto'])) {
+                        continue;
+                    }
+
+                    $fechaPago = Carbon::parse($pago['fecha']);
+
+                    if (!$fechaPago->between($startDate, $endDate)) {
+                        continue;
+                    }
+
+                    if ($venta->tipo_venta !== 'credito') {
+                        continue;
+                    }
+
+                    if ($fechaVenta && $fechaVenta->format('Ym') === $fechaPago->format('Ym')) {
+                        if (!$this->pagoParcialEstaPagado($pago)) {
+                            Log::debug('Pago parcial omitido por no estar marcado como pagado', [
+                                'venta_id' => $venta->id,
+                                'fecha_pago' => $pago['fecha'],
+                                'detalle_pago' => $pago
+                            ]);
+                            continue;
+                        }
+
+                        $metodoClave = $pago['metodo_pago'];
+                        $metodoNombre = $metodosPagoCollection->get($metodoClave, 'Desconocido');
+
+                        if ($metodoNombre === 'Desconocido' && is_string($metodoClave) && strlen($metodoClave) > 0) {
+                            $metodoNombre = $metodoClave;
+                        }
+
+                        $pagosParciales->push([
+                            'metodo_pago' => $metodoNombre,
+                            'monto' => $pago['monto'],
+                            'fecha_venta' => $venta->fecha_h,
+                            'fecha_pago' => $pago['fecha']
+                        ]);
+                    }
+                }
+            }
+
+            return [
+                'tecnico' => $tecnico->nombre,
+                'pagos' => $pagosParciales,
+                'total' => $pagosParciales->sum('monto')
+            ];
+        })->map(function ($item) {
+            $pagos = $item['pagos'];
+            if ($pagos instanceof \Illuminate\Support\Collection) {
+                return $pagos->isNotEmpty() ? $item : null;
+            }
+
+            return !empty($pagos) ? $item : null;
+        })->filter()->values();
+    }
+
+    private function combinarIngresosConParciales($ingresosRecibidos, $pagosParciales)
+    {
+        $ingresosCollection = $ingresosRecibidos instanceof \Illuminate\Support\Collection
+            ? $ingresosRecibidos
+            : collect($ingresosRecibidos);
+
+        $parcialesCollection = $pagosParciales instanceof \Illuminate\Support\Collection
+            ? $pagosParciales
+            : collect($pagosParciales);
+
+        $ingresosPorTecnico = $ingresosCollection->keyBy('tecnico');
+        $parcialesPorTecnico = $parcialesCollection->keyBy('tecnico');
+
+        $tecnicos = $ingresosPorTecnico->keys()->merge($parcialesPorTecnico->keys())->unique();
+
+        return $tecnicos->map(function ($tecnico) use ($ingresosPorTecnico, $parcialesPorTecnico) {
+            $ingreso = $ingresosPorTecnico->get($tecnico, ['pagos' => collect(), 'total' => 0]);
+            $parcial = $parcialesPorTecnico->get($tecnico, ['pagos' => collect(), 'total' => 0]);
+
+            $pagosIngreso = collect($ingreso['pagos'] ?? []);
+            $pagosParcial = collect($parcial['pagos'] ?? []);
+
+            return [
+                'tecnico' => $tecnico,
+                'pagos' => $pagosIngreso->merge($pagosParcial)->values(),
+                'total' => ($ingreso['total'] ?? 0) + ($parcial['total'] ?? 0),
+                'total_ingresos' => $ingreso['total'] ?? 0,
+                'total_parciales' => $parcial['total'] ?? 0,
+            ];
+        })->values();
+    }
+
+    private function pagoParcialEstaPagado($pago): bool
+    {
+        if (!is_array($pago)) {
+            return false;
+        }
+
+        if (array_key_exists('pagado', $pago)) {
+            $valor = $pago['pagado'];
+
+            if (is_bool($valor)) {
+                return $valor;
+            }
+
+            if (is_numeric($valor)) {
+                return (int) $valor === 1;
+            }
+
+            if (is_string($valor)) {
+                $valorNormalizado = Str::ascii(Str::lower(trim($valor)));
+                return in_array($valorNormalizado, ['1', 'true', 'si', 'yes', 'pagado', 'paid', 'completado', 'completo']);
+            }
+        }
+
+        foreach (['estatus', 'estado', 'status'] as $campo) {
+            if (isset($pago[$campo]) && is_string($pago[$campo])) {
+                $valor = Str::ascii(Str::lower(trim($pago[$campo])));
+
+                if (in_array($valor, ['pagado', 'paid', 'completo', 'completado'])) {
+                    return true;
+                }
+
+                if (in_array($valor, ['pendiente', 'pending', 'programado', 'parcial', 'incompleto'])) {
+                    return false;
+                }
+            }
+        }
+
+        if (isset($pago['monto_pagado'])) {
+            $montoPagado = (float) $pago['monto_pagado'];
+            $montoTotal = (float) ($pago['monto'] ?? 0);
+
+            if ($montoTotal > 0) {
+                return $montoPagado >= ($montoTotal - 0.01);
+            }
+
+            return $montoPagado > 0;
+        }
+
+        if (isset($pago['pagado_en']) || isset($pago['fecha_pagado'])) {
+            return true;
+        }
+
+        // No hay indicador explícito, se asume pagado para mantener compatibilidad con información histórica.
+        return true;
     }
 
     private function getVentasPorCliente($startDate, $endDate)

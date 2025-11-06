@@ -22,6 +22,19 @@ use Carbon\Carbon;
                 <button type="submit" class="btn btn-primary">Filtrar</button>
             </form>
         </div>
+        <div class="col-md-6 d-flex align-items-center justify-content-md-end mt-2 mt-md-0">
+            @php
+                $query = http_build_query(request()->only(['start_date','end_date','month','year']));
+                $pdfUrl = route('vanes.exportPdf') . ($query ? ('?'.$query) : '');
+                $excelUrl = route('vanes.exportExcel') . ($query ? ('?'.$query) : '');
+            @endphp
+            <a href="{{ $pdfUrl }}" class="btn btn-danger mr-2">
+                <i class="fas fa-file-pdf mr-1"></i> Exportar PDF
+            </a>
+            <a href="{{ $excelUrl }}" class="btn btn-success">
+                <i class="fas fa-file-excel mr-1"></i> Exportar Excel
+            </a>
+        </div>
 
     </div>
 @stop

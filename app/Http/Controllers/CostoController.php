@@ -45,7 +45,7 @@ class CostoController extends Controller
                 'valor' => 'required|numeric|min:0',
                 'estatus' => 'required|in:pendiente,parcialmente_pagado,pagado',
                 'en_vanes' => 'nullable|boolean',
-                'van' => 'nullable|string|in:Van Grande-Pulga,Van Pequeña-Pulga'
+                'van' => 'required_if:en_vanes,1|string|in:Van Grande-Pulga,Van Pequeña-Pulga'
             ]);
 
             $pagosData = [];
@@ -118,7 +118,7 @@ class CostoController extends Controller
                 'valor' => 'required|numeric|min:0',
                 'pagos' => 'required|json',
                 'en_vanes' => 'nullable|boolean',
-                'van' => 'nullable|string|in:Van Grande-Pulga,Van Pequeña-Pulga'
+                'van' => 'required_if:en_vanes,1|string|in:Van Grande-Pulga,Van Pequeña-Pulga'
             ]);
 
             $pagosJson = trim($validated['pagos'], '"\'');

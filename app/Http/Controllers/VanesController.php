@@ -176,6 +176,8 @@ class VanesController extends Controller
             'totales' => $data['totales'],
             'startDate' => $data['startDate'],
             'endDate' => $data['endDate'],
+            'gastosExtraVanes' => $data['gastosExtraVanes'],
+            'costosExtraVanes' => $data['costosExtraVanes'],
         ]);
         return $pdf->download('reporte_vanes.pdf');
     }
