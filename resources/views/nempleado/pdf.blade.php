@@ -385,6 +385,14 @@
             border-top: 1px solid #ddd;
             font-weight: bold;
         }
+        .venta-detalle {
+            background-color: #fafafa;
+            font-size: 11px;
+            color: #444;
+        }
+        .venta-detalle strong {
+            color: #2c3e50;
+        }
     </style>
 </head>
 <body>
@@ -476,6 +484,18 @@
                     <td>{{ $abono->concepto }} ({{ date('d/m/Y', strtotime($abono->a_fecha)) }})</td>
                     <td class="text-right positive">+${{ number_format($abono->valor, 2) }}</td>
                 </tr>
+                @if(!empty($abono->venta_id))
+                <tr class="venta-detalle">
+                    <td></td>
+                    <td colspan="2">
+                        <div><strong>Venta #:</strong> {{ $abono->venta_id }} | <strong>Cliente:</strong> {{ $abono->venta_cliente ?? 'N/A' }}</div>
+                        <div><strong>Vehículo:</strong> {{ trim(($abono->venta_marca ?? '').' '.($abono->venta_modelo ?? '')) ?: 'N/A' }} | <strong>Total Venta:</strong> ${{ number_format($abono->venta_valor ?? 0, 2) }}</div>
+                        @if(!empty($abono->venta_trabajos))
+                            <div><strong>Trabajos:</strong> {{ $abono->venta_trabajos }}</div>
+                        @endif
+                    </td>
+                </tr>
+                @endif
                 @endforeach
                 @endif
                 

@@ -260,7 +260,7 @@
                     <td class="text-right text-bold">${{ number_format($totales['netoPagado'], 2) }}</td>
                     <td></td>
                 </tr>
-            </tbody>t
+            </tbody>
         </table>
     </div>
 </body>

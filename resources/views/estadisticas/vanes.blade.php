@@ -211,9 +211,28 @@ use Carbon\Carbon;
                                                     </thead>
                                                     <tbody>
                                                         @foreach($item['ventas'] as $venta)
+                                                        @php
+                                                            $clienteRaw = $venta['cliente'] ?? null;
+                                                            if (is_object($clienteRaw)) {
+                                                                // Eloquent model u objeto con propiedad 'nombre' o 'cliente'
+                                                                $clienteNombre = $clienteRaw->nombre ?? ($clienteRaw->cliente ?? 'N/A');
+                                                            } elseif (is_array($clienteRaw)) {
+                                                                $clienteNombre = $clienteRaw['nombre'] ?? ($clienteRaw['cliente'] ?? 'N/A');
+                                                            } elseif (is_string($clienteRaw)) {
+                                                                $trim = trim($clienteRaw);
+                                                                if (strlen($trim) > 0 && $trim[0] === '{') {
+                                                                    $dec = json_decode($trim, true);
+                                                                    $clienteNombre = is_array($dec) ? ($dec['nombre'] ?? ($dec['cliente'] ?? 'N/A')) : $clienteRaw;
+                                                                } else {
+                                                                    $clienteNombre = $clienteRaw;
+                                                                }
+                                                            } else {
+                                                                $clienteNombre = 'N/A';
+                                                            }
+                                                        @endphp
                                                         <tr>
                                                             <td>{{ $venta['fecha'] }}</td>
-                                                            <td>{{ $venta['cliente'] }}</td>
+                                                            <td>{{ $clienteNombre }}</td>
                                                             <td>{{ $venta['tecnico'] }}</td>
                                                             <td>{{ $venta['cantidad'] }}</td>
                                                             <td>${{ number_format($venta['total'], 2) }}</td>
@@ -286,9 +305,27 @@ use Carbon\Carbon;
                                                     </thead>
                                                     <tbody>
                                                         @foreach($item['ventas'] as $venta)
+                                                        @php
+                                                            $clienteRaw = $venta['cliente'] ?? null;
+                                                            if (is_object($clienteRaw)) {
+                                                                $clienteNombre = $clienteRaw->nombre ?? ($clienteRaw->cliente ?? 'N/A');
+                                                            } elseif (is_array($clienteRaw)) {
+                                                                $clienteNombre = $clienteRaw['nombre'] ?? ($clienteRaw['cliente'] ?? 'N/A');
+                                                            } elseif (is_string($clienteRaw)) {
+                                                                $trim = trim($clienteRaw);
+                                                                if (strlen($trim) > 0 && $trim[0] === '{') {
+                                                                    $dec = json_decode($trim, true);
+                                                                    $clienteNombre = is_array($dec) ? ($dec['nombre'] ?? ($dec['cliente'] ?? 'N/A')) : $clienteRaw;
+                                                                } else {
+                                                                    $clienteNombre = $clienteRaw;
+                                                                }
+                                                            } else {
+                                                                $clienteNombre = 'N/A';
+                                                            }
+                                                        @endphp
                                                         <tr>
                                                             <td>{{ $venta['fecha'] }}</td>
-                                                            <td>{{ $venta['cliente'] }}</td>
+                                                            <td>{{ $clienteNombre }}</td>
                                                             <td>{{ $venta['tecnico'] }}</td>
                                                             <td>{{ $venta['cantidad'] }}</td>
                                                             <td>${{ number_format($venta['total'], 2) }}</td>

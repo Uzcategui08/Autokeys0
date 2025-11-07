@@ -342,6 +342,8 @@ class NempleadoController extends Controller
                 ->findOrFail($idNempleado);
 
             $abonos = $this->procesarRelacion($nominaEmpleado->id_abonos, Abono::class, 'id_abonos', 'a_fecha');
+            // Enriquecer abonos con detalles de la venta (venta_id, cliente, vehículo, trabajos, total)
+            $abonos = $this->enrichAbonosConVentaDetalles($abonos);
             $descuentos = $this->procesarRelacion($nominaEmpleado->id_descuentos, Descuento::class, 'id_descuentos', 'd_fecha');
             $metodosPago = $this->procesarMetodosPago($nominaEmpleado->metodo_pago);
 
@@ -370,6 +372,94 @@ class NempleadoController extends Controller
         } catch (\Exception $e) {
             abort(500, "Error al generar el recibo de pago: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Agrega atributos derivados de la venta asociada a cada abono para mostrarlos en PDF/UI.
+     * - Busca primero por FK directa registro_v_id, luego por registroV.id_abono y por último parsea del concepto.
+     * - Setea: venta_id, venta_cliente, venta_marca, venta_modelo, venta_valor, venta_trabajos
+     *
+     * @param \Illuminate\Support\Collection|array $abonos
+     * @return \Illuminate\Support\Collection|array
+     */
+    private function enrichAbonosConVentaDetalles($abonos)
+    {
+        if (empty($abonos)) return $abonos;
+
+        // Asegurar que sea una colección iterable
+        $collection = is_array($abonos) ? collect($abonos) : $abonos;
+
+        $collection->each(function ($abono) {
+            try {
+                $venta = null;
+
+                // 1) Preferir relación directa por FK si existe
+                if (!empty($abono->registro_v_id)) {
+                    $venta = \App\Models\RegistroV::find($abono->registro_v_id);
+                }
+
+                // 2) Intentar por relación registroV.id_abono
+                if (!$venta) {
+                    $venta = \App\Models\RegistroV::where('id_abono', $abono->id_abonos)->first();
+                }
+
+                // 3) Fallback: parsear del concepto "Abono por venta #<id>"
+                if (!$venta && is_string($abono->concepto)) {
+                    if (preg_match('/^Abono por venta #(\d+)$/', trim($abono->concepto), $m)) {
+                        $venta = \App\Models\RegistroV::find((int)($m[1] ?? 0));
+                    }
+                }
+
+                $ventaId = $venta?->id;
+                $clienteNombre = null;
+                $ventaTrabajos = null;
+                $ventaMarca = null;
+                $ventaModelo = null;
+                $ventaValor = null;
+
+                if ($venta) {
+                    // Preferir relación a Cliente si existe
+                    if (!empty($venta->id_cliente)) {
+                        $cliente = \App\Models\Cliente::find($venta->id_cliente);
+                        $clienteNombre = $cliente?->nombre ?? $venta->cliente;
+                    } else {
+                        $clienteNombre = $venta->cliente;
+                    }
+
+                    $ventaMarca = $venta->marca ?? null;
+                    $ventaModelo = $venta->modelo ?? null;
+                    $ventaValor = (float)($venta->valor_v ?? 0);
+
+                    // Construir listado de trabajos a partir de items
+                    $trabajos = [];
+                    $items = is_string($venta->items) ? json_decode($venta->items, true) : ($venta->items ?? []);
+                    if (is_array($items)) {
+                        foreach ($items as $it) {
+                            $trabajos[] = $it['trabajo_nombre'] ?? ($it['trabajo'] ?? null);
+                        }
+                    }
+                    $ventaTrabajos = collect($trabajos)->filter()->implode(' | ');
+                }
+
+                // Asignar como atributos dinámicos accesibles en Blade
+                $abono->setAttribute('venta_id', $ventaId);
+                $abono->setAttribute('venta_cliente', $clienteNombre);
+                $abono->setAttribute('venta_marca', $ventaMarca);
+                $abono->setAttribute('venta_modelo', $ventaModelo);
+                $abono->setAttribute('venta_valor', $ventaValor);
+                $abono->setAttribute('venta_trabajos', $ventaTrabajos);
+            } catch (\Throwable $t) {
+                // En caso de error, dejar atributos nulos para no romper el PDF
+                $abono->setAttribute('venta_id', null);
+                $abono->setAttribute('venta_cliente', null);
+                $abono->setAttribute('venta_marca', null);
+                $abono->setAttribute('venta_modelo', null);
+                $abono->setAttribute('venta_valor', null);
+                $abono->setAttribute('venta_trabajos', null);
+            }
+        });
+
+        return $collection;
     }
 
     private function procesarRelacion($data, $model, $idField, $fechaField)
