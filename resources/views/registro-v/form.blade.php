@@ -154,18 +154,35 @@
                             <div class="row">
                                 <div class="col-md-8">
                                     <label for="id_cliente" class="form-label">{{ __('Cliente') }}</label>
-                                    <select name="id_cliente" id="id_cliente" class="form-control select2 @error('id_cliente') is-invalid @enderror">
-                                        <option value="">{{ __('Seleccione un cliente') }}</option>
-                                        @foreach($clientes as $cliente)
-                                        <option value="{{ $cliente->id_cliente }}"
-                                            {{ old('id_cliente', $registroV?->id_cliente) == $cliente->id_cliente ? 'selected' : '' }}>
-                                            {{ $cliente->nombre }} {{ $cliente->apellido ?? '' }}
-                                        </option>
-                                        @endforeach
-                                    </select>
-                                    {!! $errors->first('cliente', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
+                                    <div class="d-flex align-items-center flex-nowrap cliente-select-group">
+                                        <select name="id_cliente" id="id_cliente" class="form-control select2 @error('id_cliente') is-invalid @enderror" style="flex:1 1 auto; min-width:0;">
+                                            <option value="">{{ __('Seleccione un cliente') }}</option>
+                                            @foreach($clientes as $cliente)
+                                            <option value="{{ $cliente->id_cliente }}"
+                                                {{ old('id_cliente', $registroV?->id_cliente) == $cliente->id_cliente ? 'selected' : '' }}>
+                                                {{ $cliente->nombre }} {{ $cliente->apellido ?? '' }}
+                                            </option>
+                                            @endforeach
+                                        </select>
+                                        <button type="button" class="cliente-switch ms-3" id="toggle-nuevo-cliente" aria-pressed="false">
+                                            <span class="cliente-switch-label">Nuevo</span>
+                                        </button>
+                                    </div>
+                                    {!! $errors->first('id_cliente', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                                 </div>
-                                <!-- Teléfono eliminado -->
+                                <div class="col-md-4 d-none" id="nuevo-cliente-campos">
+                                    <div class="card border-primary">
+                                        <div class="card-body p-3">
+                                            <div class="mb-2">
+                                                <label class="form-label">Nombre *</label>
+                                                <input type="text" id="nuevo_cliente_nombre_inline" class="form-control" placeholder="Nombre">
+                                            </div>
+                                            <button type="button" class="btn btn-primary w-100" id="btn-guardar-nuevo-cliente-inline">
+                                                <i class="fas fa-save me-1"></i> Guardar Cliente
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -435,6 +452,45 @@
 .btn-remove-costo:hover {
     transform: scale(1.1);
 }
+
+.cliente-switch {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid #d8dcff;
+    background: #f5f7ff;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    cursor: pointer;
+    font-weight: 600;
+    color: #1e3c73;
+    outline: none;
+}
+
+.cliente-switch:hover {
+    background: #eef3ff;
+}
+
+.cliente-switch:focus-visible {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.cliente-switch-label {
+    margin: 0;
+}
+
+.cliente-select-group {
+    gap: 1.25rem;
+}
+
+.cliente-switch.active {
+    border-color: #aac7ff;
+    background: #e7f1ff;
+    box-shadow: 0 6px 12px rgba(49, 102, 241, 0.08);
+}
 </style>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -492,6 +548,97 @@ $(document).ready(function() {
         });
     }
 
+    function setNuevoClienteState(isNuevo, options = {}) {
+        const { focusInput = false, suppressChange = false } = options;
+        const $toggle = $('#toggle-nuevo-cliente');
+        const $clienteSelect = $('#id_cliente');
+
+        if (isNuevo) {
+            $('#nuevo-cliente-campos').removeClass('d-none');
+            $clienteSelect.val(null).trigger('change');
+            $clienteSelect.prop('disabled', true);
+            if (focusInput) {
+                $('#nuevo_cliente_nombre_inline').focus();
+            }
+        } else {
+            $('#nuevo-cliente-campos').addClass('d-none');
+            $clienteSelect.prop('disabled', false);
+            $('#nuevo_cliente_nombre_inline').val('');
+        }
+
+        $toggle.toggleClass('active', isNuevo);
+        $toggle.attr('aria-pressed', isNuevo);
+        $toggle.data('isNuevo', isNuevo);
+        if (!suppressChange) {
+            $clienteSelect.trigger('change.select2');
+        }
+    }
+
+    function resetNuevoClienteInline() {
+        setNuevoClienteState(false);
+    }
+
+    $(document).on('click', '#toggle-nuevo-cliente', function () {
+        const isNuevo = !$(this).hasClass('active');
+        setNuevoClienteState(isNuevo, { focusInput: isNuevo });
+    });
+
+    $(document).on('keydown', '#toggle-nuevo-cliente', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            $(this).trigger('click');
+        }
+    });
+
+    setNuevoClienteState(false, { suppressChange: true });
+
+    $(document).on('click', '#btn-guardar-nuevo-cliente-inline', function () {
+        const nombre = $('#nuevo_cliente_nombre_inline').val().trim();
+
+        if (!nombre) {
+            Swal.fire({
+                title: 'Nombre requerido',
+                text: 'Ingrese al menos el nombre del cliente nuevo.',
+                icon: 'warning'
+            });
+            return;
+        }
+
+        const $button = $(this);
+        $button.prop('disabled', true).text('Guardando...');
+
+        handleAjaxCreation({
+            url: quickCreateRoutes.cliente,
+            payload: {
+                _token: csrfToken,
+                nombre
+            },
+            onSuccess(response) {
+                const $clienteSelect = $('#id_cliente');
+                const option = new Option(response.nombre, response.id, true, true);
+                $clienteSelect.append(option).prop('disabled', false).trigger('change');
+                resetNuevoClienteInline();
+                $button.prop('disabled', false).html('<i class="fas fa-save me-1"></i> Guardar Cliente');
+                Swal.fire({
+                    title: 'Cliente creado',
+                    text: 'El nuevo cliente quedó seleccionado en la venta.',
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            },
+            onError(xhr) {
+                const mensaje = xhr?.responseJSON?.message || 'No se pudo crear el cliente.';
+                $button.prop('disabled', false).html('<i class="fas fa-save me-1"></i> Guardar Cliente');
+                Swal.fire({
+                    title: 'Error',
+                    text: mensaje,
+                    icon: 'error'
+                });
+            }
+        });
+    });
+
     function initializeClienteSelect() {
         const $clienteSelect = $('#id_cliente');
         if (!$clienteSelect.length) {
@@ -499,104 +646,26 @@ $(document).ready(function() {
         }
 
         if ($clienteSelect.hasClass('select2-hidden-accessible')) {
-            $clienteSelect.off('select2:select.quickCreateCliente');
-            $clienteSelect.off('select2:closing.quickCreateCliente');
-            $clienteSelect.off('select2:close.quickCreateCliente');
             $clienteSelect.select2('destroy');
         }
 
-        let pendingClienteTerm = '';
-
         $clienteSelect.select2({
-            theme: 'bootstrap-5',
-            placeholder: 'Seleccione o agregue un cliente',
+            placeholder: 'Seleccione un cliente',
             allowClear: true,
-            tags: true,
-            selectOnClose: true,
-            createTag: createTagOption,
-            width: '100%'
-        });
-
-        $clienteSelect.on('select2:closing.quickCreateCliente', function () {
-            const select2Instance = $(this).data('select2');
-            const $searchField = select2Instance?.dropdown?.$search || select2Instance?.selection?.$search;
-            pendingClienteTerm = $searchField ? $searchField.val().trim() : '';
-        });
-        $clienteSelect.on('select2:close.quickCreateCliente', function () {
-            if (!pendingClienteTerm) {
-                return;
-            }
-
-            const $select = $(this);
-            const currentValue = $select.val();
-            const selectedValues = Array.isArray(currentValue)
-                ? currentValue
-                : (currentValue ? [currentValue] : []);
-
-            const tieneSeleccionExistente = selectedValues.some(function (valor) {
-                if (!valor) {
-                    return false;
-                }
-
-                return String(valor).indexOf('__new__') !== 0;
-            });
-
-            if (tieneSeleccionExistente) {
-                pendingClienteTerm = '';
-                return;
-            }
-
-            const hasExistingOption = $select.find('option').filter(function () {
-                return $(this).text().trim().toLowerCase() === pendingClienteTerm.toLowerCase();
-            }).length > 0;
-
-            if (hasExistingOption) {
-                pendingClienteTerm = '';
-                return;
-            }
-
-            const newTag = {
-                id: `__new__${pendingClienteTerm}`,
-                text: pendingClienteTerm,
-                newOption: true
-            };
-
-            const option = new Option(newTag.text, newTag.id, true, true);
-            $select.append(option).trigger({
-                type: 'select2:select',
-                params: { data: newTag }
-            });
-
-            pendingClienteTerm = '';
-        });
-
-        $clienteSelect.on('select2:select.quickCreateCliente', function (e) {
-            const data = e.params.data;
-            pendingClienteTerm = '';
-
-            if (!data || !data.newOption) {
-                return;
-            }
-
-            const $select = $(this);
-            handleAjaxCreation({
-                url: quickCreateRoutes.cliente,
-                payload: {
-                    _token: csrfToken,
-                    nombre: data.text,
-                    telefono: '',
-                    direccion: ''
+            width: '100%',
+            minimumInputLength: 1,
+            ajax: {
+                url: '{{ route('clientes.search') }}',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return { term: params.term };
                 },
-                onSuccess(response) {
-                    const option = new Option(response.nombre, response.id, true, true);
-                    $select.append(option).trigger('change');
-                    $select.find(`option[value="${data.id}"]`).remove();
+                processResults: function (data) {
+                    return data;
                 },
-                onError() {
-                    $select.find(`option[value="${data.id}"]`).remove();
-                    $select.val(null).trigger('change');
-                }
-            });
+                cache: true
+            }
         });
     }
 

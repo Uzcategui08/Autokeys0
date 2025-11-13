@@ -54,6 +54,9 @@ Route::resource('clientes', ClienteController::class);
 Route::post('/clientes/quick-create', [ClienteController::class, 'quickStore'])
     ->name('clientes.quick-store')
     ->middleware('auth');
+Route::get('/clientes/search', [ClienteController::class, 'search'])
+    ->name('clientes.search')
+    ->middleware('auth');
 
 Route::resource('productos', ProductoController::class);
 

@@ -94,6 +94,30 @@ class ClienteController extends Controller
         ]);
     }
 
+    public function search(Request $request): JsonResponse
+    {
+        $term = trim((string) $request->get('term', ''));
+
+        $clientes = Cliente::query()
+            ->when($term !== '', function ($query) use ($term) {
+                $query->where('nombre', 'LIKE', "%{$term}%");
+            })
+            ->orderBy('nombre')
+            ->limit(20)
+            ->get(['id_cliente', 'nombre']);
+
+        $results = $clientes->map(function (Cliente $cliente) {
+            return [
+                'id' => $cliente->id_cliente,
+                'text' => $cliente->nombre,
+            ];
+        });
+
+        return response()->json([
+            'results' => $results,
+        ]);
+    }
+
     public function destroy($id): RedirectResponse
     {
         Cliente::find($id)->delete();
