@@ -45,7 +45,7 @@ class CostoController extends Controller
                 'valor' => 'required|numeric|min:0',
                 'estatus' => 'required|in:pendiente,parcialmente_pagado,pagado',
                 'en_vanes' => 'nullable|boolean',
-                'van' => 'required_if:en_vanes,1|string|in:Van Grande-Pulga,Van Pequeña-Pulga'
+                'van' => 'nullable|string|in:Van Grande-Pulga,Van Pequeña-Pulga'
             ]);
 
             $pagosData = [];
@@ -116,16 +116,19 @@ class CostoController extends Controller
                 'descripcion' => 'required|string|max:500',
                 'subcategoria' => 'required',
                 'valor' => 'required|numeric|min:0',
-                'pagos' => 'required|json',
+                'pagos' => 'nullable',
                 'en_vanes' => 'nullable|boolean',
-                'van' => 'required_if:en_vanes,1|string|in:Van Grande-Pulga,Van Pequeña-Pulga'
+                'van' => 'nullable|string|in:Van Grande-Pulga,Van Pequeña-Pulga'
             ]);
 
-            $pagosJson = trim($validated['pagos'], '"\'');
-            $pagos = json_decode($pagosJson, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE || !is_array($pagos)) {
-                throw new \Exception("Formato de pagos inválido: " . json_last_error_msg());
+            $pagosInput = $request->input('pagos', '[]');
+            if (is_string($pagosInput)) {
+                $pagosInput = trim($pagosInput, '"\' ');
+                $pagos = json_decode($pagosInput, true) ?? [];
+            } elseif (is_array($pagosInput)) {
+                $pagos = $pagosInput;
+            } else {
+                $pagos = [];
             }
 
             $costo = Costo::findOrFail($id);
