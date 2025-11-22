@@ -970,17 +970,25 @@ class RegistroVController extends Controller
 
         $inventario = $query->first();
 
-        if ($inventario) {
-            $nuevaCantidad = $inventario->cantidad + $cantidad;
-
-            if ($nuevaCantidad < 0) {
-                throw new \Exception("No hay suficiente stock para el producto $productoId");
+        if (!$inventario) {
+            if ($cantidad < 0) {
+                throw new \Exception("El producto $productoId no existe en el inventario" . ($almacenId ? " para el almacén $almacenId" : ""));
             }
 
-            $inventario->update(['cantidad' => $nuevaCantidad]);
-        } else {
-            throw new \Exception("El producto $productoId no existe en el inventario" . ($almacenId ? " para el almacén $almacenId" : ""));
+            $inventario = Inventario::create([
+                'id_producto' => $productoId,
+                'id_almacen' => $almacenId,
+                'cantidad' => 0,
+            ]);
         }
+
+        $nuevaCantidad = $inventario->cantidad + $cantidad;
+
+        if ($nuevaCantidad < 0) {
+            throw new \Exception("No hay suficiente stock para el producto $productoId");
+        }
+
+        $inventario->update(['cantidad' => $nuevaCantidad]);
     }
 
     private function restarInventario($productoId, $cantidad, $almacenId = null)
@@ -1103,62 +1111,73 @@ class RegistroVController extends Controller
             if ($request->has('costos_extras')) {
                 foreach ($request->input('costos_extras') as $cIndex => $costoData) {
                     try {
-                        if (!empty($costoData['descripcion'])) {
-                            $pagoCosto = [
-                                [
-                                    'monto' => (float)($costoData['monto'] ?? 0),
-                                    'metodo_pago' => $costoData['metodo_pago'] ?? 'efectivo',
-                                    'fecha' => $costoData['fecha'] ?? now()->format('Y-m-d'),
-                                    'comprobante' => $costoData['comprobante'] ?? null
-                                ]
-                            ];
-                            Log::debug("Procesando costo extra $cIndex", ['costo' => $costoData]);
+                        $descripcionCosto = trim((string) ($costoData['descripcion'] ?? ''));
 
-                            if (!empty($costoData['id_costos'])) {
-                                Log::debug("Actualizando costo existente", ['id_costo' => $costoData['id_costos']]);
-                                $costo = Costo::find($costoData['id_costos']);
-                                if ($costo) {
-                                    $fechaAntes = $costo->f_costos;
-                                    $fechaNueva = $costoData['f_costos']; // Usamos directamente la fecha del request
-                                    Log::debug("Actualizando fecha de costo", [
-                                        'id_costo' => $costo->id_costos,
-                                        'fecha_anterior' => $fechaAntes,
-                                        'fecha_nueva' => $fechaNueva
-                                    ]);
-
-                                    $costo->update([
-                                        'f_costos' => $fechaNueva ?? now()->format('Y-m-d'),
-                                        'descripcion' => $costoData['descripcion'],
-                                        'valor' => (float)($costoData['monto'] ?? 0),
-                                        'subcategoria' => $costoData['subcategoria'],
-                                        'estatus' => 'pagado',
-                                        'pagos' => $pagoCosto,
-                                        'id_tecnico' => $request->input('id_empleado'),
-                                        'registro_v_id' => $registroV->id
-                                    ]);
-                                    $costosIds[] = $costo->id_costos;
-                                    Log::debug("Costo actualizado", [
-                                        'id_costo' => $costo->id_costos,
-                                        'fecha_actual' => $costo->f_costos
-                                    ]);
-                                    continue;
-                                }
-                            }
-
-                            Log::debug("Creando nuevo costo");
-                            $nuevoCosto = Costo::create([
-                                'f_costos' => $costoData['f_costos'] ?? now()->format('Y-m-d'),
-                                'id_tecnico' => $request->input('id_empleado'),
-                                'descripcion' => $costoData['descripcion'],
-                                'subcategoria' => $costoData['subcategoria'],
-                                'valor' => (float)($costoData['monto'] ?? 0),
-                                'estatus' => 'pagado',
-                                'pagos' => $pagoCosto,
-                                'registro_v_id' => $registroV->id
-                            ]);
-                            $costosIds[] = $nuevoCosto->id_costos;
-                            Log::debug("Nuevo costo creado", ['id_costo' => $nuevoCosto->id_costos]);
+                        if ($descripcionCosto === '') {
+                            Log::debug("Costo extra $cIndex omitido por no tener descripción", ['costo' => $costoData]);
+                            continue;
                         }
+
+                        $subcategoriaCosto = $costoData['subcategoria'] ?? null;
+                        if ($subcategoriaCosto === null || $subcategoriaCosto === '') {
+                            Log::warning("Costo extra $cIndex omitido por no tener subcategoría", ['costo' => $costoData]);
+                            continue;
+                        }
+
+                        $pagoCosto = [
+                            [
+                                'monto' => (float)($costoData['monto'] ?? 0),
+                                'metodo_pago' => $costoData['metodo_pago'] ?? 'efectivo',
+                                'fecha' => $costoData['fecha'] ?? now()->format('Y-m-d'),
+                                'comprobante' => $costoData['comprobante'] ?? null
+                            ]
+                        ];
+                        Log::debug("Procesando costo extra $cIndex", ['costo' => $costoData]);
+
+                        if (!empty($costoData['id_costos'])) {
+                            Log::debug("Actualizando costo existente", ['id_costo' => $costoData['id_costos']]);
+                            $costo = Costo::find($costoData['id_costos']);
+                            if ($costo) {
+                                $fechaAntes = $costo->f_costos;
+                                $fechaNueva = $costoData['f_costos']; // Usamos directamente la fecha del request
+                                Log::debug("Actualizando fecha de costo", [
+                                    'id_costo' => $costo->id_costos,
+                                    'fecha_anterior' => $fechaAntes,
+                                    'fecha_nueva' => $fechaNueva
+                                ]);
+
+                                $costo->update([
+                                    'f_costos' => $fechaNueva ?? now()->format('Y-m-d'),
+                                    'descripcion' => $descripcionCosto,
+                                    'valor' => (float)($costoData['monto'] ?? 0),
+                                    'subcategoria' => $subcategoriaCosto,
+                                    'estatus' => 'pagado',
+                                    'pagos' => $pagoCosto,
+                                    'id_tecnico' => $request->input('id_empleado'),
+                                    'registro_v_id' => $registroV->id
+                                ]);
+                                $costosIds[] = $costo->id_costos;
+                                Log::debug("Costo actualizado", [
+                                    'id_costo' => $costo->id_costos,
+                                    'fecha_actual' => $costo->f_costos
+                                ]);
+                                continue;
+                            }
+                        }
+
+                        Log::debug("Creando nuevo costo");
+                        $nuevoCosto = Costo::create([
+                            'f_costos' => $costoData['f_costos'] ?? now()->format('Y-m-d'),
+                            'id_tecnico' => $request->input('id_empleado'),
+                            'descripcion' => $descripcionCosto,
+                            'subcategoria' => $subcategoriaCosto,
+                            'valor' => (float)($costoData['monto'] ?? 0),
+                            'estatus' => 'pagado',
+                            'pagos' => $pagoCosto,
+                            'registro_v_id' => $registroV->id
+                        ]);
+                        $costosIds[] = $nuevoCosto->id_costos;
+                        Log::debug("Nuevo costo creado", ['id_costo' => $nuevoCosto->id_costos]);
                     } catch (\Exception $e) {
                         Log::error("Error procesando costo extra $cIndex", ['error' => $e->getMessage(), 'costo' => $costoData]);
                         throw $e;
@@ -1174,62 +1193,73 @@ class RegistroVController extends Controller
             if ($request->has('gastos')) {
                 foreach ($request->input('gastos') as $gIndex => $gastoData) {
                     try {
-                        if (!empty($gastoData['descripcion'])) {
-                            $pagoGasto = [
-                                [
-                                    'monto' => (float)($gastoData['monto'] ?? 0),
-                                    'metodo_pago' => $gastoData['metodo_pago'] ?? 'efectivo',
-                                    'fecha' => $gastoData['fecha'] ?? now()->format('Y-m-d'),
-                                    'comprobante' => $gastoData['comprobante'] ?? null
-                                ]
-                            ];
-                            Log::debug("Procesando gasto $gIndex", ['gasto' => $gastoData]);
+                        $descripcionGasto = trim((string) ($gastoData['descripcion'] ?? ''));
 
-                            if (!empty($gastoData['id_gastos'])) {
-                                Log::debug("Actualizando gasto existente", ['id_gasto' => $gastoData['id_gastos']]);
-                                $gasto = Gasto::find($gastoData['id_gastos']);
-                                if ($gasto) {
-                                    $fechaAntes = $gasto->f_gastos;
-                                    $fechaNueva = $gastoData['f_gastos'];
-                                    Log::debug("Actualizando fecha de gasto", [
-                                        'id_gasto' => $gasto->id_gastos,
-                                        'fecha_anterior' => $fechaAntes,
-                                        'fecha_nueva' => $fechaNueva
-                                    ]);
-
-                                    $gasto->update([
-                                        'f_gastos' => $fechaNueva ?? now()->format('Y-m-d'),
-                                        'descripcion' => $gastoData['descripcion'],
-                                        'valor' => (float)($gastoData['monto'] ?? 0),
-                                        'estatus' => 'pagado',
-                                        'subcategoria' => $gastoData['subcategoria'],
-                                        'pagos' => $pagoGasto,
-                                        'id_empleado' => $request->input('id_empleado'),
-                                        'registro_v_id' => $registroV->id
-                                    ]);
-                                    $gastosIds[] = $gasto->id_gastos;
-                                    Log::debug("Gasto actualizado", [
-                                        'id_gasto' => $gasto->id_gastos,
-                                        'fecha_actual' => $gasto->f_gastos
-                                    ]);
-                                    continue;
-                                }
-                            }
-
-                            Log::debug("Creando nuevo gasto");
-                            $nuevoGasto = Gasto::create([
-                                'f_gastos' => $gastoData['f_gastos'] ?? now()->format('Y-m-d'),
-                                'id_tecnico' => $request->input('id_empleado'),
-                                'descripcion' => $gastoData['descripcion'],
-                                'subcategoria' => $gastoData['subcategoria'],
-                                'valor' => (float)($gastoData['monto'] ?? 0),
-                                'estatus' => 'pagado',
-                                'pagos' => $pagoGasto,
-                                'registro_v_id' => $registroV->id
-                            ]);
-                            $gastosIds[] = $nuevoGasto->id_gastos;
-                            Log::debug("Nuevo gasto creado", ['id_gasto' => $nuevoGasto->id_gastos]);
+                        if ($descripcionGasto === '') {
+                            Log::debug("Gasto $gIndex omitido por no tener descripción", ['gasto' => $gastoData]);
+                            continue;
                         }
+
+                        $subcategoriaGasto = $gastoData['subcategoria'] ?? null;
+                        if ($subcategoriaGasto === null || $subcategoriaGasto === '') {
+                            Log::warning("Gasto $gIndex omitido por no tener subcategoría", ['gasto' => $gastoData]);
+                            continue;
+                        }
+
+                        $pagoGasto = [
+                            [
+                                'monto' => (float)($gastoData['monto'] ?? 0),
+                                'metodo_pago' => $gastoData['metodo_pago'] ?? 'efectivo',
+                                'fecha' => $gastoData['fecha'] ?? now()->format('Y-m-d'),
+                                'comprobante' => $gastoData['comprobante'] ?? null
+                            ]
+                        ];
+                        Log::debug("Procesando gasto $gIndex", ['gasto' => $gastoData]);
+
+                        if (!empty($gastoData['id_gastos'])) {
+                            Log::debug("Actualizando gasto existente", ['id_gasto' => $gastoData['id_gastos']]);
+                            $gasto = Gasto::find($gastoData['id_gastos']);
+                            if ($gasto) {
+                                $fechaAntes = $gasto->f_gastos;
+                                $fechaNueva = $gastoData['f_gastos'];
+                                Log::debug("Actualizando fecha de gasto", [
+                                    'id_gasto' => $gasto->id_gastos,
+                                    'fecha_anterior' => $fechaAntes,
+                                    'fecha_nueva' => $fechaNueva
+                                ]);
+
+                                $gasto->update([
+                                    'f_gastos' => $fechaNueva ?? now()->format('Y-m-d'),
+                                    'descripcion' => $descripcionGasto,
+                                    'valor' => (float)($gastoData['monto'] ?? 0),
+                                    'estatus' => 'pagado',
+                                    'subcategoria' => $subcategoriaGasto,
+                                    'pagos' => $pagoGasto,
+                                    'id_empleado' => $request->input('id_empleado'),
+                                    'registro_v_id' => $registroV->id
+                                ]);
+                                $gastosIds[] = $gasto->id_gastos;
+                                Log::debug("Gasto actualizado", [
+                                    'id_gasto' => $gasto->id_gastos,
+                                    'fecha_actual' => $gasto->f_gastos
+                                ]);
+                                continue;
+                            }
+                        }
+
+                        Log::debug("Creando nuevo gasto");
+                        $nuevoGasto = Gasto::create([
+                            'f_gastos' => $gastoData['f_gastos'] ?? now()->format('Y-m-d'),
+                            'id_tecnico' => $request->input('id_empleado'),
+                            'descripcion' => $descripcionGasto,
+                            'subcategoria' => $subcategoriaGasto,
+                            'valor' => (float)($gastoData['monto'] ?? 0),
+                            'estatus' => 'pagado',
+                            'pagos' => $pagoGasto,
+                            'registro_v_id' => $registroV->id
+                        ]);
+                        $gastosIds[] = $nuevoGasto->id_gastos;
+                        Log::debug("Nuevo gasto creado", ['id_gasto' => $nuevoGasto->id_gastos]);
                     } catch (\Exception $e) {
                         Log::error("Error procesando gasto $gIndex", ['error' => $e->getMessage(), 'gasto' => $gastoData]);
                         throw $e;
@@ -1247,7 +1277,26 @@ class RegistroVController extends Controller
             if ($request->has('pagos')) {
                 try {
                     $pagosInput = $request->input('pagos');
-                    $pagos = is_string($pagosInput) ? json_decode($pagosInput, true) : $pagosInput;
+                    if (is_string($pagosInput)) {
+                        $pagosDecodificados = json_decode($pagosInput, true);
+                        if (json_last_error() !== JSON_ERROR_NONE) {
+                            Log::warning('Pagos recibidos con JSON inválido, se ignorarán', [
+                                'pagos_raw' => $pagosInput,
+                                'json_error' => json_last_error_msg()
+                            ]);
+                            $pagos = [];
+                        } else {
+                            $pagos = $pagosDecodificados;
+                        }
+                    } else {
+                        $pagos = $pagosInput;
+                    }
+
+                    if (!is_array($pagos)) {
+                        Log::warning('Pagos recibidos en formato no soportado, se ignorarán', ['pagos' => $pagos]);
+                        $pagos = [];
+                    }
+
                     Log::debug('Datos de pagos recibidos', ['pagos' => $pagos]);
 
                     foreach ($pagos as $pIndex => $pago) {

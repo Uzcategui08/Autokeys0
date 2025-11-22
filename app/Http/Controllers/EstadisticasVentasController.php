@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Nempleado;
 use App\Models\RegistroV;
 use App\Models\Gasto;
 use App\Models\Costo;
@@ -15,6 +16,15 @@ class EstadisticasVentasController extends Controller
     protected $month;
     protected $year;
     protected $availableYears;
+    protected $nominaCostos = null;
+    protected $nominaGastos = null;
+    protected $detalleNominaCostos = null;
+    protected $detalleNominaGastos = null;
+    protected $categoriaCache = [];
+    protected $retiroDuenoTotal = null;
+    protected $detalleRetirosDueno = null;
+    protected $costosLlavesTotal = null;
+    protected $detalleCostosLlaves = null;
 
     public function __construct()
     {
@@ -65,29 +75,61 @@ class EstadisticasVentasController extends Controller
     }
 
     // Métodos para estadísticas de ventas
+
     protected function cobradoDelMes()
     {
         $total = 0;
-        $registros = RegistroV::whereYear('fecha_h', $this->year)
-            ->whereMonth('fecha_h', $this->month)
-            ->get();
+
+        // Traemos todos los registros con pagos (sin limitar por fecha de venta) para poder capturar ingresos de meses posteriores
+        $registros = RegistroV::whereNotNull('pagos')->get();
 
         foreach ($registros as $registro) {
-            $pagos = is_array($registro->pagos) ? $registro->pagos : (json_decode($registro->pagos, true) ?? []);
+            $pagos = $registro->pagos;
+
+            // Normalizar a array (puede venir como JSON)
+            if (!is_array($pagos)) {
+                $pagos = json_decode($pagos ?? '[]', true) ?? [];
+            }
+
             foreach ($pagos as $pago) {
-                if (isset($pago['fecha_pago'])) {
-                    $fechaPago = Carbon::parse($pago['fecha_pago']);
-                    if ($fechaPago->year == $this->year && $fechaPago->month == $this->month) {
-                        $total += $pago['monto'] ?? 0;
+                // Extraer campos soportando array u objeto
+                $fecha = is_array($pago)
+                    ? ($pago['fecha'] ?? null)
+                    : ($pago->fecha ?? null);
+
+                $monto = is_array($pago)
+                    ? ($pago['monto'] ?? 0)
+                    : ($pago->monto ?? 0);
+
+                // Si el pago tiene fecha propia, usamos esa
+                if ($fecha) {
+                    try {
+                        $fechaPago = Carbon::parse($fecha);
+                    } catch (\Exception $e) {
+                        continue;
                     }
-                } else {
-                    // Si no hay fecha de pago, solo sumar si la venta es de este mes
-                    if (Carbon::parse($registro->fecha_h)->year == $this->year && Carbon::parse($registro->fecha_h)->month == $this->month) {
-                        $total += $pago['monto'] ?? 0;
+
+                    if (
+                        (int) $fechaPago->year === (int) $this->year &&
+                        (int) $fechaPago->month === (int) $this->month
+                    ) {
+                        $total += (float) $monto;
                     }
+
+                    continue;
+                }
+
+                // Sin fecha en el pago: lo consideramos cobrado en el mes de la venta original
+                $fechaVenta = Carbon::parse($registro->fecha_h);
+                if (
+                    (int) $fechaVenta->year === (int) $this->year &&
+                    (int) $fechaVenta->month === (int) $this->month
+                ) {
+                    $total += (float) $monto;
                 }
             }
         }
+
         return $total;
     }
 
@@ -100,27 +142,21 @@ class EstadisticasVentasController extends Controller
 
     protected function evolucionFacturacion()
     {
-        // Mes actual: suma de trabajos (items)
-        $registros_mes_actual = RegistroV::whereYear('fecha_h', $this->year)
-            ->whereMonth('fecha_h', $this->month)
-            ->get()
-            ->sum(function ($registro) {
-                $items = is_array($registro->items) ? $registro->items : (json_decode($registro->items, true) ?? []);
-                return is_array($items) ? count($items) : 0;
-            });
-        // Mes anterior: conteo de registros
+        // D5 = facturación del mes actual
+        $facturacionActual = $this->facturacionDelMes();
+
+        // H3 = facturación del mes anterior (referencia)
         $lastMonth = Carbon::create($this->year, $this->month, 1)->subMonth();
-        $registros_mes_anterior = RegistroV::whereYear('fecha_h', $lastMonth->year)
+        $facturacionAnterior = RegistroV::whereYear('fecha_h', $lastMonth->year)
             ->whereMonth('fecha_h', $lastMonth->month)
-            ->count();
-        // Diferencia porcentual
-        $diferencia = 0;
-        if ($registros_mes_anterior > 0) {
-            $diferencia = ($registros_mes_actual / $registros_mes_anterior);
-        } elseif ($registros_mes_actual > 0) {
-            $diferencia = 100;
+            ->sum('valor_v');
+
+        if ($facturacionActual <= 0 || $facturacionAnterior <= 0) {
+            return 0;
         }
-        return round($diferencia, 2);
+
+        // Fórmula Excel: =D5/H3
+        return round($facturacionActual / $facturacionAnterior, 2);
     }
 
     protected function numeroTransacciones()
@@ -154,13 +190,17 @@ class EstadisticasVentasController extends Controller
     {
         return Costo::whereYear('f_costos', $this->year)
             ->whereMonth('f_costos', $this->month)
-            ->sum('valor');
+            ->sum('valor')
+            + $this->obtenerNominaCostos()
+            + $this->obtenerCostosLlavesTotal();
     }
     protected function totalCostoVenta()
     {
         return Costo::whereYear('f_costos', $this->year)
             ->whereMonth('f_costos', $this->month)
-            ->sum('valor');
+            ->sum('valor')
+            + $this->obtenerNominaCostos()
+            + $this->obtenerCostosLlavesTotal();
     }
 
     protected function totalGastoPersonal()
@@ -199,7 +239,278 @@ class EstadisticasVentasController extends Controller
     {
         return Gasto::whereYear('f_gastos', $this->year)
             ->whereMonth('f_gastos', $this->month)
-            ->sum('valor');
+            ->sum('valor') + $this->obtenerNominaGastos() + $this->obtenerRetirosDuenoTotal();
+    }
+
+    protected function obtenerNominaCostos()
+    {
+        if ($this->nominaCostos !== null) {
+            return $this->nominaCostos;
+        }
+
+        $this->nominaCostos = Nempleado::whereYear('fecha_pago', $this->year)
+            ->whereMonth('fecha_pago', $this->month)
+            ->whereHas('empleado', function ($query) {
+                $query->where('tipo', 1);
+            })
+            ->sum('total_pagado');
+
+        return $this->nominaCostos;
+    }
+
+    protected function obtenerNominaGastos()
+    {
+        if ($this->nominaGastos !== null) {
+            return $this->nominaGastos;
+        }
+
+        $this->nominaGastos = Nempleado::whereYear('fecha_pago', $this->year)
+            ->whereMonth('fecha_pago', $this->month)
+            ->whereHas('empleado', function ($query) {
+                $query->where('tipo', '!=', 1);
+            })
+            ->sum('total_pagado');
+
+        return $this->nominaGastos;
+    }
+
+    protected function obtenerNominaDetallePorTipo(int $tipoClasificado)
+    {
+        if ($tipoClasificado === 1 && $this->detalleNominaCostos !== null) {
+            return $this->detalleNominaCostos;
+        }
+
+        if ($tipoClasificado === 2 && $this->detalleNominaGastos !== null) {
+            return $this->detalleNominaGastos;
+        }
+
+        $detalle = Nempleado::with('empleado')
+            ->whereYear('fecha_pago', $this->year)
+            ->whereMonth('fecha_pago', $this->month)
+            ->whereHas('empleado', function ($query) use ($tipoClasificado) {
+                if ($tipoClasificado === 1) {
+                    $query->where('tipo', 1);
+                } else {
+                    $query->where('tipo', '!=', 1);
+                }
+            })
+            ->orderBy('fecha_pago')
+            ->get()
+            ->map(function ($registro) {
+                return [
+                    'fecha' => $registro->fecha_pago,
+                    'descripcion' => 'Nómina de ' . ($registro->empleado->nombre ?? 'Empleado'),
+                    'subcategoria' => 'Nómina',
+                    'valor' => (float) $registro->total_pagado,
+                    'detalle' => $registro->detalle_pago,
+                    'fuente' => 'nomina'
+                ];
+            })
+            ->toArray();
+
+        if ($tipoClasificado === 1) {
+            $this->detalleNominaCostos = $detalle;
+        } else {
+            $this->detalleNominaGastos = $detalle;
+        }
+
+        return $detalle;
+    }
+
+    protected function obtenerCostosDetalle()
+    {
+        $costos = Costo::whereYear('f_costos', $this->year)
+            ->whereMonth('f_costos', $this->month)
+            ->orderBy('f_costos')
+            ->get()
+            ->map(function ($costo) {
+                return [
+                    'fecha' => $costo->f_costos,
+                    'descripcion' => $costo->descripcion,
+                    'subcategoria' => $this->obtenerNombreSubcategoria($costo->subcategoria),
+                    'valor' => (float) $costo->valor,
+                    'fuente' => 'costo'
+                ];
+            })
+            ->toArray();
+
+        return array_merge(
+            $costos,
+            $this->obtenerDetalleCostosLlaves(),
+            $this->obtenerNominaDetallePorTipo(1)
+        );
+    }
+
+    protected function obtenerGastosDetalle()
+    {
+        $gastos = Gasto::whereYear('f_gastos', $this->year)
+            ->whereMonth('f_gastos', $this->month)
+            ->orderBy('f_gastos')
+            ->get()
+            ->map(function ($gasto) {
+                return [
+                    'fecha' => $gasto->f_gastos,
+                    'descripcion' => $gasto->descripcion,
+                    'subcategoria' => $this->obtenerNombreSubcategoria($gasto->subcategoria),
+                    'valor' => (float) $gasto->valor,
+                    'fuente' => 'gasto'
+                ];
+            })
+            ->toArray();
+
+        return array_merge($gastos, $this->obtenerNominaDetallePorTipo(2), $this->obtenerRetirosDuenoDetalle());
+    }
+
+    protected function obtenerNombreSubcategoria($identificador)
+    {
+        if (empty($identificador)) {
+            return 'Sin subcategoría';
+        }
+
+        if (!ctype_digit((string) $identificador)) {
+            return $identificador;
+        }
+
+        if (!isset($this->categoriaCache[$identificador])) {
+            $this->categoriaCache[$identificador] = Categoria::find($identificador)?->nombre ?? $identificador;
+        }
+
+        return $this->categoriaCache[$identificador];
+    }
+
+    protected function obtenerRangoMes(): array
+    {
+        $inicio = Carbon::create($this->year, $this->month, 1)->startOfMonth();
+        $fin = $inicio->copy()->endOfMonth();
+
+        return [$inicio, $fin];
+    }
+
+    protected function obtenerRetirosDuenoTotal()
+    {
+        if ($this->retiroDuenoTotal !== null) {
+            return $this->retiroDuenoTotal;
+        }
+
+        [$inicio, $fin] = $this->obtenerRangoMes();
+
+        $this->retiroDuenoTotal = Nempleado::whereHas('empleado', function ($query) {
+            $query->where('cargo', 5)->orWhere('tipo_pago', 'retiro');
+        })->where(function ($query) use ($inicio, $fin) {
+            $query->whereBetween('fecha_pago', [$inicio, $fin])
+                ->orWhereBetween('fecha_desde', [$inicio, $fin])
+                ->orWhereBetween('fecha_hasta', [$inicio, $fin]);
+        })->sum('total_pagado');
+
+        return $this->retiroDuenoTotal;
+    }
+
+    protected function obtenerRetirosDuenoDetalle()
+    {
+        if ($this->detalleRetirosDueno !== null) {
+            return $this->detalleRetirosDueno;
+        }
+
+        [$inicio, $fin] = $this->obtenerRangoMes();
+
+        $this->detalleRetirosDueno = Nempleado::with('empleado')
+            ->whereHas('empleado', function ($query) {
+                $query->where('cargo', 5)->orWhere('tipo_pago', 'retiro');
+            })
+            ->where(function ($query) use ($inicio, $fin) {
+                $query->whereBetween('fecha_pago', [$inicio, $fin])
+                    ->orWhereBetween('fecha_desde', [$inicio, $fin])
+                    ->orWhereBetween('fecha_hasta', [$inicio, $fin]);
+            })
+            ->orderBy('fecha_pago')
+            ->get()
+            ->map(function ($registro) {
+                return [
+                    'fecha' => $registro->fecha_pago ?? $registro->fecha_desde ?? null,
+                    'descripcion' => 'Retiro de ' . ($registro->empleado->nombre ?? 'Dueño'),
+                    'subcategoria' => 'Retiros del dueño',
+                    'valor' => (float) $registro->total_pagado,
+                    'detalle' => $registro->detalle_pago,
+                    'fuente' => 'retiro'
+                ];
+            })
+            ->toArray();
+
+        return $this->detalleRetirosDueno;
+    }
+
+    protected function obtenerCostosLlavesTotal()
+    {
+        if ($this->costosLlavesTotal !== null) {
+            return $this->costosLlavesTotal;
+        }
+
+        [$inicio, $fin] = $this->obtenerRangoMes();
+        $ventas = RegistroV::whereBetween('fecha_h', [$inicio, $fin])->get(['items']);
+
+        $total = 0;
+        $detalle = [];
+
+        foreach ($ventas as $venta) {
+            $items = is_array($venta->items) ? $venta->items : (json_decode($venta->items, true) ?? []);
+
+            foreach ($items as $item) {
+                if (!isset($item['productos']) || !is_array($item['productos'])) {
+                    continue;
+                }
+
+                foreach ($item['productos'] as $producto) {
+                    $cantidad = isset($producto['cantidad']) ? (float) $producto['cantidad'] : 0;
+                    $precio = isset($producto['precio']) ? (float) $producto['precio'] : 0;
+
+                    if ($cantidad <= 0 || $precio <= 0) {
+                        continue;
+                    }
+
+                    $valor = $cantidad * $precio;
+                    $nombre = $producto['nombre_producto'] ?? 'Llave sin nombre';
+                    $clave = $producto['producto'] ?? $nombre;
+
+                    if (!isset($detalle[$clave])) {
+                        $detalle[$clave] = [
+                            'nombre' => $nombre,
+                            'total_cantidad' => 0,
+                            'total_valor' => 0
+                        ];
+                    }
+
+                    $detalle[$clave]['total_cantidad'] += $cantidad;
+                    $detalle[$clave]['total_valor'] += $valor;
+
+                    $total += $valor;
+                }
+            }
+        }
+
+        $this->costosLlavesTotal = $total;
+        $this->detalleCostosLlaves = array_values($detalle);
+
+        return $this->costosLlavesTotal;
+    }
+
+    protected function obtenerDetalleCostosLlaves()
+    {
+        $this->obtenerCostosLlavesTotal();
+
+        if (empty($this->detalleCostosLlaves)) {
+            return [];
+        }
+
+        return array_map(function ($llave) {
+            return [
+                'fecha' => null,
+                'descripcion' => 'Llaves: ' . ($llave['nombre'] ?? 'Sin nombre'),
+                'subcategoria' => 'Costo de llaves',
+                'valor' => (float) ($llave['total_valor'] ?? 0),
+                'detalle' => 'Cantidad: ' . number_format($llave['total_cantidad'] ?? 0, 2),
+                'fuente' => 'llaves'
+            ];
+        }, $this->detalleCostosLlaves);
     }
 
     // Métodos auxiliares
@@ -239,11 +550,32 @@ class EstadisticasVentasController extends Controller
                 ->where('subcategoria', $subcategoria)
                 ->sum('valor');
             // Buscar el nombre real de la subcategoría
-            $nombreSubcategoria = \App\Models\Categoria::find($subcategoria)?->nombre ?? $subcategoria;
+            $nombreSubcategoria = $this->obtenerNombreSubcategoria($subcategoria);
             $gastosPorSubcategoria[] = [
                 'nombre' => $nombreSubcategoria,
                 'total' => $total,
                 'porcentaje' => $this->calcularPorcentaje($total, $facturacion)
+            ];
+        }
+
+        $nominaCostos = $this->obtenerNominaCostos();
+        $nominaGastos = $this->obtenerNominaGastos();
+        $retiroDueno = $this->obtenerRetirosDuenoTotal();
+        $costosLlaves = $this->obtenerCostosLlavesTotal();
+
+        if ($nominaGastos > 0) {
+            $gastosPorSubcategoria[] = [
+                'nombre' => 'Nómina (gastos)',
+                'total' => $nominaGastos,
+                'porcentaje' => $this->calcularPorcentaje($nominaGastos, $facturacion)
+            ];
+        }
+
+        if ($retiroDueno > 0) {
+            $gastosPorSubcategoria[] = [
+                'nombre' => 'Retiros del dueño',
+                'total' => $retiroDueno,
+                'porcentaje' => $this->calcularPorcentaje($retiroDueno, $facturacion)
             ];
         }
 
@@ -325,12 +657,22 @@ class EstadisticasVentasController extends Controller
                 'utilidad_bruta' => $utilidadBruta,
                 'porcentaje_utilidad_bruta' => $this->calcularPorcentaje($utilidadBruta, $facturacion),
                 'total_costos_mes' => $this->totalCostosDelMes(),
-                'porcentaje_total_costos' => $this->calcularPorcentaje($this->totalCostosDelMes(), $facturacion)
+                'porcentaje_total_costos' => $this->calcularPorcentaje($this->totalCostosDelMes(), $facturacion),
+                'nomina_costos' => $nominaCostos,
+                'porcentaje_nomina_costos' => $this->calcularPorcentaje($nominaCostos, $facturacion),
+                'costos_llaves' => $costosLlaves,
+                'porcentaje_costos_llaves' => $this->calcularPorcentaje($costosLlaves, $facturacion),
+                'detalle' => $this->obtenerCostosDetalle()
             ],
             'gastos' => [
                 'por_subcategoria' => $gastosPorSubcategoria,
                 'total_gastos' => $this->totalGastos(),
-                'porcentaje_gastos' => $this->calcularPorcentaje($this->totalGastos(), $facturacion)
+                'porcentaje_gastos' => $this->calcularPorcentaje($this->totalGastos(), $facturacion),
+                'nomina_gastos' => $nominaGastos,
+                'porcentaje_nomina_gastos' => $this->calcularPorcentaje($nominaGastos, $facturacion),
+                'retiros_dueno' => $retiroDueno,
+                'porcentaje_retiros_dueno' => $this->calcularPorcentaje($retiroDueno, $facturacion),
+                'detalle' => $this->obtenerGastosDetalle()
             ],
             // Resultados finales
             'resultados' => [

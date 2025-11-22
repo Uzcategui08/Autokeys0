@@ -196,10 +196,81 @@
                         <td>${{ number_format($stats['costos']['total_costos_mes'], 2) }}</td>
                         <td>{{ number_format($stats['costos']['porcentaje_total_costos'] - ($gastosExtraVanes ?? collect())->sum('valor'), 2) }}%</td>
                     </tr>
+                    @if(($stats['costos']['costos_llaves'] ?? 0) > 0)
+                    <tr>
+                        <td>&nbsp;&nbsp;Costo de llaves</td>
+                        <td>${{ number_format($stats['costos']['costos_llaves'], 2) }}</td>
+                        <td>{{ number_format($stats['costos']['porcentaje_costos_llaves'], 2) }}%</td>
+                    </tr>
+                    @endif
+                    @if(($stats['costos']['nomina_costos'] ?? 0) > 0)
+                    <tr>
+                        <td>&nbsp;&nbsp;Nómina asignada a costos</td>
+                        <td>${{ number_format($stats['costos']['nomina_costos'], 2) }}</td>
+                        <td>{{ number_format($stats['costos']['porcentaje_nomina_costos'], 2) }}%</td>
+                    </tr>
+                    @endif
                     <tr>
                         <td><strong>Utilidad Bruta</strong></td>
                         <td>${{ number_format($stats['costos']['utilidad_bruta'], 2) }}</td>
                         <td>{{ number_format($stats['costos']['porcentaje_utilidad_bruta'], 2) }}%</td>
+                    </tr>
+                    <tr class="table-light">
+                        <td colspan="3">
+                            <button class="btn btn-link p-0 toggle-detail" type="button" data-toggle="collapse" data-target="#detalleCostos" aria-expanded="false" aria-controls="detalleCostos">
+                                <i class="fas fa-chevron-down mr-1"></i> Ver detalle de costos ({{ count($stats['costos']['detalle'] ?? []) }})
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="p-0 border-0">
+                            <div class="collapse" id="detalleCostos">
+                                <div class="p-3">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Fecha</th>
+                                                    <th>Descripción</th>
+                                                    <th>Categoría</th>
+                                                    <th>Valor</th>
+                                                    <th>Origen</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @forelse($stats['costos']['detalle'] ?? [] as $detalle)
+                                                    <tr>
+                                                        <td>{{ $detalle['fecha'] ? \Carbon\Carbon::parse($detalle['fecha'])->format('d/m/Y') : 'N/D' }}</td>
+                                                        <td>{{ $detalle['descripcion'] }}</td>
+                                                        <td>{{ $detalle['subcategoria'] }}</td>
+                                                        <td>${{ number_format($detalle['valor'], 2) }}</td>
+                                                        <td>
+                                                            @php
+                                                                $fuente = $detalle['fuente'] ?? 'directo';
+                                                                $badgeClass = 'primary';
+                                                                $fuenteTexto = 'Costo directo';
+                                                                if ($fuente === 'nomina') {
+                                                                    $badgeClass = 'info';
+                                                                    $fuenteTexto = 'Nómina';
+                                                                } elseif ($fuente === 'llaves') {
+                                                                    $badgeClass = 'warning';
+                                                                    $fuenteTexto = 'Llaves';
+                                                                }
+                                                            @endphp
+                                                            <span class="badge badge-{{ $badgeClass }}">{{ $fuenteTexto }}</span>
+                                                        </td>
+                                                    </tr>
+                                                @empty
+                                                    <tr>
+                                                        <td colspan="5" class="text-center text-muted">Sin registros de costos para este mes.</td>
+                                                    </tr>
+                                                @endforelse
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
                     </tr>
                                         
                     @foreach($stats['gastos']['por_subcategoria'] as $item)
@@ -213,6 +284,63 @@
                         <td><strong>Total Gastos</strong></td>
                         <td>${{ number_format($stats['gastos']['total_gastos'], 2) }}</td>
                         <td>{{ number_format($stats['gastos']['porcentaje_gastos'], 2) }}%</td>
+                    </tr>
+                    <tr class="table-light">
+                        <td colspan="3">
+                            <button class="btn btn-link p-0 toggle-detail" type="button" data-toggle="collapse" data-target="#detalleGastos" aria-expanded="false" aria-controls="detalleGastos">
+                                <i class="fas fa-chevron-down mr-1"></i> Ver detalle de gastos ({{ count($stats['gastos']['detalle'] ?? []) }})
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="p-0 border-0">
+                            <div class="collapse" id="detalleGastos">
+                                <div class="p-3">
+                                    <div class="table-responsive">
+                                    <table class="table table-sm table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Fecha</th>
+                                                <th>Descripción</th>
+                                                <th>Subcategoría</th>
+                                                <th>Valor</th>
+                                                <th>Origen</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($stats['gastos']['detalle'] ?? [] as $detalle)
+                                                <tr>
+                                                    <td>{{ $detalle['fecha'] ? \Carbon\Carbon::parse($detalle['fecha'])->format('d/m/Y') : 'N/D' }}</td>
+                                                    <td>{{ $detalle['descripcion'] }}</td>
+                                                    <td>{{ $detalle['subcategoria'] }}</td>
+                                                    <td>${{ number_format($detalle['valor'], 2) }}</td>
+                                                    <td>
+                                                        @php
+                                                            $fuente = $detalle['fuente'] ?? 'directo';
+                                                            $badgeClass = 'secondary';
+                                                            $fuenteTexto = 'Gasto directo';
+                                                            if ($fuente === 'nomina') {
+                                                                $badgeClass = 'info';
+                                                                $fuenteTexto = 'Nómina';
+                                                            } elseif ($fuente === 'retiro') {
+                                                                $badgeClass = 'dark';
+                                                                $fuenteTexto = 'Retiro dueño';
+                                                            }
+                                                        @endphp
+                                                        <span class="badge badge-{{ $badgeClass }}">{{ $fuenteTexto }}</span>
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="5" class="text-center text-muted">Sin registros de gastos para este mes.</td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
                     </tr>
                     <tr>
                         <td><strong>Utilidad Neta</strong></td>
@@ -241,6 +369,20 @@
     }
     .table tbody tr:hover {
         background-color: rgba(0,0,0,.05);
+    }
+    .toggle-detail {
+        font-weight: 600;
+        color: #0d6efd;
+        text-decoration: none;
+    }
+    .toggle-detail:hover {
+        text-decoration: underline;
+    }
+    .toggle-detail i {
+        transition: transform .2s ease;
+    }
+    .toggle-detail[aria-expanded="true"] i {
+        transform: rotate(180deg);
     }
     @media print {
         body * {

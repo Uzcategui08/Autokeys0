@@ -26,6 +26,7 @@ class Gasto extends Model
 
     protected $perPage = 20;
     protected $primaryKey = 'id_gastos';
+    protected $keyType = 'int';
 
     /**
      * The attributes that are mass assignable.
