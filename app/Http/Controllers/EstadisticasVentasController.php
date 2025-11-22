@@ -7,6 +7,8 @@ use App\Models\RegistroV;
 use App\Models\Gasto;
 use App\Models\Costo;
 use App\Models\Categoria;
+use App\Models\Empleado;
+use App\Models\AjusteInventario;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -487,6 +489,24 @@ class EstadisticasVentasController extends Controller
             }
         }
 
+        // Incluir ajustes manuales (descargas inventario) en el costo de llaves
+        $ajustes = $this->formatearAjustesManuales();
+        if (!empty($ajustes['detalle'])) {
+            foreach ($ajustes['detalle'] as $ajusteLlave) {
+                $claveAjuste = $ajusteLlave['id_producto'] ?? $ajusteLlave['nombre'];
+                if (!isset($detalle[$claveAjuste])) {
+                    $detalle[$claveAjuste] = [
+                        'nombre' => $ajusteLlave['nombre'],
+                        'total_cantidad' => 0,
+                        'total_valor' => 0
+                    ];
+                }
+                $detalle[$claveAjuste]['total_cantidad'] += $ajusteLlave['total_cantidad'];
+                $detalle[$claveAjuste]['total_valor'] += $ajusteLlave['total_valor'];
+            }
+            $total += $ajustes['total_valor'];
+        }
+
         $this->costosLlavesTotal = $total;
         $this->detalleCostosLlaves = array_values($detalle);
 
@@ -678,7 +698,206 @@ class EstadisticasVentasController extends Controller
             'resultados' => [
                 'utilidad_neta' => $utilidadNeta,
                 'porcentaje_utilidad_neta' => $this->calcularPorcentaje($utilidadNeta, $facturacion)
-            ]
+            ],
+            'llaves' => $this->formatearLlavesStats(),
+            'ajustes' => $this->formatearAjustesManuales()
+        ];
+    }
+
+    protected function obtenerLlavesPorTecnico()
+    {
+        [$inicio, $fin] = $this->obtenerRangoMes();
+        return Empleado::with(['ventas' => function ($query) use ($inicio, $fin) {
+            $query->whereBetween('fecha_h', [$inicio, $fin]);
+        }])
+            ->whereHas('ventas', function ($query) use ($inicio, $fin) {
+                $query->whereBetween('fecha_h', [$inicio, $fin]);
+            })
+            ->get()
+            ->map(function ($tecnico) {
+                $llavesInfo = collect();
+                $totalLlaves = 0;
+                $totalValor = 0;
+
+                foreach ($tecnico->ventas as $venta) {
+                    $items = is_array($venta->items) ? $venta->items : (json_decode($venta->items, true) ?? []);
+                    foreach ($items as $item) {
+                        if (!isset($item['productos']) || !is_array($item['productos'])) {
+                            continue;
+                        }
+                        foreach ($item['productos'] as $producto) {
+                            if (!isset($producto['almacen'], $producto['cantidad'])) {
+                                continue;
+                            }
+                            $llaveNombre = $producto['nombre_producto'] ?? 'Llave sin nombre';
+                            $almacenId = $producto['almacen'];
+                            $cantidad = (float) ($producto['cantidad'] ?? 0);
+                            $precio = (float) ($producto['precio'] ?? 0);
+                            if ($cantidad <= 0) {
+                                continue;
+                            }
+                            if (!$llavesInfo->has($llaveNombre)) {
+                                $llavesInfo->put($llaveNombre, [
+                                    'nombre' => $llaveNombre,
+                                    'id_producto' => $producto['producto'] ?? null,
+                                    'almacenes' => collect(),
+                                    'total_cantidad' => 0,
+                                    'total_valor' => 0
+                                ]);
+                            }
+                            $llaveData = $llavesInfo->get($llaveNombre);
+                            if (!$llaveData['almacenes']->has($almacenId)) {
+                                $llaveData['almacenes']->put($almacenId, [
+                                    'cantidad' => 0,
+                                    'total' => 0
+                                ]);
+                            }
+                            $almacenData = $llaveData['almacenes'][$almacenId];
+                            $almacenData['cantidad'] += $cantidad;
+                            $almacenData['total'] += ($cantidad * $precio);
+                            $llaveData['almacenes'][$almacenId] = $almacenData;
+                            $llaveData['total_cantidad'] += $cantidad;
+                            $llaveData['total_valor'] += ($cantidad * $precio);
+                            $llavesInfo->put($llaveNombre, $llaveData);
+                            $totalLlaves += $cantidad;
+                            $totalValor += ($cantidad * $precio);
+                        }
+                    }
+                }
+                return $totalLlaves > 0 ? [
+                    'tecnico' => $tecnico->nombre,
+                    'llaves' => $llavesInfo->values()->map(function ($llave) {
+                        // Convertir almacenes a array simple
+                        $llave['almacenes'] = $llave['almacenes']->map(function ($almacen, $id) {
+                            return [
+                                'id_almacen' => $id,
+                                'cantidad' => $almacen['cantidad'],
+                                'total' => $almacen['total']
+                            ];
+                        })->values();
+                        return $llave;
+                    }),
+                    'total_llaves' => $totalLlaves,
+                    'total_valor' => $totalValor
+                ] : null;
+            })
+            ->filter();
+    }
+
+    protected function formatearLlavesStats()
+    {
+        $llavesPorTecnico = $this->obtenerLlavesPorTecnico();
+        // Construir resumen global por llave (sin separar por técnico)
+        $resumen = collect();
+        foreach ($llavesPorTecnico as $tecnico) {
+            foreach ($tecnico['llaves'] as $llave) {
+                $nombre = $llave['nombre'];
+                if (!$resumen->has($nombre)) {
+                    $resumen->put($nombre, [
+                        'nombre' => $nombre,
+                        'total_cantidad' => 0,
+                        'total_valor' => 0,
+                        'almacenes' => collect()
+                    ]);
+                }
+                $entry = $resumen->get($nombre);
+                $entry['total_cantidad'] += $llave['total_cantidad'];
+                $entry['total_valor'] += $llave['total_valor'];
+                // Acumular almacenes
+                foreach ($llave['almacenes'] as $almacen) {
+                    $almId = $almacen['id_almacen'];
+                    if (!$entry['almacenes']->has($almId)) {
+                        $entry['almacenes']->put($almId, [
+                            'id_almacen' => $almId,
+                            'cantidad' => 0,
+                            'total' => 0
+                        ]);
+                    }
+                    $almData = $entry['almacenes']->get($almId);
+                    $almData['cantidad'] += $almacen['cantidad'];
+                    $almData['total'] += $almacen['total'];
+                    $entry['almacenes']->put($almId, $almData);
+                }
+                $resumen->put($nombre, $entry);
+            }
+        }
+        $resumenLlaves = $resumen->values()->map(function ($llave) {
+            $llave['almacenes'] = $llave['almacenes']->values();
+            return $llave;
+        });
+        return [
+            'por_tecnico' => $llavesPorTecnico,
+            'total_llaves' => $llavesPorTecnico->sum('total_llaves'),
+            'total_valor' => $llavesPorTecnico->sum('total_valor'),
+            'resumen' => $resumenLlaves
+        ];
+    }
+
+    protected function obtenerDescargasManualesMes()
+    {
+        [$inicio, $fin] = $this->obtenerRangoMes();
+        return AjusteInventario::with(['producto', 'almacene'])
+            ->where(function ($query) use ($inicio, $fin) {
+                $query->whereBetween('fecha_ajuste', [$inicio, $fin])
+                    ->orWhere(function ($q) use ($inicio, $fin) {
+                        $q->whereNull('fecha_ajuste')->whereBetween('created_at', [$inicio, $fin]);
+                    });
+            })
+            ->where('tipo_ajuste', 'ajuste2')
+            ->where('cierre', true)
+            ->get()
+            ->map(function ($ajuste) {
+                $producto = $ajuste->producto;
+                $almacen = $ajuste->almacene;
+                $precioBase = $ajuste->precio_llave ?? ($producto->precio ?? 0);
+                return [
+                    'producto' => $producto?->item ?? $producto?->nombre ?? 'Producto no encontrado',
+                    'id_producto' => $producto?->id_producto,
+                    'almacen' => $almacen?->nombre ?? 'Sin almacén',
+                    'id_almacen' => $almacen?->id_almacen,
+                    'cantidad_anterior' => $ajuste->cantidad_anterior,
+                    'cantidad_nueva' => $ajuste->cantidad_nueva,
+                    'diferencia' => abs($ajuste->diferencia),
+                    'precio' => (float) $precioBase,
+                    'valor' => abs($ajuste->diferencia) * (float)$precioBase
+                ];
+            });
+    }
+
+    protected function formatearAjustesManuales()
+    {
+        $descargas = $this->obtenerDescargasManualesMes();
+        if ($descargas->isEmpty()) {
+            return [
+                'total_llaves' => 0,
+                'total_valor' => 0,
+                'detalle' => []
+            ];
+        }
+        $agrupado = $descargas->groupBy('id_producto')->map(function ($grupo) {
+            $primero = $grupo->first();
+            $totalCantidad = $grupo->sum('diferencia');
+            $totalValor = $grupo->sum('valor');
+            $almacenes = $grupo->groupBy('id_almacen')->map(function ($sub) {
+                return [
+                    'id_almacen' => $sub->first()['id_almacen'],
+                    'almacen' => $sub->first()['almacen'],
+                    'cantidad' => $sub->sum('diferencia'),
+                    'valor' => $sub->sum('valor')
+                ];
+            })->values();
+            return [
+                'id_producto' => $primero['id_producto'],
+                'nombre' => $primero['producto'],
+                'total_cantidad' => $totalCantidad,
+                'total_valor' => $totalValor,
+                'almacenes' => $almacenes
+            ];
+        })->values();
+        return [
+            'total_llaves' => $agrupado->sum('total_cantidad'),
+            'total_valor' => $agrupado->sum('total_valor'),
+            'detalle' => $agrupado
         ];
     }
     //PDF   Que muestra todo
