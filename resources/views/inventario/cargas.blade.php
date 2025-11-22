@@ -57,7 +57,7 @@
                                     <td class="text-center align-middle">{{ $ajuste->cantidad_anterior }}</td>
                                     <td class="text-center align-middle">{{ $ajuste->cantidad_nueva }}</td>
                                     <td class="text-center align-middle">{{ $ajuste->descripcion }}</td>
-                                    <td class="text-center align-middle">{{ $ajuste->created_at->format('m/d/Y') }}</td>
+                                    <td class="text-center align-middle">{{ $ajuste->fecha_ajuste}}</td>
                                     <td class="text-center align-middle">
                                         <form action="{{ route('ajustes.destroy', $ajuste->id) }}" method="POST" class="delete-ajuste-form" style="display:inline;">
                                             @csrf
