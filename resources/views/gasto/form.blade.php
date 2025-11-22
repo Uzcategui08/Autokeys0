@@ -57,7 +57,7 @@
                                 <option value="" disabled>{{ __('Seleccionar Subcategoría') }}</option>
                                 @foreach($categorias as $categoria)
                                     <option value="{{ $categoria->id_categoria }}"
-                                        {{ (old('subcategoria', $prestamo?->subcategoria ?? null)) == $categoria->id_categoria ? 'selected' : '' }}>
+                                        {{ (old('subcategoria', $gasto?->subcategoria ?? null)) == $categoria->id_categoria ? 'selected' : '' }}>
                                         {{ $categoria->nombre }}
                                     </option>
                                 @endforeach
