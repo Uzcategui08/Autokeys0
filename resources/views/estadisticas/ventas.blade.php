@@ -344,10 +344,26 @@
                         </td>
                     </tr>
                     <tr>
-                        <td><strong>Utilidad Neta</strong></td>
+                        <td><strong>Utilidad bruta</strong></td>
                         <td>${{ number_format($stats['resultados']['utilidad_neta'], 2) }}</td>
                         <td>{{ number_format($stats['resultados']['porcentaje_utilidad_neta'], 2) }}%</td>
                     </tr>
+                    @if(($stats['gastos']['retiros_dueno'] ?? 0) > 0)
+                    <tr>
+                        <td>Retiro del Dueño</td>
+                        <td>${{ number_format($stats['gastos']['retiros_dueno'], 2) }}</td>
+                        <td>{{ number_format($stats['gastos']['porcentaje_retiros_dueno'], 2) }}%</td>
+                    </tr>
+                    @endif
+                    <tr>
+                        <td><strong>Utilidad Neta</strong></td>
+                        @php
+                            $utilidadNetaSoloRetiro = ($stats['resultados']['utilidad_neta'] ?? 0) - ($stats['gastos']['retiros_dueno'] ?? 0);
+                            $porcentajeUtilidadNetaSoloRetiro = ($utilidadNetaSoloRetiro / max($stats['ventas']['facturacion'] ?? 0, 1)) * 100;
+                        @endphp
+                        <td>${{ number_format($utilidadNetaSoloRetiro, 2) }}</td>
+                        <td>{{ number_format($porcentajeUtilidadNetaSoloRetiro, 2) }}%</td>
+                        </tr>
                 </tbody>
             </table>
         </div>
