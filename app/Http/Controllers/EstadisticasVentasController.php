@@ -303,10 +303,10 @@ class EstadisticasVentasController extends Controller
 
     protected function totalGastos()
     {
-        // Total de gastos incluye nómina de gastos y retiros del dueño (comportamiento original)
+        // Total de gastos SIN incluir retiros del dueño
         return Gasto::whereYear('f_gastos', $this->year)
             ->whereMonth('f_gastos', $this->month)
-            ->sum('valor') + $this->obtenerNominaGastos() + $this->obtenerRetirosDuenoTotal();
+            ->sum('valor') + $this->obtenerNominaGastos();
     }
 
     protected function obtenerNominaCostos()
@@ -318,7 +318,9 @@ class EstadisticasVentasController extends Controller
         $this->nominaCostos = Nempleado::whereYear('fecha_pago', $this->year)
             ->whereMonth('fecha_pago', $this->month)
             ->whereHas('empleado', function ($query) {
-                $query->where('tipo', 1);
+                $query->where('tipo', 1)
+                    ->where('cargo', '!=', 5)
+                    ->where('tipo_pago', '!=', 'retiro');
             })
             ->sum('total_pagado');
 
@@ -334,7 +336,9 @@ class EstadisticasVentasController extends Controller
         $this->nominaGastos = Nempleado::whereYear('fecha_pago', $this->year)
             ->whereMonth('fecha_pago', $this->month)
             ->whereHas('empleado', function ($query) {
-                $query->where('tipo', '!=', 1);
+                $query->where('tipo', '!=', 1)
+                    ->where('cargo', '!=', 5)
+                    ->where('tipo_pago', '!=', 'retiro');
             })
             ->sum('total_pagado');
 
@@ -356,9 +360,13 @@ class EstadisticasVentasController extends Controller
             ->whereMonth('fecha_pago', $this->month)
             ->whereHas('empleado', function ($query) use ($tipoClasificado) {
                 if ($tipoClasificado === 1) {
-                    $query->where('tipo', 1);
+                    $query->where('tipo', 1)
+                        ->where('cargo', '!=', 5)
+                        ->where('tipo_pago', '!=', 'retiro');
                 } else {
-                    $query->where('tipo', '!=', 1);
+                    $query->where('tipo', '!=', 1)
+                        ->where('cargo', '!=', 5)
+                        ->where('tipo_pago', '!=', 'retiro');
                 }
             })
             ->orderBy('fecha_pago')
@@ -424,8 +432,8 @@ class EstadisticasVentasController extends Controller
                 ];
             })
             ->toArray();
-        // Incluir retiros del dueño en el detalle de gastos (comportamiento original)
-        return array_merge($gastos, $this->obtenerNominaDetallePorTipo(2), $this->obtenerRetirosDuenoDetalle());
+        // Excluir retiros del dueño: se mostrarán aparte
+        return array_merge($gastos, $this->obtenerNominaDetallePorTipo(2));
     }
 
     protected function obtenerNombreSubcategoria($identificador)
@@ -609,10 +617,16 @@ class EstadisticasVentasController extends Controller
         return $this->facturacionDelMes() - $this->totalCostoVenta();
     }
 
+    protected function calcularUtilidadOperativa()
+    {
+        // Operativa = Bruta - Gastos (sin retiros)
+        return $this->calcularUtilidadBruta() - $this->totalGastos();
+    }
+
     protected function calcularUtilidadNeta()
     {
-        // Utilidad Neta original: Bruta - Total Gastos
-        return $this->calcularUtilidadBruta() - $this->totalGastos();
+        // Neta = Operativa - Retiros del dueño
+        return $this->calcularUtilidadOperativa() - $this->obtenerRetirosDuenoTotal();
     }
 
     // Método principal que obtiene todas las estadísticas
@@ -620,6 +634,7 @@ class EstadisticasVentasController extends Controller
     {
         $facturacion = $this->facturacionDelMes();
         $utilidadBruta = $this->calcularUtilidadBruta();
+        $utilidadOperativa = $this->calcularUtilidadOperativa();
         $utilidadNeta = $this->calcularUtilidadNeta();
         // Obtener subcategorías únicas (son strings, no IDs)
         $subcategorias = Gasto::whereYear('f_gastos', $this->year)
@@ -657,13 +672,7 @@ class EstadisticasVentasController extends Controller
             ];
         }
 
-        if ($retiroDueno > 0) {
-            $gastosPorSubcategoria[] = [
-                'nombre' => 'Retiros del dueño',
-                'total' => $retiroDueno,
-                'porcentaje' => $this->calcularPorcentaje($retiroDueno, $facturacion)
-            ];
-        }
+        // No agregar retiros del dueño a subcategorías de gastos
 
         // Calcular total de trabajos como en getResumenTrabajos
         $ventas = RegistroV::whereYear('fecha_h', $this->year)
@@ -768,6 +777,8 @@ class EstadisticasVentasController extends Controller
             ],
             // Resultados finales
             'resultados' => [
+                'utilidad_operativa' => $utilidadOperativa,
+                'porcentaje_utilidad_operativa' => $this->calcularPorcentaje($utilidadOperativa, $facturacion),
                 'utilidad_neta' => $utilidadNeta,
                 'porcentaje_utilidad_neta' => $this->calcularPorcentaje($utilidadNeta, $facturacion)
             ],

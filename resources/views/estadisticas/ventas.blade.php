@@ -110,14 +110,10 @@
                     <div class="card border-success mb-3">
                         <div class="card-header bg-success text-white">Utilidad Bruta</div>
                         <div class="card-body">
-                            @php
-                                $utilidadBrutaResumen = ($stats['resultados']['utilidad_neta'] ?? 0) + ($stats['gastos']['retiros_dueno'] ?? 0);
-                                $porcentajeUtilidadBrutaResumen = ($utilidadBrutaResumen / max($stats['ventas']['facturacion'] ?? 0, 1)) * 100;
-                            @endphp
-                            <h4 class="card-title">${{ number_format($utilidadBrutaResumen, 2) }}</h4>
+                            <h4 class="card-title">${{ number_format($stats['costos']['utilidad_bruta'], 2) }}</h4>
                             <p class="card-text">
                                 <small class="text-muted">
-                                    {{ number_format($porcentajeUtilidadBrutaResumen, 2) }}% de facturación<br>
+                                    {{ number_format($stats['costos']['porcentaje_utilidad_bruta'], 2) }}% de facturación<br>
                                     Costo venta: ${{ number_format($stats['costos']['total_costo_venta'], 2) }}<br>
                                     ({{ number_format($stats['costos']['porcentaje_costo_venta'], 2) }}%)
                                 </small>
@@ -146,16 +142,11 @@
                     <div class="card border-warning mb-3">
                         <div class="card-header bg-warning text-dark">Utilidad Operativa</div>
                         <div class="card-body">
-                            @php
-                                $utilidadBrutaResumen = ($stats['resultados']['utilidad_neta'] ?? 0) + ($stats['gastos']['retiros_dueno'] ?? 0);
-                                $utilidadOperativaResumen = $utilidadBrutaResumen - ($stats['gastos']['total_gastos'] ?? 0);
-                                $porcentajeUtilidadOperativaResumen = ($utilidadOperativaResumen / max($stats['ventas']['facturacion'] ?? 0, 1)) * 100;
-                            @endphp
-                            <h4 class="card-title">${{ number_format($utilidadOperativaResumen, 2) }}</h4>
+                            <h4 class="card-title">${{ number_format($stats['resultados']['utilidad_operativa'], 2) }}</h4>
                             <p class="card-text">
                                 <small class="text-muted">
-                                    {{ number_format($porcentajeUtilidadOperativaResumen, 2) }}% de facturación<br>
-                                    Total gastos: ${{ number_format($stats['gastos']['total_gastos'] ?? 0, 2) }}
+                                    {{ number_format($stats['resultados']['porcentaje_utilidad_operativa'], 2) }}% de facturación<br>
+                                    Gastos (excluye retiros): ${{ number_format($stats['gastos']['total_gastos'] ?? 0, 2) }}
                                 </small>
                             </p>
                         </div>
@@ -365,23 +356,15 @@
                         </td>
                     </tr>
                     
-                    @php
-                        $retiroCalc = $stats['gastos']['retiros_dueno'] ?? 0;
-                        $facturacionBase = max($stats['ventas']['facturacion'] ?? 0, 1);
-                        $utilidadBrutaConRetiro = ($stats['resultados']['utilidad_neta'] ?? 0) + $retiroCalc;
-                        $porcentajeUtilidadBrutaConRetiro = ($utilidadBrutaConRetiro / $facturacionBase) * 100;
-                        $utilidadOperativa = $utilidadBrutaConRetiro - ($stats['gastos']['total_gastos'] ?? 0);
-                        $porcentajeUtilidadOperativa = ($utilidadOperativa / $facturacionBase) * 100;
-                    @endphp
                     <tr>
                         <td><strong>Utilidad Bruta</strong></td>
-                        <td>${{ number_format($utilidadBrutaConRetiro, 2) }}</td>
-                        <td>{{ number_format($porcentajeUtilidadBrutaConRetiro, 2) }}%</td>
+                        <td>${{ number_format($stats['costos']['utilidad_bruta'], 2) }}</td>
+                        <td>{{ number_format($stats['costos']['porcentaje_utilidad_bruta'], 2) }}%</td>
                     </tr>
                     <tr>
                         <td><strong>Utilidad Operativa</strong></td>
-                        <td>${{ number_format($utilidadOperativa, 2) }}</td>
-                        <td>{{ number_format($porcentajeUtilidadOperativa, 2) }}%</td>
+                        <td>${{ number_format($stats['resultados']['utilidad_operativa'], 2) }}</td>
+                        <td>{{ number_format($stats['resultados']['porcentaje_utilidad_operativa'], 2) }}%</td>
                     </tr>
                     @if(($stats['gastos']['retiros_dueno'] ?? 0) > 0)
                     <tr>
@@ -392,17 +375,8 @@
                     @endif
                     <tr>
                         <td><strong>Utilidad Neta</strong></td>
-                        @php
-                            $retiroCalc = $stats['gastos']['retiros_dueno'] ?? 0;
-                            $facturacionBase = max($stats['ventas']['facturacion'] ?? 0, 1);
-                            // Recalcular operativa por si no persisten variables previas
-                            $utilidadBrutaTmp = ($stats['resultados']['utilidad_neta'] ?? 0) + $retiroCalc;
-                            $utilidadOperativaTmp = $utilidadBrutaTmp - ($stats['gastos']['total_gastos'] ?? 0);
-                            $utilidadNetaDesdeOperativa = $utilidadOperativaTmp - $retiroCalc;
-                            $porcentajeUtilidadNetaDesdeOperativa = ($utilidadNetaDesdeOperativa / $facturacionBase) * 100;
-                        @endphp
-                        <td>${{ number_format($utilidadNetaDesdeOperativa, 2) }}</td>
-                        <td>{{ number_format($porcentajeUtilidadNetaDesdeOperativa, 2) }}%</td>
+                        <td>${{ number_format($stats['resultados']['utilidad_neta'], 2) }}</td>
+                        <td>{{ number_format($stats['resultados']['porcentaje_utilidad_neta'], 2) }}%</td>
                         </tr>
                 </tbody>
             </table>
