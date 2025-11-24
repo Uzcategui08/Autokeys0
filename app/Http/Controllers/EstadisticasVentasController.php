@@ -303,6 +303,7 @@ class EstadisticasVentasController extends Controller
 
     protected function totalGastos()
     {
+        // Total de gastos incluye nómina de gastos y retiros del dueño (comportamiento original)
         return Gasto::whereYear('f_gastos', $this->year)
             ->whereMonth('f_gastos', $this->month)
             ->sum('valor') + $this->obtenerNominaGastos() + $this->obtenerRetirosDuenoTotal();
@@ -423,7 +424,7 @@ class EstadisticasVentasController extends Controller
                 ];
             })
             ->toArray();
-
+        // Incluir retiros del dueño en el detalle de gastos (comportamiento original)
         return array_merge($gastos, $this->obtenerNominaDetallePorTipo(2), $this->obtenerRetirosDuenoDetalle());
     }
 
@@ -610,6 +611,7 @@ class EstadisticasVentasController extends Controller
 
     protected function calcularUtilidadNeta()
     {
+        // Utilidad Neta original: Bruta - Total Gastos
         return $this->calcularUtilidadBruta() - $this->totalGastos();
     }
 
