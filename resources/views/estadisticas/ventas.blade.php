@@ -97,7 +97,8 @@
                             <h4 class="card-title">${{ number_format($stats['ventas']['facturacion'], 2) }}</h4>
                             <p class="card-text">
                                 <small class="text-muted">
-                                    Cobrado: ${{ number_format($stats['ventas']['cobrado_mes'], 2) }}<br>
+                                    Cobrado: ${{ number_format($stats['ventas']['cobrado'], 2) }}<br>
+                                    <small>(Contado: ${{ number_format($stats['ventas']['ingresos_contado'], 2) }}, Recibidos: ${{ number_format($stats['ventas']['ingresos_recibidos'], 2) }})</small><br>
                                     Transacciones: {{ $stats['ventas']['num_transacciones'] }}<br>
                                     Ticket promedio: ${{ number_format($stats['ventas']['ticket_promedio'], 2) }}
                                 </small>
@@ -161,9 +162,9 @@
                             <td>100.00%</td>
                         </tr>
                         <tr>
-                            <td>Cobrado del Mes</td>
-                            <td>${{ number_format($stats['ventas']['cobrado_mes'], 2) }}</td>
-                            <td>{{ number_format($stats['ventas']['cobrado_mes'] / $stats['ventas']['facturacion'] * 100, 2) }}%</td>
+                            <td>Cobrado </td>
+                            <td>${{ number_format($stats['ventas']['cobrado'], 2) }}</td>
+                            <td>{{ number_format(($stats['ventas']['cobrado'] / max($stats['ventas']['facturacion'], 1)) * 100, 2) }}%</td>
                         </tr>
                         <tr>
                             <td>Evolución Facturación (vs mes anterior)</td>

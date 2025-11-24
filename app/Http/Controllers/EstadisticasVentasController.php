@@ -135,6 +135,70 @@ class EstadisticasVentasController extends Controller
         return $total;
     }
 
+    protected function ingresosRecibidosDelMes()
+    {
+        // Lógica equivalente a getIngresosRecibidos del cierre semanal: pagos cuya fecha cae en el mes
+        // y corresponden a ventas de meses anteriores (créditos históricos).
+        [$inicio, $fin] = $this->obtenerRangoMes();
+
+        $empleados = \App\Models\Empleado::with(['ventas' => function ($query) {
+            $query->whereNotNull('pagos')
+                ->whereRaw("json_array_length(pagos) > 0");
+        }])
+            ->whereHas('ventas', function ($query) {
+                $query->whereNotNull('pagos')
+                    ->whereRaw("json_array_length(pagos) > 0");
+            })
+            ->get();
+
+        $total = 0;
+
+        foreach ($empleados as $empleado) {
+            foreach ($empleado->ventas as $venta) {
+                $pagos = $this->parsePagosVenta($venta->pagos ?? '[]');
+                $fechaVenta = $venta->fecha_h ? \Carbon\Carbon::parse($venta->fecha_h) : null;
+
+                foreach ($pagos as $pago) {
+                    if (!isset($pago['fecha'], $pago['monto'])) {
+                        continue;
+                    }
+                    try {
+                        $fechaPago = \Carbon\Carbon::parse($pago['fecha']);
+                    } catch (\Exception $e) {
+                        continue;
+                    }
+                    if (!$fechaPago->between($inicio, $fin)) {
+                        continue;
+                    }
+                    // Excluir pagos de ventas del mismo mes (solo ingresos de créditos históricos)
+                    if ($fechaVenta && $fechaVenta->format('Ym') >= $fechaPago->format('Ym')) {
+                        continue;
+                    }
+                    $total += (float) $pago['monto'];
+                }
+            }
+        }
+        return $total;
+    }
+
+    protected function parsePagosVenta($pagosData)
+    {
+        if (is_string($pagosData)) {
+            $decoded = json_decode($pagosData, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+        return is_array($pagosData) ? $pagosData : [];
+    }
+
+    protected function ingresosAlContadoDelMes()
+    {
+        // Ventas al contado facturadas en el mes
+        return RegistroV::whereYear('fecha_h', $this->year)
+            ->whereMonth('fecha_h', $this->month)
+            ->where('tipo_venta', 'contado')
+            ->sum('valor_v');
+    }
+
     protected function facturacionDelMes()
     {
         return RegistroV::whereYear('fecha_h', $this->year)
@@ -655,6 +719,10 @@ class EstadisticasVentasController extends Controller
             }
         }
 
+        $ingresosRecibidos = $this->ingresosRecibidosDelMes();
+        $ingresosContado = $this->ingresosAlContadoDelMes();
+        $cobradoTotal = $ingresosRecibidos + $ingresosContado;
+
         return [
             // Datos básicos
             'month' => $this->month,
@@ -662,7 +730,9 @@ class EstadisticasVentasController extends Controller
 
             // Estadísticas de ventas
             'ventas' => [
-                'cobrado_mes' => $this->cobradoDelMes(),
+                'cobrado' => $cobradoTotal,
+                'ingresos_contado' => $ingresosContado,
+                'ingresos_recibidos' => $ingresosRecibidos,
                 'facturacion' => $facturacion,
                 'evolucion_facturacion' => $this->evolucionFacturacion(),
                 'num_transacciones' => $totalTrabajos, // Mostrar la suma de trabajos
