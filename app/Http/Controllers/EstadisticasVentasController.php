@@ -633,6 +633,8 @@ class EstadisticasVentasController extends Controller
     protected function getAllStats()
     {
         $facturacion = $this->facturacionDelMes();
+        $totalCostoVenta = $this->totalCostoVenta();
+        $totalGastos = $this->totalGastos();
         $utilidadBruta = $this->calcularUtilidadBruta();
         $utilidadOperativa = $this->calcularUtilidadOperativa();
         $utilidadNeta = $this->calcularUtilidadNeta();
@@ -655,7 +657,7 @@ class EstadisticasVentasController extends Controller
             $gastosPorSubcategoria[] = [
                 'nombre' => $nombreSubcategoria,
                 'total' => $total,
-                'porcentaje' => $this->calcularPorcentaje($total, $facturacion)
+                'porcentaje' => $this->calcularPorcentaje($total, $totalGastos)
             ];
         }
 
@@ -753,26 +755,26 @@ class EstadisticasVentasController extends Controller
 
             // Costos y utilidad
             'costos' => [
-                'total_costo_venta' => $this->totalCostoVenta(),
-                'porcentaje_costo_venta' => $this->calcularPorcentaje($this->totalCostoVenta(), $facturacion),
+                'total_costo_venta' => $totalCostoVenta,
+                'porcentaje_costo_venta' => $this->calcularPorcentaje($totalCostoVenta, $facturacion),
                 'utilidad_bruta' => $utilidadBruta,
                 'porcentaje_utilidad_bruta' => $this->calcularPorcentaje($utilidadBruta, $facturacion),
                 'total_costos_mes' => $this->totalCostosDelMes(),
                 'porcentaje_total_costos' => $this->calcularPorcentaje($this->totalCostosDelMes(), $facturacion),
                 'nomina_costos' => $nominaCostos,
-                'porcentaje_nomina_costos' => $this->calcularPorcentaje($nominaCostos, $facturacion),
+                'porcentaje_nomina_costos' => $this->calcularPorcentaje($nominaCostos, $totalCostoVenta),
                 'costos_llaves' => $costosLlaves,
-                'porcentaje_costos_llaves' => $this->calcularPorcentaje($costosLlaves, $facturacion),
+                'porcentaje_costos_llaves' => $this->calcularPorcentaje($costosLlaves, $totalCostoVenta),
                 'detalle' => $this->obtenerCostosDetalle()
             ],
             'gastos' => [
                 'por_subcategoria' => $gastosPorSubcategoria,
                 'total_gastos' => $this->totalGastos(),
-                'porcentaje_gastos' => $this->calcularPorcentaje($this->totalGastos(), $facturacion),
+                'porcentaje_gastos' => $this->calcularPorcentaje($totalGastos, $facturacion),
                 'nomina_gastos' => $nominaGastos,
-                'porcentaje_nomina_gastos' => $this->calcularPorcentaje($nominaGastos, $facturacion),
+                'porcentaje_nomina_gastos' => $this->calcularPorcentaje($nominaGastos, $totalGastos),
                 'retiros_dueno' => $retiroDueno,
-                'porcentaje_retiros_dueno' => $this->calcularPorcentaje($retiroDueno, $facturacion),
+                'porcentaje_retiros_dueno' => $this->calcularPorcentaje($retiroDueno, $utilidadOperativa),
                 'detalle' => $this->obtenerGastosDetalle()
             ],
             // Resultados finales

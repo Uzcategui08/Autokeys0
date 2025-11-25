@@ -89,66 +89,63 @@
         </div>
         
         <div class="card-body">
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="card border-primary mb-3">
-                        <div class="card-header bg-primary text-white">Facturación</div>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-3 metrics-row">
+                <div class="col">
+                    <div class="card mini-card border-0 shadow-sm h-100">
                         <div class="card-body">
-                            <h4 class="card-title">${{ number_format($stats['ventas']['facturacion'], 2) }}</h4>
-                            <p class="card-text">
-                                <small class="text-muted">
-                                    Cobrado: ${{ number_format($stats['ventas']['cobrado'], 2) }}<br>
-                                    <small>(Contado: ${{ number_format($stats['ventas']['ingresos_contado'], 2) }}, Recibidos: ${{ number_format($stats['ventas']['ingresos_recibidos'], 2) }})</small><br>
-                                    Transacciones: {{ $stats['ventas']['num_transacciones'] }}<br>
-                                    Ticket promedio: ${{ number_format($stats['ventas']['ticket_promedio'], 2) }}
-                                </small>
-                            </p>
+                            <div class="metric-label text-primary"><i class="fas fa-chart-line mr-1"></i>Facturación</div>
+                            <div class="metric-value">${{ number_format($stats['ventas']['facturacion'], 2) }}</div>
+                            <div class="metric-meta">
+                                Cobrado: <strong>${{ number_format($stats['ventas']['cobrado'], 2) }}</strong>
+                                <span class="chip chip-light ml-2">Contado ${{ number_format($stats['ventas']['ingresos_contado'], 2) }}</span>
+                                <span class="chip chip-light">Recibidos ${{ number_format($stats['ventas']['ingresos_recibidos'], 2) }}</span>
+                                <div class="mt-2 small text-muted">
+                                    {{ $stats['ventas']['num_transacciones'] }} transacciones · Ticket ${{ number_format($stats['ventas']['ticket_promedio'], 2) }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card border-success mb-3">
-                        <div class="card-header bg-success text-white">Utilidad Bruta</div>
+                <div class="col">
+                    <div class="card mini-card border-0 shadow-sm h-100">
                         <div class="card-body">
-                            <h4 class="card-title">${{ number_format($stats['costos']['utilidad_bruta'], 2) }}</h4>
-                            <p class="card-text">
-                                <small class="text-muted">
-                                    {{ number_format($stats['costos']['porcentaje_utilidad_bruta'], 2) }}% de facturación<br>
-                                    Costo venta: ${{ number_format($stats['costos']['total_costo_venta'], 2) }}<br>
-                                    ({{ number_format($stats['costos']['porcentaje_costo_venta'], 2) }}%)
-                                </small>
-                            </p>
+                            <div class="metric-label text-success"><i class="fas fa-donate mr-1"></i>Utilidad Bruta</div>
+                            <div class="metric-value">${{ number_format($stats['costos']['utilidad_bruta'], 2) }}</div>
+                            <div class="metric-meta">
+                                {{ number_format($stats['costos']['porcentaje_utilidad_bruta'], 2) }}% de facturación
+                                <div class="mt-2 small text-muted">
+                                    Costo venta: ${{ number_format($stats['costos']['total_costo_venta'], 2) }}
+                                    <span class="chip chip-outline">{{ number_format($stats['costos']['porcentaje_costo_venta'], 2) }}% fact.</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card border-info mb-3">
-                        <div class="card-header bg-info text-white">Utilidad Neta</div>
+                <div class="col">
+                    <div class="card mini-card border-0 shadow-sm h-100">
                         <div class="card-body">
-                            <h4 class="card-title">${{ number_format($stats['resultados']['utilidad_neta'], 2) }}</h4>
-                            <p class="card-text">
-                                <small class="text-muted">
-                                    {{ number_format($stats['resultados']['porcentaje_utilidad_neta'], 2) }}% de facturación<br>
-                                    Total gastos: ${{ number_format($stats['gastos']['total_gastos'], 2) }}<br>
-                                    ({{ number_format($stats['gastos']['porcentaje_gastos'], 2) }}%)
-                                </small>
-                            </p>
+                            <div class="metric-label text-warning"><i class="fas fa-briefcase mr-1"></i>Utilidad Operativa</div>
+                            <div class="metric-value">${{ number_format($stats['resultados']['utilidad_operativa'], 2) }}</div>
+                            <div class="metric-meta">
+                                {{ number_format($stats['resultados']['porcentaje_utilidad_operativa'], 2) }}% de facturación
+                                <div class="mt-2 small text-muted">
+                                    Gastos (sin retiros): ${{ number_format($stats['gastos']['total_gastos'] ?? 0, 2) }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="card border-warning mb-3">
-                        <div class="card-header bg-warning text-dark">Utilidad Operativa</div>
+                <div class="col">
+                    <div class="card mini-card border-0 shadow-sm h-100">
                         <div class="card-body">
-                            <h4 class="card-title">${{ number_format($stats['resultados']['utilidad_operativa'], 2) }}</h4>
-                            <p class="card-text">
-                                <small class="text-muted">
-                                    {{ number_format($stats['resultados']['porcentaje_utilidad_operativa'], 2) }}% de facturación<br>
-                                    Gastos (excluye retiros): ${{ number_format($stats['gastos']['total_gastos'] ?? 0, 2) }}
-                                </small>
-                            </p>
+                            <div class="metric-label text-info"><i class="fas fa-wallet mr-1"></i>Utilidad Neta</div>
+                            <div class="metric-value">${{ number_format($stats['resultados']['utilidad_neta'], 2) }}</div>
+                            <div class="metric-meta">
+                                {{ number_format($stats['resultados']['porcentaje_utilidad_neta'], 2) }}% de facturación
+                                <div class="mt-2 small text-muted">
+                                    Retiros del dueño: ${{ number_format($stats['gastos']['retiros_dueno'] ?? 0, 2) }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -158,15 +155,12 @@
 
     <!-- Detalle de Ventas -->
     <div class="card mb-4">
-        <div class="card-header bg-dark text-white">
-            <h3 class="card-title">Detalle de Ventas</h3>
-        </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-bordered table-striped">
+                <table class="table table-modern align-middle">
                     <thead class="thead-dark">
                         <tr>
-                            <th>Concepto</th>
+                            <th>Detalle de Ventas</th>
                             <th>Valor</th>
                             <th>% Facturación</th>
                         </tr>
@@ -194,25 +188,34 @@
 
     <!-- Detalle de Costos y Gastos -->
 <div class="card mb-4">
-    <div class="card-header bg-dark text-white">
-        <h3 class="card-title">Detalle de Costos y Gastos</h3>
-    </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-bordered table-striped">
+            <table class="table table-modern align-middle">
                 <thead class="thead-dark">
                     <tr>
-                        <th>Concepto</th>
+                        <th>Detalle de Costos y Gastos</th>
                         <th>Valor</th>
                         <th>% Facturación</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><strong>Costo de Venta</strong></td>
-                        <td>${{ number_format($stats['costos']['total_costos_mes'], 2) }}</td>
-                        <td>{{ number_format($stats['costos']['porcentaje_total_costos'] - ($gastosExtraVanes ?? collect())->sum('valor'), 2) }}%</td>
-                    </tr>
+                    <tr class="table-section-title">
+                        <td colspan="3">
+                            <span class="section-pill"><i class="fas fa-wallet mr-2"></i>Costos</span>
+                        </td>
+                    </tr>   
+                        <tr>
+                            <td><strong>Costo de Venta</strong></td>
+                            <td>${{ number_format($stats['costos']['total_costos_mes'], 2) }}</td>
+                            <td>
+                                <div class="d-flex justify-content-between align-items-center" style="gap:0.5rem;">
+                                    <span>{{ number_format($stats['costos']['porcentaje_total_costos'] - ($gastosExtraVanes ?? collect())->sum('valor'), 2) }}%</span>
+                                    <button class="btn btn-link p-0 toggle-detail" type="button" data-toggle="collapse" data-target="#detalleCostos" aria-expanded="false" aria-controls="detalleCostos">
+                                        <i class="fas fa-chevron-down mr-1"></i> Ver detalle ({{ count($stats['costos']['detalle'] ?? []) }})
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
                     @if(($stats['costos']['costos_llaves'] ?? 0) > 0)
                     <tr>
                         <td>&nbsp;&nbsp;Costo de llaves</td>
@@ -227,20 +230,18 @@
                         <td>{{ number_format($stats['costos']['porcentaje_nomina_costos'], 2) }}%</td>
                     </tr>
                     @endif
-                    
-                    <tr class="table-light">
-                        <td colspan="3">
-                            <button class="btn btn-link p-0 toggle-detail" type="button" data-toggle="collapse" data-target="#detalleCostos" aria-expanded="false" aria-controls="detalleCostos">
-                                <i class="fas fa-chevron-down mr-1"></i> Ver detalle de costos ({{ count($stats['costos']['detalle'] ?? []) }})
-                            </button>
-                        </td>
+                                  <tr>
+                        <td><strong>Utilidad Bruta</strong></td>
+                        <td>${{ number_format($stats['costos']['utilidad_bruta'], 2) }}</td>
+                        <td>{{ number_format($stats['costos']['porcentaje_utilidad_bruta'], 2) }}%</td>
                     </tr>
+                    
                     <tr>
                         <td colspan="3" class="p-0 border-0">
                             <div class="collapse" id="detalleCostos">
                                 <div class="p-3">
                                     <div class="table-responsive">
-                                        <table class="table table-sm table-hover mb-0">
+                                        <table class="table table-sm table-hover table-detail align-middle mb-0">
                                             <thead>
                                                 <tr>
                                                     <th>Fecha</th>
@@ -278,6 +279,7 @@
                                                         <td colspan="5" class="text-center text-muted">Sin registros de costos para este mes.</td>
                                                     </tr>
                                                 @endforelse
+                                                
                                             </tbody>
                                         </table>
                                     </div>
@@ -285,7 +287,11 @@
                             </div>
                         </td>
                     </tr>
-                                        
+                    <tr class="table-section-title">
+                        <td colspan="3">
+                            <span class="section-pill"><i class="fas fa-wallet mr-2"></i>Gastos</span>
+                        </td>
+                    </tr>             
                     @foreach($stats['gastos']['por_subcategoria'] as $item)
                     <tr>
                         <td>&nbsp;&nbsp;{{ $item['nombre'] }}</td>
@@ -293,24 +299,24 @@
                         <td>{{ number_format($item['porcentaje'], 2) }}%</td>
                     </tr>
                     @endforeach
-                    <tr>
-                        <td><strong>Total Gastos</strong></td>
-                        <td>${{ number_format($stats['gastos']['total_gastos'], 2) }}</td>
-                        <td>{{ number_format($stats['gastos']['porcentaje_gastos'], 2) }}%</td>
-                    </tr>
-                    <tr class="table-light">
-                        <td colspan="3">
-                            <button class="btn btn-link p-0 toggle-detail" type="button" data-toggle="collapse" data-target="#detalleGastos" aria-expanded="false" aria-controls="detalleGastos">
-                                <i class="fas fa-chevron-down mr-1"></i> Ver detalle de gastos ({{ count($stats['gastos']['detalle'] ?? []) }})
-                            </button>
-                        </td>
-                    </tr>
+                        <tr>
+                            <td><strong>Total Gastos</strong></td>
+                            <td>${{ number_format($stats['gastos']['total_gastos'], 2) }}</td>
+                            <td>
+                                <div class="d-flex justify-content-between align-items-center" style="gap:0.5rem;">
+                                    <span>{{ number_format($stats['gastos']['porcentaje_gastos'], 2) }}%</span>
+                                    <button class="btn btn-link p-0 toggle-detail" type="button" data-toggle="collapse" data-target="#detalleGastos" aria-expanded="false" aria-controls="detalleGastos">
+                                        <i class="fas fa-chevron-down mr-1"></i> Ver detalle ({{ count($stats['gastos']['detalle'] ?? []) }})
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
                     <tr>
                         <td colspan="3" class="p-0 border-0">
                             <div class="collapse" id="detalleGastos">
                                 <div class="p-3">
                                     <div class="table-responsive">
-                                    <table class="table table-sm table-hover mb-0">
+                                    <table class="table table-sm table-hover table-detail align-middle mb-0">
                                         <thead>
                                             <tr>
                                                 <th>Fecha</th>
@@ -355,12 +361,12 @@
                             </div>
                         </td>
                     </tr>
-                    
-                    <tr>
-                        <td><strong>Utilidad Bruta</strong></td>
-                        <td>${{ number_format($stats['costos']['utilidad_bruta'], 2) }}</td>
-                        <td>{{ number_format($stats['costos']['porcentaje_utilidad_bruta'], 2) }}%</td>
-                    </tr>
+                        <tr class="table-section-title">
+                        <td colspan="3">
+                            <span class="section-pill"><i class="fas fa-wallet mr-2"></i>Resultados</span>
+                        </td>
+                    </tr>   
+      
                     <tr>
                         <td><strong>Utilidad Operativa</strong></td>
                         <td>${{ number_format($stats['resultados']['utilidad_operativa'], 2) }}</td>
@@ -391,19 +397,106 @@
 
 @section('css')
 <style>
+    :root {
+        --ak-blue: #0d6efd;
+        --ak-gray: #6c757d;
+        --ak-soft-bg: #f8f9fb;
+    }
+
     .card-header {
         font-weight: bold;
+    }
+    .metrics-row .mini-card {
+        border-radius: 0.75rem;
+        background: linear-gradient(180deg, #fff, #f7f9ff);
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .metrics-row .mini-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.65rem 1.25rem rgba(13, 110, 253, 0.12);
+    }
+    .metric-label {
+        font-size: .85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+    }
+    .metric-value {
+        font-size: 1.65rem;
+        font-weight: 700;
+        margin: .35rem 0 .45rem;
+        color: #111;
+    }
+    .metric-meta {
+        font-size: .85rem;
+        color: var(--ak-gray);
+        line-height: 1.4;
+    }
+    .chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.1rem 0.55rem;
+        border-radius: 999px;
+        font-size: .75rem;
+        font-weight: 600;
+        border: 1px solid transparent;
+    }
+    .chip-light {
+        background: #eef4ff;
+        color: #1b4fbc;
+    }
+    .chip-outline {
+        border-color: #cfd5e4;
+        color: #5c6c89;
+        background: transparent;
     }
     .table th {
         background-color: #343a40;
         color: white;
     }
-    .table tbody tr:hover {
-        background-color: rgba(0,0,0,.05);
+    .table-modern {
+        background: #fff;
+        border-radius: .75rem;
+        border-collapse: separate;
+        border-spacing: 0;
+        overflow: hidden;
+    }
+    .table-modern thead th {
+        background: #11192f;
+        border: none;
+        text-transform: uppercase;
+        font-size: .75rem;
+        letter-spacing: .08em;
+    }
+    .table-modern tbody tr:nth-child(odd) {
+        background: #fafbfd;
+    }
+    .table-modern tbody tr:hover {
+        background-color: rgba(13, 110, 253, .07);
+    }
+    .table-detail thead {
+        background: var(--ak-soft-bg);
+    }
+    .table-detail tbody tr:hover {
+        background: rgba(0,0,0,.03);
+    }
+    .table-section-title td {
+        background: #eef4ff;
+        border-top: 2px solid var(--ak-blue);
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        font-size: .78rem;
+        color: #0d2b66;
+    }
+    .section-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-weight: 700;
     }
     .toggle-detail {
         font-weight: 600;
-        color: #0d6efd;
+        color: var(--ak-blue);
         text-decoration: none;
     }
     .toggle-detail:hover {
