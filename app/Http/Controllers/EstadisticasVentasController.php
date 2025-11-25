@@ -670,7 +670,7 @@ class EstadisticasVentasController extends Controller
             $gastosPorSubcategoria[] = [
                 'nombre' => 'Nómina (gastos)',
                 'total' => $nominaGastos,
-                'porcentaje' => $this->calcularPorcentaje($nominaGastos, $facturacion)
+                'porcentaje' => $this->calcularPorcentaje($nominaGastos, $totalGastos)
             ];
         }
 
@@ -769,7 +769,7 @@ class EstadisticasVentasController extends Controller
             ],
             'gastos' => [
                 'por_subcategoria' => $gastosPorSubcategoria,
-                'total_gastos' => $this->totalGastos(),
+                'total_gastos' => $totalGastos,
                 'porcentaje_gastos' => $this->calcularPorcentaje($totalGastos, $facturacion),
                 'nomina_gastos' => $nominaGastos,
                 'porcentaje_nomina_gastos' => $this->calcularPorcentaje($nominaGastos, $totalGastos),
