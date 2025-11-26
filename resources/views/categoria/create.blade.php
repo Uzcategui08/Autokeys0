@@ -23,7 +23,7 @@
                         <form method="POST" action="{{ route('categorias.store') }}"  role="form" enctype="multipart/form-data">
                             @csrf
 
-                            @include('categoria.form')
+                            @include('categoria.form', ['categoriasPadre' => $categoriasPadre ?? []])
 
                         </form>
                     </div>

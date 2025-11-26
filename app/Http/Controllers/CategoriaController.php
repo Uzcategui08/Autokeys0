@@ -28,8 +28,9 @@ class CategoriaController extends Controller
     public function create(): View
     {
         $categoria = new Categoria();
+        $categoriasPadre = $this->obtenerCategoriasPadre();
 
-        return view('categoria.create', compact('categoria'));
+        return view('categoria.create', compact('categoria', 'categoriasPadre'));
     }
 
     /**
@@ -37,7 +38,8 @@ class CategoriaController extends Controller
      */
     public function store(CategoriaRequest $request): RedirectResponse
     {
-        Categoria::create($request->validated());
+        $data = $this->prepareCategoriaPayload($request->validated());
+        Categoria::create($data);
 
         return Redirect::route('categorias.index')
             ->with('success', 'Subcategoría creada satisfactoriamente.');
@@ -59,8 +61,9 @@ class CategoriaController extends Controller
     public function edit($id): View
     {
         $categoria = Categoria::find($id);
+        $categoriasPadre = $this->obtenerCategoriasPadre();
 
-        return view('categoria.edit', compact('categoria'));
+        return view('categoria.edit', compact('categoria', 'categoriasPadre'));
     }
 
     /**
@@ -68,7 +71,8 @@ class CategoriaController extends Controller
      */
     public function update(CategoriaRequest $request, Categoria $categoria): RedirectResponse
     {
-        $categoria->update($request->validated());
+        $data = $this->prepareCategoriaPayload($request->validated());
+        $categoria->update($data);
 
         return Redirect::route('categorias.index')
             ->with('success', 'Subcategoría actualizada satisfactoriamente.');
@@ -78,16 +82,40 @@ class CategoriaController extends Controller
     {
         $validated = $request->validate([
             'nombre' => ['required', 'string', 'max:255'],
+            'categoria' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $categoria = Categoria::create([
-            'nombre' => trim($validated['nombre']),
-        ]);
+        $data = $this->prepareCategoriaPayload($validated);
+        $categoria = Categoria::create($data);
 
         return response()->json([
             'id' => $categoria->id_categoria,
             'nombre' => $categoria->nombre,
+            'categoria' => $categoria->categoria,
         ]);
+    }
+
+    private function prepareCategoriaPayload(array $data): array
+    {
+        $nombre = trim($data['nombre']);
+        $categoria = trim($data['categoria'] ?? '') ?: $nombre;
+
+        return [
+            'nombre' => $nombre,
+            'categoria' => $categoria,
+        ];
+    }
+
+    private function obtenerCategoriasPadre(): array
+    {
+        return Categoria::query()
+            ->whereNotNull('categoria')
+            ->pluck('categoria')
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
     }
 
     public function destroy($id): RedirectResponse

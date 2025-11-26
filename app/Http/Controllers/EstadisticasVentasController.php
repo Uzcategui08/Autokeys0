@@ -327,6 +327,56 @@ class EstadisticasVentasController extends Controller
         return $this->nominaCostos;
     }
 
+    protected function agruparDetallePorCategoria(array $detalle, float $totalBase): array
+    {
+        if (empty($detalle) || $totalBase <= 0) {
+            return [];
+        }
+
+        $agrupado = [];
+
+        foreach ($detalle as $item) {
+            $valor = (float) ($item['valor'] ?? 0);
+            if ($valor == 0) {
+                continue;
+            }
+
+            $categoria = $item['categoria_padre'] ?? $item['subcategoria'] ?? 'Sin categoría';
+            $subcategoria = $item['subcategoria'] ?? $categoria;
+
+            if (! isset($agrupado[$categoria])) {
+                $agrupado[$categoria] = [
+                    'nombre' => $categoria,
+                    'total' => 0,
+                    'subcategorias' => []
+                ];
+            }
+
+            $agrupado[$categoria]['total'] += $valor;
+            $agrupado[$categoria]['subcategorias'][$subcategoria] = ($agrupado[$categoria]['subcategorias'][$subcategoria] ?? 0) + $valor;
+        }
+
+        return collect($agrupado)
+            ->map(function ($categoria) use ($totalBase) {
+                $categoria['porcentaje'] = $this->calcularPorcentaje($categoria['total'], $totalBase);
+                $categoria['subcategorias'] = collect($categoria['subcategorias'])
+                    ->map(function ($valor, $nombre) {
+                        return [
+                            'nombre' => $nombre,
+                            'total' => $valor
+                        ];
+                    })
+                    ->sortByDesc('total')
+                    ->values()
+                    ->toArray();
+
+                return $categoria;
+            })
+            ->sortByDesc('total')
+            ->values()
+            ->toArray();
+    }
+
     protected function obtenerNominaGastos()
     {
         if ($this->nominaGastos !== null) {
@@ -376,6 +426,7 @@ class EstadisticasVentasController extends Controller
                     'fecha' => $registro->fecha_pago,
                     'descripcion' => 'Nómina de ' . ($registro->empleado->nombre ?? 'Empleado'),
                     'subcategoria' => 'Nómina',
+                    'categoria_padre' => 'Nómina',
                     'valor' => (float) $registro->total_pagado,
                     'detalle' => $registro->detalle_pago,
                     'fuente' => 'nomina'
@@ -403,6 +454,7 @@ class EstadisticasVentasController extends Controller
                     'fecha' => $costo->f_costos,
                     'descripcion' => $costo->descripcion,
                     'subcategoria' => $this->obtenerNombreSubcategoria($costo->subcategoria),
+                    'categoria_padre' => $this->obtenerNombreCategoriaPadre($costo->subcategoria),
                     'valor' => (float) $costo->valor,
                     'fuente' => 'costo'
                 ];
@@ -427,6 +479,7 @@ class EstadisticasVentasController extends Controller
                     'fecha' => $gasto->f_gastos,
                     'descripcion' => $gasto->descripcion,
                     'subcategoria' => $this->obtenerNombreSubcategoria($gasto->subcategoria),
+                    'categoria_padre' => $this->obtenerNombreCategoriaPadre($gasto->subcategoria),
                     'valor' => (float) $gasto->valor,
                     'fuente' => 'gasto'
                 ];
@@ -442,15 +495,42 @@ class EstadisticasVentasController extends Controller
             return 'Sin subcategoría';
         }
 
-        if (!ctype_digit((string) $identificador)) {
-            return $identificador;
+        $info = $this->obtenerRegistroCategoriaCache($identificador);
+
+        return $info['nombre'] ?? (string) $identificador;
+    }
+
+    protected function obtenerNombreCategoriaPadre($identificador)
+    {
+        if (empty($identificador)) {
+            return 'Sin categoría';
         }
 
-        if (!isset($this->categoriaCache[$identificador])) {
-            $this->categoriaCache[$identificador] = Categoria::find($identificador)?->nombre ?? $identificador;
+        $info = $this->obtenerRegistroCategoriaCache($identificador);
+
+        return $info['categoria'] ?? ($info['nombre'] ?? 'Sin categoría');
+    }
+
+    protected function obtenerRegistroCategoriaCache($identificador): array
+    {
+        $clave = is_numeric($identificador) ? 'id_' . $identificador : 'nombre_' . $identificador;
+
+        if (isset($this->categoriaCache[$clave]) && is_array($this->categoriaCache[$clave])) {
+            return $this->categoriaCache[$clave];
         }
 
-        return $this->categoriaCache[$identificador];
+        if (is_numeric($identificador)) {
+            $categoria = Categoria::find($identificador);
+        } else {
+            $categoria = Categoria::where('nombre', $identificador)->first();
+        }
+
+        $this->categoriaCache[$clave] = [
+            'nombre' => $categoria?->nombre ?? (string) $identificador,
+            'categoria' => $categoria?->categoria ?: ($categoria?->nombre ?? (string) $identificador)
+        ];
+
+        return $this->categoriaCache[$clave];
     }
 
     protected function obtenerRangoMes(): array
@@ -599,6 +679,7 @@ class EstadisticasVentasController extends Controller
                 'fecha' => null,
                 'descripcion' => 'Llaves: ' . ($llave['nombre'] ?? 'Sin nombre'),
                 'subcategoria' => 'Costo de llaves',
+                'categoria_padre' => 'Llaves utilizadas',
                 'valor' => (float) ($llave['total_valor'] ?? 0),
                 'detalle' => 'Cantidad: ' . number_format($llave['total_cantidad'] ?? 0, 2),
                 'fuente' => 'llaves'
@@ -634,45 +715,17 @@ class EstadisticasVentasController extends Controller
     {
         $facturacion = $this->facturacionDelMes();
         $totalCostoVenta = $this->totalCostoVenta();
+        $totalCostosMes = $this->totalCostosDelMes();
         $totalGastos = $this->totalGastos();
         $utilidadBruta = $this->calcularUtilidadBruta();
         $utilidadOperativa = $this->calcularUtilidadOperativa();
         $utilidadNeta = $this->calcularUtilidadNeta();
-        // Obtener subcategorías únicas (son strings, no IDs)
-        $subcategorias = Gasto::whereYear('f_gastos', $this->year)
-            ->whereMonth('f_gastos', $this->month)
-            ->pluck('subcategoria')
-            ->unique()
-            ->filter(); // Elimina valores nulos
-
-        $gastosPorSubcategoria = [];
-
-        foreach ($subcategorias as $subcategoria) {
-            $total = Gasto::whereYear('f_gastos', $this->year)
-                ->whereMonth('f_gastos', $this->month)
-                ->where('subcategoria', $subcategoria)
-                ->sum('valor');
-            // Buscar el nombre real de la subcategoría
-            $nombreSubcategoria = $this->obtenerNombreSubcategoria($subcategoria);
-            $gastosPorSubcategoria[] = [
-                'nombre' => $nombreSubcategoria,
-                'total' => $total,
-                'porcentaje' => $this->calcularPorcentaje($total, $totalGastos)
-            ];
-        }
-
         $nominaCostos = $this->obtenerNominaCostos();
         $nominaGastos = $this->obtenerNominaGastos();
         $retiroDueno = $this->obtenerRetirosDuenoTotal();
         $costosLlaves = $this->obtenerCostosLlavesTotal();
-
-        if ($nominaGastos > 0) {
-            $gastosPorSubcategoria[] = [
-                'nombre' => 'Nómina (gastos)',
-                'total' => $nominaGastos,
-                'porcentaje' => $this->calcularPorcentaje($nominaGastos, $totalGastos)
-            ];
-        }
+        $detalleCostos = $this->obtenerCostosDetalle();
+        $detalleGastos = $this->obtenerGastosDetalle();
 
         // No agregar retiros del dueño a subcategorías de gastos
 
@@ -759,23 +812,24 @@ class EstadisticasVentasController extends Controller
                 'porcentaje_costo_venta' => $this->calcularPorcentaje($totalCostoVenta, $facturacion),
                 'utilidad_bruta' => $utilidadBruta,
                 'porcentaje_utilidad_bruta' => $this->calcularPorcentaje($utilidadBruta, $facturacion),
-                'total_costos_mes' => $this->totalCostosDelMes(),
-                'porcentaje_total_costos' => $this->calcularPorcentaje($this->totalCostosDelMes(), $facturacion),
+                'total_costos_mes' => $totalCostosMes,
+                'porcentaje_total_costos' => $this->calcularPorcentaje($totalCostosMes, $facturacion),
                 'nomina_costos' => $nominaCostos,
                 'porcentaje_nomina_costos' => $this->calcularPorcentaje($nominaCostos, $totalCostoVenta),
                 'costos_llaves' => $costosLlaves,
                 'porcentaje_costos_llaves' => $this->calcularPorcentaje($costosLlaves, $totalCostoVenta),
-                'detalle' => $this->obtenerCostosDetalle()
+                'categorias' => $this->agruparDetallePorCategoria($detalleCostos, $totalCostosMes),
+                'detalle' => $detalleCostos
             ],
             'gastos' => [
-                'por_subcategoria' => $gastosPorSubcategoria,
+                'categorias' => $this->agruparDetallePorCategoria($detalleGastos, $totalGastos),
                 'total_gastos' => $totalGastos,
                 'porcentaje_gastos' => $this->calcularPorcentaje($totalGastos, $facturacion),
                 'nomina_gastos' => $nominaGastos,
                 'porcentaje_nomina_gastos' => $this->calcularPorcentaje($nominaGastos, $totalGastos),
                 'retiros_dueno' => $retiroDueno,
                 'porcentaje_retiros_dueno' => $this->calcularPorcentaje($retiroDueno, $utilidadOperativa),
-                'detalle' => $this->obtenerGastosDetalle()
+                'detalle' => $detalleGastos
             ],
             // Resultados finales
             'resultados' => [
@@ -985,6 +1039,7 @@ class EstadisticasVentasController extends Controller
             'detalle' => $agrupado
         ];
     }
+
     //PDF   Que muestra todo
     public function showReportForm()
     {

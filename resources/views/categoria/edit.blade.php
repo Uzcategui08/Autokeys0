@@ -25,7 +25,7 @@
                             {{ method_field('PATCH') }}
                             @csrf
 
-                            @include('categoria.form')
+                            @include('categoria.form', ['categoriasPadre' => $categoriasPadre ?? []])
 
                         </form>
                     </div>

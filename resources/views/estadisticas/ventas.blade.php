@@ -1,5 +1,54 @@
 @extends('adminlte::page')
 
+@push('css')
+<style>
+    .toggle-category-btn {
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: #6c757d;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        padding: 0;
+        transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+    .toggle-category-btn:hover,
+    .toggle-category-btn:focus {
+        color: #0d6efd;
+        border-color: rgba(13, 110, 253, 0.35);
+        outline: none;
+        box-shadow: none;
+    }
+    .toggle-category-btn[aria-expanded="true"] {
+        background: #0d6efd;
+        color: #fff;
+        border-color: #0d6efd;
+    }
+    .toggle-category-btn i {
+        transition: transform 0.2s ease;
+    }
+    .toggle-category-btn[aria-expanded="true"] i {
+        transform: rotate(90deg);
+    }
+    .category-detail-panel {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 0.45rem;
+        padding: 0.5rem 0.75rem;
+    }
+    .category-detail-panel table td,
+    .category-detail-panel table th {
+        border: none;
+        padding: 0.2rem 0.35rem;
+        font-size: 0.82rem;
+    }
+</style>
+@endpush
+
 @section('title', 'Estadísticas Financieras')
 
 @section('content_header')
@@ -216,19 +265,50 @@
                                 </div>
                             </td>
                         </tr>
-                    @if(($stats['costos']['costos_llaves'] ?? 0) > 0)
-                    <tr>
-                        <td>&nbsp;&nbsp;Costo de llaves</td>
-                        <td>${{ number_format($stats['costos']['costos_llaves'], 2) }}</td>
-                        <td>{{ number_format($stats['costos']['porcentaje_costos_llaves'], 2) }}%</td>
+                    @if(!empty($stats['costos']['categorias']))
+                    <tr class="table-section-title">
+                        <td colspan="3">
+                            <span class="section-pill"><i class="fas fa-layer-group mr-2"></i>Costos por categoría</span>
+                        </td>
                     </tr>
-                    @endif
-                    @if(($stats['costos']['nomina_costos'] ?? 0) > 0)
-                    <tr>
-                        <td>&nbsp;&nbsp;Nómina asignada a costos</td>
-                        <td>${{ number_format($stats['costos']['nomina_costos'], 2) }}</td>
-                        <td>{{ number_format($stats['costos']['porcentaje_nomina_costos'], 2) }}%</td>
-                    </tr>
+                        @foreach($stats['costos']['categorias'] as $concepto)
+                        <tr>
+                            <td class="align-middle">
+                                &nbsp;&nbsp;{{ $concepto['nombre'] }}
+                                @if(!empty($concepto['subcategorias']))
+                                    <button class="btn toggle-category-btn ml-2" type="button" data-toggle="collapse" data-target="#detalleCostCategoria{{ $loop->index }}" aria-expanded="false" aria-controls="detalleCostCategoria{{ $loop->index }}" aria-label="Ver conceptos de {{ $concepto['nombre'] }}">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                @endif
+                            </td>
+                            <td>${{ number_format($concepto['total'], 2) }}</td>
+                            <td>
+                                <div>
+                                    <span class="font-weight-bold">{{ number_format($concepto['porcentaje'], 2) }}%</span>
+                                    <small class="text-muted text-uppercase" style="letter-spacing: .05em;">sobre costos</small>
+                                </div>
+                            </td>
+                        </tr>
+                        @if(!empty($concepto['subcategorias']))
+                        <tr class="collapse" id="detalleCostCategoria{{ $loop->index }}">
+                            <td colspan="3" class="border-0 pt-0">
+                                <div class="pl-4 pb-3">
+                                    <div class="category-detail-panel">
+                                        <table class="table table-sm mb-0">
+                                            <tbody>
+                                                @foreach($concepto['subcategorias'] as $sub)
+                                                <tr>
+                                                    <td class="text-muted">{{ $sub['nombre'] }}</td>
+                                                    <td class="text-right font-weight-bold">${{ number_format($sub['total'], 2) }}</td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                            </td>
+                        </tr>
+                        @endif
+                        @endforeach
                     @endif
                                   <tr>
                         <td><strong>Utilidad Bruta</strong></td>
@@ -256,7 +336,7 @@
                                                     <tr>
                                                         <td>{{ $detalle['fecha'] ? \Carbon\Carbon::parse($detalle['fecha'])->format('d/m/Y') : 'N/D' }}</td>
                                                         <td>{{ $detalle['descripcion'] }}</td>
-                                                        <td>{{ $detalle['subcategoria'] }}</td>
+                                                        <td>{{ $detalle['categoria_padre'] ?? $detalle['subcategoria'] }}</td>
                                                         <td>${{ number_format($detalle['valor'], 2) }}</td>
                                                         <td>
                                                             @php
@@ -287,18 +367,47 @@
                             </div>
                         </td>
                     </tr>
+                    @if(!empty($stats['gastos']['categorias']))
                     <tr class="table-section-title">
                         <td colspan="3">
-                            <span class="section-pill"><i class="fas fa-wallet mr-2"></i>Gastos</span>
+                            <span class="section-pill"><i class="fas fa-wallet mr-2"></i>Gastos por categoría</span>
                         </td>
                     </tr>             
-                    @foreach($stats['gastos']['por_subcategoria'] as $item)
-                    <tr>
-                        <td>&nbsp;&nbsp;{{ $item['nombre'] }}</td>
-                        <td>${{ number_format($item['total'], 2) }}</td>
-                        <td>{{ number_format($item['porcentaje'], 2) }}%</td>
-                    </tr>
-                    @endforeach
+                        @foreach($stats['gastos']['categorias'] as $item)
+                        <tr>
+                            <td class="align-middle">
+                                &nbsp;&nbsp;{{ $item['nombre'] }}
+                                @if(!empty($item['subcategorias']))
+                                    <button class="btn toggle-category-btn ml-2" type="button" data-toggle="collapse" data-target="#detalleGastoCategoria{{ $loop->index }}" aria-expanded="false" aria-controls="detalleGastoCategoria{{ $loop->index }}" aria-label="Ver conceptos de {{ $item['nombre'] }}">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                @endif
+                            </td>
+                            <td>${{ number_format($item['total'], 2) }}</td>
+                            <td>{{ number_format($item['porcentaje'], 2) }}%</td>
+                        </tr>
+                        @if(!empty($item['subcategorias']))
+                        <tr class="collapse" id="detalleGastoCategoria{{ $loop->index }}">
+                            <td colspan="3" class="border-0 pt-0">
+                                <div class="pl-4 pb-3">
+                                    <div class="category-detail-panel">
+                                        <table class="table table-sm mb-0">
+                                            <tbody>
+                                                @foreach($item['subcategorias'] as $sub)
+                                                <tr>
+                                                    <td class="text-muted">{{ $sub['nombre'] }}</td>
+                                                    <td class="text-right font-weight-bold">${{ number_format($sub['total'], 2) }}</td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        @endif
+                        @endforeach
+                    @endif
                         <tr>
                             <td><strong>Total Gastos</strong></td>
                             <td>${{ number_format($stats['gastos']['total_gastos'], 2) }}</td>
@@ -321,7 +430,7 @@
                                             <tr>
                                                 <th>Fecha</th>
                                                 <th>Descripción</th>
-                                                <th>Subcategoría</th>
+                                                <th>Categoría</th>
                                                 <th>Valor</th>
                                                 <th>Origen</th>
                                             </tr>
@@ -331,7 +440,7 @@
                                                 <tr>
                                                     <td>{{ $detalle['fecha'] ? \Carbon\Carbon::parse($detalle['fecha'])->format('d/m/Y') : 'N/D' }}</td>
                                                     <td>{{ $detalle['descripcion'] }}</td>
-                                                    <td>{{ $detalle['subcategoria'] }}</td>
+                                                    <td>{{ $detalle['categoria_padre'] ?? $detalle['subcategoria'] }}</td>
                                                     <td>${{ number_format($detalle['valor'], 2) }}</td>
                                                     <td>
                                                         @php

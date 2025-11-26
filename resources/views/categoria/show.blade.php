@@ -27,6 +27,10 @@
                             <strong>Nombre:</strong>
                             {{ $categoria->nombre }}
                         </div>
+                        <div class="form-group mb-2 mb20">
+                            <strong>Categoría:</strong>
+                            {{ $categoria->categoria ?? 'Sin categoría' }}
+                        </div>
                     </div>
                 </div>
             </div>

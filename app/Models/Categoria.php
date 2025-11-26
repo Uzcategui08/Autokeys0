@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Categoria extends Model
 {
-    
+
     protected $perPage = 20;
     protected $primaryKey = 'id_categoria';
 
@@ -26,6 +26,5 @@ class Categoria extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['id_categoria', 'nombre'];
-
+    protected $fillable = ['id_categoria', 'nombre', 'categoria'];
 }

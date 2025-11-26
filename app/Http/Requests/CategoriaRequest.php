@@ -22,7 +22,8 @@ class CategoriaRequest extends FormRequest
     public function rules(): array
     {
         return [
-			'nombre' => 'required|string',
+            'nombre' => 'required|string|max:255',
+            'categoria' => 'nullable|string|max:255',
         ];
     }
 }
