@@ -151,6 +151,9 @@
                                 <div class="mt-2 small text-muted">
                                     {{ $stats['ventas']['num_transacciones'] }} transacciones · Ticket ${{ number_format($stats['ventas']['ticket_promedio'], 2) }}
                                 </div>
+                                <div class="small text-muted" style="font-size: 0.7rem;">
+                                    Mes anterior: ${{ number_format($stats['ventas']['facturacion_mes_anterior'] ?? 0, 2) }}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -248,23 +251,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr class="table-section-title">
-                        <td colspan="3">
-                            <span class="section-pill"><i class="fas fa-wallet mr-2"></i>Costos</span>
-                        </td>
-                    </tr>   
-                        <tr>
-                            <td><strong>Costo de Venta</strong></td>
-                            <td>${{ number_format($stats['costos']['total_costos_mes'], 2) }}</td>
-                            <td>
-                                <div class="d-flex justify-content-between align-items-center" style="gap:0.5rem;">
-                                    <span>{{ number_format($stats['costos']['porcentaje_total_costos'], 2) }}%</span>
-                                    <button class="btn btn-link p-0 toggle-detail" type="button" data-toggle="collapse" data-target="#detalleCostos" aria-expanded="false" aria-controls="detalleCostos">
-                                        <i class="fas fa-chevron-down mr-1"></i> Ver detalle ({{ count($stats['costos']['detalle'] ?? []) }})
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+   
                     @if(!empty($stats['costos']['categorias']))
                     <tr class="table-section-title">
                         <td colspan="3">
@@ -302,6 +289,11 @@
                                                     <td class="text-right text-muted">{{ number_format($sub['porcentaje'] ?? 0, 2) }}%</td>
                                                 </tr>
                                                 @endforeach
+                                                <tr class="border-top">
+                                                    <td class="text-muted font-weight-bold">Total {{ $concepto['nombre'] }}</td>
+                                                    <td class="text-right font-weight-bold">${{ number_format($concepto['total'], 2) }}</td>
+                                                    <td class="text-right text-muted">{{ number_format($concepto['porcentaje'] ?? 0, 2) }}%</td>
+                                                </tr>
                                             </tbody>
                                         </table>
                                     </div>
@@ -311,6 +303,18 @@
                         @endif
                         @endforeach
                     @endif
+                            <tr>
+                            <td><strong>Costo de Venta</strong></td>
+                            <td>${{ number_format($stats['costos']['total_costos_mes'], 2) }}</td>
+                            <td>
+                                <div class="d-flex justify-content-between align-items-center" style="gap:0.5rem;">
+                                    <span>{{ number_format($stats['costos']['porcentaje_total_costos'], 2) }}%</span>
+                                    <button class="btn btn-link p-0 toggle-detail" type="button" data-toggle="collapse" data-target="#detalleCostos" aria-expanded="false" aria-controls="detalleCostos">
+                                        <i class="fas fa-chevron-down mr-1"></i> Ver detalle ({{ count($stats['costos']['detalle'] ?? []) }})
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
                                   <tr>
                         <td><strong>Utilidad Bruta</strong></td>
                         <td>${{ number_format($stats['costos']['utilidad_bruta'], 2) }}</td>
@@ -407,6 +411,11 @@
                                                     <td class="text-right text-muted">{{ number_format($sub['porcentaje'] ?? 0, 2) }}%</td>
                                                 </tr>
                                                 @endforeach
+                                                <tr class="border-top">
+                                                    <td class="text-muted font-weight-bold">Total {{ $item['nombre'] }}</td>
+                                                    <td class="text-right font-weight-bold">${{ number_format($item['total'], 2) }}</td>
+                                                    <td class="text-right text-muted">{{ number_format($item['porcentaje'] ?? 0, 2) }}%</td>
+                                                </tr>
                                             </tbody>
                                         </table>
                                     </div>

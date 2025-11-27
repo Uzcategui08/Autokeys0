@@ -22,6 +22,15 @@ class EstadisticasVentasController extends Controller
         'otros-gastos' => 'Otros Gastos',
         'financieros-e-impuestos' => 'Financieros e Impuestos'
     ];
+    protected const COSTOS_CATEGORIAS_ORDENADAS = [
+        'Compras de Insumos',
+        'Llaves utilizadas',
+        'Nómina',
+        'Servicio Subcontratados',
+        'Costo de Codigos',
+        'Gasolina',
+        'Alquiler Pulga'
+    ];
 
     protected $month;
     protected $year;
@@ -35,6 +44,7 @@ class EstadisticasVentasController extends Controller
     protected $detalleRetirosDueno = null;
     protected $costosLlavesTotal = null;
     protected $detalleCostosLlaves = null;
+    protected $facturacionMesAnterior = null;
 
     public function __construct()
     {
@@ -220,10 +230,7 @@ class EstadisticasVentasController extends Controller
         $facturacionActual = $this->facturacionDelMes();
 
         // H3 = facturación del mes anterior (referencia)
-        $lastMonth = Carbon::create($this->year, $this->month, 1)->subMonth();
-        $facturacionAnterior = RegistroV::whereYear('fecha_h', $lastMonth->year)
-            ->whereMonth('fecha_h', $lastMonth->month)
-            ->sum('valor_v');
+        $facturacionAnterior = $this->obtenerFacturacionMesAnterior();
 
         if ($facturacionActual <= 0 || $facturacionAnterior <= 0) {
             return 0;
@@ -231,6 +238,20 @@ class EstadisticasVentasController extends Controller
 
         // Fórmula Excel: =D5/H3
         return round($facturacionActual / $facturacionAnterior, 2);
+    }
+
+    protected function obtenerFacturacionMesAnterior()
+    {
+        if ($this->facturacionMesAnterior !== null) {
+            return $this->facturacionMesAnterior;
+        }
+
+        $lastMonth = Carbon::create($this->year, $this->month, 1)->subMonth();
+        $this->facturacionMesAnterior = RegistroV::whereYear('fecha_h', $lastMonth->year)
+            ->whereMonth('fecha_h', $lastMonth->month)
+            ->sum('valor_v');
+
+        return $this->facturacionMesAnterior;
     }
 
     protected function numeroTransacciones()
@@ -364,7 +385,7 @@ class EstadisticasVentasController extends Controller
             $agrupado[$categoria]['subcategorias'][$subcategoria] = ($agrupado[$categoria]['subcategorias'][$subcategoria] ?? 0) + $valor;
         }
 
-        return collect($agrupado)
+        $categorias = collect($agrupado)
             ->map(function ($categoria) use ($totalBase) {
                 $categoria['porcentaje'] = $this->calcularPorcentaje($categoria['total'], $totalBase);
                 $categoria['subcategorias'] = collect($categoria['subcategorias'])
@@ -381,9 +402,10 @@ class EstadisticasVentasController extends Controller
 
                 return $categoria;
             })
-            ->sortByDesc('total')
             ->values()
             ->toArray();
+
+        return $this->ordenarCategoriasPorLista($categorias, self::COSTOS_CATEGORIAS_ORDENADAS);
     }
 
     protected function agruparGastosPorCategoriasFijas(array $detalle, float $totalBase): array
@@ -472,6 +494,37 @@ class EstadisticasVentasController extends Controller
             $item['porcentaje_facturacion'] = $this->calcularPorcentaje($valor, $facturacion);
             return $item;
         }, $detalle);
+    }
+
+    protected function ordenarCategoriasPorLista(array $categorias, array $ordenPreferente): array
+    {
+        if (empty($categorias)) {
+            return [];
+        }
+
+        $mapaOrden = array_flip($ordenPreferente);
+
+        return collect($categorias)
+            ->sort(function ($a, $b) use ($mapaOrden) {
+                $posA = $mapaOrden[$a['nombre']] ?? null;
+                $posB = $mapaOrden[$b['nombre']] ?? null;
+
+                if ($posA !== null && $posB !== null) {
+                    return $posA <=> $posB;
+                }
+
+                if ($posA !== null) {
+                    return -1;
+                }
+
+                if ($posB !== null) {
+                    return 1;
+                }
+
+                return $b['total'] <=> $a['total'];
+            })
+            ->values()
+            ->toArray();
     }
 
     protected function obtenerNominaGastos()
@@ -903,6 +956,7 @@ class EstadisticasVentasController extends Controller
                 'ingresos_contado' => $ingresosContado,
                 'ingresos_recibidos' => $ingresosRecibidos,
                 'facturacion' => $facturacion,
+                'facturacion_mes_anterior' => $this->obtenerFacturacionMesAnterior(),
                 'evolucion_facturacion' => $this->evolucionFacturacion(),
                 'num_transacciones' => $totalTrabajos, // Mostrar la suma de trabajos
                 'ticket_promedio' => $this->ticketPromedio(),
