@@ -285,7 +285,6 @@
                             <td>
                                 <div>
                                     <span class="font-weight-bold">{{ number_format($concepto['porcentaje'], 2) }}%</span>
-                                    <small class="text-muted text-uppercase" style="letter-spacing: .05em;">sobre facturación</small>
                                 </div>
                             </td>
                         </tr>
@@ -391,7 +390,6 @@
                             <td>
                                 <div>
                                     <span class="font-weight-bold">{{ number_format($item['porcentaje'], 2) }}%</span>
-                                    <small class="text-muted text-uppercase" style="letter-spacing: .05em;">sobre facturación</small>
                                 </div>
                             </td>
                         </tr>
