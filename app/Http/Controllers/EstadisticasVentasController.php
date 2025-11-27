@@ -413,7 +413,7 @@ class EstadisticasVentasController extends Controller
             $agrupado[$categoriaClave]['subcategorias'][$subcategoria] = ($agrupado[$categoriaClave]['subcategorias'][$subcategoria] ?? 0) + $valor;
         }
 
-        return collect($agrupado)->map(function ($categoria) use ($totalBase) {
+        return collect($agrupado)->map(function ($categoria, $slug) use ($totalBase) {
             $categoria['porcentaje'] = $this->calcularPorcentaje($categoria['total'], $totalBase);
             $categoria['subcategorias'] = collect($categoria['subcategorias'])
                 ->map(function ($valor, $nombre) use ($totalBase) {
@@ -422,8 +422,20 @@ class EstadisticasVentasController extends Controller
                         'total' => $valor,
                         'porcentaje' => $this->calcularPorcentaje($valor, $totalBase)
                     ];
+                });
+
+            $categoria['subcategorias'] = $categoria['subcategorias']
+                ->sort(function ($a, $b) use ($slug) {
+                    if ($slug === 'gastos-de-personal') {
+                        if ($a['nombre'] === 'Nómina' && $b['nombre'] !== 'Nómina') {
+                            return -1;
+                        }
+                        if ($b['nombre'] === 'Nómina' && $a['nombre'] !== 'Nómina') {
+                            return 1;
+                        }
+                    }
+                    return $b['total'] <=> $a['total'];
                 })
-                ->sortByDesc('total')
                 ->values()
                 ->toArray();
 
