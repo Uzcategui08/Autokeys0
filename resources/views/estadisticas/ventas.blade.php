@@ -258,7 +258,7 @@
                             <td>${{ number_format($stats['costos']['total_costos_mes'], 2) }}</td>
                             <td>
                                 <div class="d-flex justify-content-between align-items-center" style="gap:0.5rem;">
-                                    <span>{{ number_format($stats['costos']['porcentaje_total_costos'] - ($gastosExtraVanes ?? collect())->sum('valor'), 2) }}%</span>
+                                    <span>{{ number_format($stats['costos']['porcentaje_total_costos'], 2) }}%</span>
                                     <button class="btn btn-link p-0 toggle-detail" type="button" data-toggle="collapse" data-target="#detalleCostos" aria-expanded="false" aria-controls="detalleCostos">
                                         <i class="fas fa-chevron-down mr-1"></i> Ver detalle ({{ count($stats['costos']['detalle'] ?? []) }})
                                     </button>
@@ -285,7 +285,7 @@
                             <td>
                                 <div>
                                     <span class="font-weight-bold">{{ number_format($concepto['porcentaje'], 2) }}%</span>
-                                    <small class="text-muted text-uppercase" style="letter-spacing: .05em;">sobre costos</small>
+                                    <small class="text-muted text-uppercase" style="letter-spacing: .05em;">sobre facturación</small>
                                 </div>
                             </td>
                         </tr>
@@ -300,11 +300,13 @@
                                                 <tr>
                                                     <td class="text-muted">{{ $sub['nombre'] }}</td>
                                                     <td class="text-right font-weight-bold">${{ number_format($sub['total'], 2) }}</td>
+                                                    <td class="text-right text-muted">{{ number_format($sub['porcentaje'] ?? 0, 2) }}%</td>
                                                 </tr>
                                                 @endforeach
                                             </tbody>
                                         </table>
                                     </div>
+                                </div>
                             </td>
                         </tr>
                         @endif
@@ -328,6 +330,7 @@
                                                     <th>Descripción</th>
                                                     <th>Categoría</th>
                                                     <th>Valor</th>
+                                                    <th>% Facturación</th>
                                                     <th>Origen</th>
                                                 </tr>
                                             </thead>
@@ -338,6 +341,7 @@
                                                         <td>{{ $detalle['descripcion'] }}</td>
                                                         <td>{{ $detalle['categoria_padre'] ?? $detalle['subcategoria'] }}</td>
                                                         <td>${{ number_format($detalle['valor'], 2) }}</td>
+                                                        <td>{{ number_format($detalle['porcentaje_facturacion'] ?? 0, 2) }}%</td>
                                                         <td>
                                                             @php
                                                                 $fuente = $detalle['fuente'] ?? 'directo';
@@ -356,7 +360,7 @@
                                                     </tr>
                                                 @empty
                                                     <tr>
-                                                        <td colspan="5" class="text-center text-muted">Sin registros de costos para este mes.</td>
+                                                        <td colspan="6" class="text-center text-muted">Sin registros de costos para este mes.</td>
                                                     </tr>
                                                 @endforelse
                                                 
@@ -384,7 +388,12 @@
                                 @endif
                             </td>
                             <td>${{ number_format($item['total'], 2) }}</td>
-                            <td>{{ number_format($item['porcentaje'], 2) }}%</td>
+                            <td>
+                                <div>
+                                    <span class="font-weight-bold">{{ number_format($item['porcentaje'], 2) }}%</span>
+                                    <small class="text-muted text-uppercase" style="letter-spacing: .05em;">sobre facturación</small>
+                                </div>
+                            </td>
                         </tr>
                         @if(!empty($item['subcategorias']))
                         <tr class="collapse" id="detalleGastoCategoria{{ $loop->index }}">
@@ -397,6 +406,7 @@
                                                 <tr>
                                                     <td class="text-muted">{{ $sub['nombre'] }}</td>
                                                     <td class="text-right font-weight-bold">${{ number_format($sub['total'], 2) }}</td>
+                                                    <td class="text-right text-muted">{{ number_format($sub['porcentaje'] ?? 0, 2) }}%</td>
                                                 </tr>
                                                 @endforeach
                                             </tbody>
@@ -432,16 +442,18 @@
                                                 <th>Descripción</th>
                                                 <th>Categoría</th>
                                                 <th>Valor</th>
+                                                <th>% Facturación</th>
                                                 <th>Origen</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @forelse($stats['gastos']['detalle'] ?? [] as $detalle)
+                                                @forelse($stats['gastos']['detalle'] ?? [] as $detalle)
                                                 <tr>
                                                     <td>{{ $detalle['fecha'] ? \Carbon\Carbon::parse($detalle['fecha'])->format('d/m/Y') : 'N/D' }}</td>
                                                     <td>{{ $detalle['descripcion'] }}</td>
                                                     <td>{{ $detalle['categoria_padre'] ?? $detalle['subcategoria'] }}</td>
                                                     <td>${{ number_format($detalle['valor'], 2) }}</td>
+                                                    <td>{{ number_format($detalle['porcentaje_facturacion'] ?? 0, 2) }}%</td>
                                                     <td>
                                                         @php
                                                             $fuente = $detalle['fuente'] ?? 'directo';
@@ -458,9 +470,9 @@
                                                         <span class="badge badge-{{ $badgeClass }}">{{ $fuenteTexto }}</span>
                                                     </td>
                                                 </tr>
-                                            @empty
+                                                @empty
                                                 <tr>
-                                                    <td colspan="5" class="text-center text-muted">Sin registros de gastos para este mes.</td>
+                                                    <td colspan="6" class="text-center text-muted">Sin registros de gastos para este mes.</td>
                                                 </tr>
                                             @endforelse
                                         </tbody>

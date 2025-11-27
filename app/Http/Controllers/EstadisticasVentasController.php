@@ -12,9 +12,17 @@ use App\Models\AjusteInventario;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
 
 class EstadisticasVentasController extends Controller
 {
+    protected const GASTOS_CATEGORIAS_FIJAS = [
+        'gastos-de-personal' => 'Gastos de Personal',
+        'gastos-operativos' => 'Gastos operativos',
+        'otros-gastos' => 'Otros Gastos',
+        'financieros-e-impuestos' => 'Financieros e Impuestos'
+    ];
+
     protected $month;
     protected $year;
     protected $availableYears;
@@ -329,7 +337,7 @@ class EstadisticasVentasController extends Controller
 
     protected function agruparDetallePorCategoria(array $detalle, float $totalBase): array
     {
-        if (empty($detalle) || $totalBase <= 0) {
+        if (empty($detalle)) {
             return [];
         }
 
@@ -360,10 +368,11 @@ class EstadisticasVentasController extends Controller
             ->map(function ($categoria) use ($totalBase) {
                 $categoria['porcentaje'] = $this->calcularPorcentaje($categoria['total'], $totalBase);
                 $categoria['subcategorias'] = collect($categoria['subcategorias'])
-                    ->map(function ($valor, $nombre) {
+                    ->map(function ($valor, $nombre) use ($totalBase) {
                         return [
                             'nombre' => $nombre,
-                            'total' => $valor
+                            'total' => $valor,
+                            'porcentaje' => $this->calcularPorcentaje($valor, $totalBase)
                         ];
                     })
                     ->sortByDesc('total')
@@ -375,6 +384,82 @@ class EstadisticasVentasController extends Controller
             ->sortByDesc('total')
             ->values()
             ->toArray();
+    }
+
+    protected function agruparGastosPorCategoriasFijas(array $detalle, float $totalBase): array
+    {
+        $agrupado = collect(self::GASTOS_CATEGORIAS_FIJAS)
+            ->mapWithKeys(function ($nombre, $slug) {
+                return [
+                    $slug => [
+                        'nombre' => $nombre,
+                        'total' => 0,
+                        'subcategorias' => []
+                    ]
+                ];
+            })
+            ->toArray();
+
+        foreach ($detalle as $item) {
+            $valor = (float) ($item['valor'] ?? 0);
+            if ($valor === 0.0) {
+                continue;
+            }
+
+            $categoriaClave = $this->resolverCategoriaGasto($item['categoria_padre'] ?? $item['subcategoria'] ?? 'Otros Gastos');
+            $subcategoria = $item['subcategoria'] ?? ($item['categoria_padre'] ?? 'Sin subcategoría');
+
+            $agrupado[$categoriaClave]['total'] += $valor;
+            $agrupado[$categoriaClave]['subcategorias'][$subcategoria] = ($agrupado[$categoriaClave]['subcategorias'][$subcategoria] ?? 0) + $valor;
+        }
+
+        return collect($agrupado)->map(function ($categoria) use ($totalBase) {
+            $categoria['porcentaje'] = $this->calcularPorcentaje($categoria['total'], $totalBase);
+            $categoria['subcategorias'] = collect($categoria['subcategorias'])
+                ->map(function ($valor, $nombre) use ($totalBase) {
+                    return [
+                        'nombre' => $nombre,
+                        'total' => $valor,
+                        'porcentaje' => $this->calcularPorcentaje($valor, $totalBase)
+                    ];
+                })
+                ->sortByDesc('total')
+                ->values()
+                ->toArray();
+
+            return $categoria;
+        })->values()->toArray();
+    }
+
+    protected function resolverCategoriaGasto(?string $nombre): string
+    {
+        $slug = $this->slugCategoria($nombre);
+
+        foreach (self::GASTOS_CATEGORIAS_FIJAS as $clave => $titulo) {
+            if ($slug === $clave) {
+                return $clave;
+            }
+        }
+
+        return 'otros-gastos';
+    }
+
+    protected function slugCategoria(?string $texto): string
+    {
+        if (empty($texto)) {
+            return '';
+        }
+
+        return Str::slug($texto);
+    }
+
+    protected function aplicarPorcentajeSobreFacturacion(array $detalle, float $facturacion): array
+    {
+        return array_map(function ($item) use ($facturacion) {
+            $valor = (float) ($item['valor'] ?? 0);
+            $item['porcentaje_facturacion'] = $this->calcularPorcentaje($valor, $facturacion);
+            return $item;
+        }, $detalle);
     }
 
     protected function obtenerNominaGastos()
@@ -421,12 +506,12 @@ class EstadisticasVentasController extends Controller
             })
             ->orderBy('fecha_pago')
             ->get()
-            ->map(function ($registro) {
+            ->map(function ($registro) use ($tipoClasificado) {
                 return [
                     'fecha' => $registro->fecha_pago,
                     'descripcion' => 'Nómina de ' . ($registro->empleado->nombre ?? 'Empleado'),
                     'subcategoria' => 'Nómina',
-                    'categoria_padre' => 'Nómina',
+                    'categoria_padre' => $tipoClasificado === 2 ? 'Gastos de Personal' : 'Nómina',
                     'valor' => (float) $registro->total_pagado,
                     'detalle' => $registro->detalle_pago,
                     'fuente' => 'nomina'
@@ -724,8 +809,14 @@ class EstadisticasVentasController extends Controller
         $nominaGastos = $this->obtenerNominaGastos();
         $retiroDueno = $this->obtenerRetirosDuenoTotal();
         $costosLlaves = $this->obtenerCostosLlavesTotal();
-        $detalleCostos = $this->obtenerCostosDetalle();
-        $detalleGastos = $this->obtenerGastosDetalle();
+        $detalleCostos = $this->aplicarPorcentajeSobreFacturacion(
+            $this->obtenerCostosDetalle(),
+            $facturacion
+        );
+        $detalleGastos = $this->aplicarPorcentajeSobreFacturacion(
+            $this->obtenerGastosDetalle(),
+            $facturacion
+        );
 
         // No agregar retiros del dueño a subcategorías de gastos
 
@@ -815,20 +906,20 @@ class EstadisticasVentasController extends Controller
                 'total_costos_mes' => $totalCostosMes,
                 'porcentaje_total_costos' => $this->calcularPorcentaje($totalCostosMes, $facturacion),
                 'nomina_costos' => $nominaCostos,
-                'porcentaje_nomina_costos' => $this->calcularPorcentaje($nominaCostos, $totalCostoVenta),
+                'porcentaje_nomina_costos' => $this->calcularPorcentaje($nominaCostos, $facturacion),
                 'costos_llaves' => $costosLlaves,
-                'porcentaje_costos_llaves' => $this->calcularPorcentaje($costosLlaves, $totalCostoVenta),
-                'categorias' => $this->agruparDetallePorCategoria($detalleCostos, $totalCostosMes),
+                'porcentaje_costos_llaves' => $this->calcularPorcentaje($costosLlaves, $facturacion),
+                'categorias' => $this->agruparDetallePorCategoria($detalleCostos, $facturacion),
                 'detalle' => $detalleCostos
             ],
             'gastos' => [
-                'categorias' => $this->agruparDetallePorCategoria($detalleGastos, $totalGastos),
+                'categorias' => $this->agruparGastosPorCategoriasFijas($detalleGastos, $facturacion),
                 'total_gastos' => $totalGastos,
                 'porcentaje_gastos' => $this->calcularPorcentaje($totalGastos, $facturacion),
                 'nomina_gastos' => $nominaGastos,
-                'porcentaje_nomina_gastos' => $this->calcularPorcentaje($nominaGastos, $totalGastos),
+                'porcentaje_nomina_gastos' => $this->calcularPorcentaje($nominaGastos, $facturacion),
                 'retiros_dueno' => $retiroDueno,
-                'porcentaje_retiros_dueno' => $this->calcularPorcentaje($retiroDueno, $utilidadOperativa),
+                'porcentaje_retiros_dueno' => $this->calcularPorcentaje($retiroDueno, $facturacion),
                 'detalle' => $detalleGastos
             ],
             // Resultados finales
