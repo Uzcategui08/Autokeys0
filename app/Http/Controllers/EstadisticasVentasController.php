@@ -26,8 +26,8 @@ class EstadisticasVentasController extends Controller
         'Compras de Insumos',
         'Llaves utilizadas',
         'Nómina',
-        'Servicio Subcontratados',
-        'Costo de Codigos',
+        'Servicios Subcontratados',
+        'Código',
         'Gasolina',
         'Alquiler Pulga'
     ];
