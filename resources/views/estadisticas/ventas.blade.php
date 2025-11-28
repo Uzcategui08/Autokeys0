@@ -517,6 +517,51 @@
         </div>
     </div>
 </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="card-title mb-0">Devoluciones del mes</h3>
+                <small class="text-muted">Registro simple de ajustes manuales</small>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ route('devoluciones.index') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-list"></i> Ver historial
+                </a>
+                <a href="{{ route('devoluciones.create') }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus"></i> Registrar devolución
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            @php
+                $devolucionesMes = $stats['devoluciones']['detalle'] ?? [];
+                $totalDevoluciones = $stats['devoluciones']['total'] ?? 0;
+            @endphp
+
+            @if(!empty($devolucionesMes))
+                <ul class="list-group list-group-flush devoluciones-list">
+                    @foreach($devolucionesMes as $devolucion)
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                                <div class="font-weight-bold">{{ $devolucion['descripcion'] }}</div>
+                                <small class="text-muted">
+                                    {{ $devolucion['fecha'] ? \Carbon\Carbon::parse($devolucion['fecha'])->format('d/m/Y') : 'Fecha no disponible' }}
+                                </small>
+                            </div>
+                            <span class="badge badge-light text-dark">${{ number_format($devolucion['monto'], 2) }}</span>
+                        </li>
+                    @endforeach
+                    <li class="list-group-item d-flex justify-content-between align-items-center font-weight-bold px-0 border-top">
+                        <span>Total del mes</span>
+                        <span>${{ number_format($totalDevoluciones, 2) }}</span>
+                    </li>
+                </ul>
+            @else
+                <p class="text-muted text-center mb-0">Sin devoluciones registradas para este período.</p>
+            @endif
+        </div>
+    </div>
 </div>
 </div>
 

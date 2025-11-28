@@ -9,6 +9,7 @@ use App\Models\Costo;
 use App\Models\Categoria;
 use App\Models\Empleado;
 use App\Models\AjusteInventario;
+use App\Models\Devolucion;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -45,6 +46,7 @@ class EstadisticasVentasController extends Controller
     protected $costosLlavesTotal = null;
     protected $detalleCostosLlaves = null;
     protected $facturacionMesAnterior = null;
+    protected $devolucionesMes = null;
 
     public function __construct()
     {
@@ -882,6 +884,7 @@ class EstadisticasVentasController extends Controller
             $this->obtenerGastosDetalle(),
             $facturacion
         );
+        $devoluciones = $this->obtenerDevolucionesMes();
 
         // No agregar retiros del dueño a subcategorías de gastos
 
@@ -996,8 +999,33 @@ class EstadisticasVentasController extends Controller
                 'porcentaje_utilidad_neta' => $this->calcularPorcentaje($utilidadNeta, $facturacion)
             ],
             'llaves' => $this->formatearLlavesStats(),
-            'ajustes' => $this->formatearAjustesManuales()
+            'ajustes' => $this->formatearAjustesManuales(),
+            'devoluciones' => [
+                'total' => $devoluciones->sum('monto'),
+                'detalle' => $devoluciones->map(function (Devolucion $devolucion) {
+                    return [
+                        'id' => $devolucion->id,
+                        'fecha' => $devolucion->fecha ? $devolucion->fecha->format('Y-m-d') : null,
+                        'monto' => (float) $devolucion->monto,
+                        'descripcion' => $devolucion->descripcion,
+                    ];
+                })->toArray()
+            ]
         ];
+    }
+
+    protected function obtenerDevolucionesMes()
+    {
+        if ($this->devolucionesMes !== null) {
+            return $this->devolucionesMes;
+        }
+
+        $this->devolucionesMes = Devolucion::whereYear('fecha', $this->year)
+            ->whereMonth('fecha', $this->month)
+            ->orderByDesc('fecha')
+            ->get();
+
+        return $this->devolucionesMes;
     }
 
     protected function obtenerLlavesPorTecnico()

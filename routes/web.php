@@ -22,6 +22,7 @@ use App\Http\Controllers\EstadisticasVentasController;
 use App\Http\Controllers\CierreVentasController;
 use App\Http\Controllers\VanesController;
 use App\Http\Controllers\CierreVentasSemanalController;
+use App\Http\Controllers\DevolucionController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TransferenciaController;
 use App\Http\Controllers\TrabajoController;
@@ -110,6 +111,9 @@ Route::get('/estadisticas/vanes/export-excel', [VanesController::class, 'exportE
 Route::get('/estadisticas/vanes/export-pdf', [VanesController::class, 'exportPdf'])->name('vanes.exportPdf');
 
 Route::resource('tipos-de-pagos', TiposDePagoController::class);
+Route::resource('devoluciones', DevolucionController::class)
+    ->parameters(['devoluciones' => 'devolucion'])
+    ->except(['show']);
 
 Route::get('/cxc', [RegistroVController::class, 'cxc'])->name('registroV.cxc');
 
