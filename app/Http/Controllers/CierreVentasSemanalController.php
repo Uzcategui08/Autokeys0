@@ -1083,12 +1083,9 @@ class CierreVentasSemanalController extends Controller
                 $ventasCredito = 0;
 
                 foreach ($tecnico->ventas as $venta) {
-                    $esCredito = ($venta->tipo_venta === 'credito') || $this->ventaEsCredito($venta);
-                    if ($esCredito) {
-                        $ventasCredito += (float) ($venta->valor_v ?? 0);
-                    } else {
-                        $ventasContado += (float) ($venta->valor_v ?? 0);
-                    }
+                    [$pagado, $pendiente] = $this->calcularPagadoPendiente($venta);
+                    $ventasContado += $pagado;
+                    $ventasCredito += $pendiente;
                 }
 
                 return [
@@ -1608,12 +1605,9 @@ class CierreVentasSemanalController extends Controller
                 $ventasCredito = 0;
 
                 foreach ($ventas as $venta) {
-                    $esCredito = ($venta->tipo_venta === 'credito') || $this->ventaEsCredito($venta);
-                    if ($esCredito) {
-                        $ventasCredito += (float) ($venta->valor_v ?? 0);
-                    } else {
-                        $ventasContado += (float) ($venta->valor_v ?? 0);
-                    }
+                    [$pagado, $pendiente] = $this->calcularPagadoPendiente($venta);
+                    $ventasContado += $pagado;
+                    $ventasCredito += $pendiente;
                 }
 
                 return [
@@ -1643,7 +1637,7 @@ class CierreVentasSemanalController extends Controller
             $totalItems = count($items);
             $valorPorItem = $totalItems > 0 ? $venta->valor_v / $totalItems : $venta->valor_v;
 
-            $esCredito = ($venta->tipo_venta === 'credito') || $this->ventaEsCredito($venta);
+            [$totalPagado, $pendiente] = $this->calcularPagadoPendiente($venta);
 
             foreach ($items as $item) {
                 // Obtener el nombre del trabajo usando el trabajo_id si existe
@@ -1652,7 +1646,12 @@ class CierreVentasSemanalController extends Controller
                     : ($this->formatosTrabajo[$item['trabajo'] ?? 'Sin especificar'] ?? ($item['trabajo'] ?? 'Sin especificar'));
                 $trabajoKey = $trabajoNombre;
 
-                if (! $esCredito) {
+                $totalItems = max(count($items), 1);
+                $valorPorItem = $venta->valor_v / $totalItems;
+                $pagadoPorItem = min($totalPagado, $venta->valor_v) / $totalItems;
+                $pendientePorItem = $pendiente / $totalItems;
+
+                if ($pagadoPorItem > 0) {
                     if (!$contado->has($trabajoNombre)) {
                         $contado->put($trabajoNombre, [
                             'metodos' => collect(),
@@ -1662,11 +1661,11 @@ class CierreVentasSemanalController extends Controller
                     }
 
                     $trabajoData = $contado->get($trabajoNombre);
-                    $trabajoData['total'] += $valorPorItem;
+                    $trabajoData['total'] += $pagadoPorItem;
 
                     foreach ($pagosVenta as $pago) {
                         $metodoNombre = $metodosPago[$pago['metodo_pago']] ?? 'Método ' . $pago['metodo_pago'];
-                        $montoProporcional = $pago['monto'] / $totalItems;
+                        $montoProporcional = ($pago['monto'] ?? 0) / $totalItems;
 
                         if (!$trabajoData['metodos']->has($metodoNombre)) {
                             $trabajoData['metodos']->put($metodoNombre, [
@@ -1683,7 +1682,9 @@ class CierreVentasSemanalController extends Controller
                     }
 
                     $contado->put($trabajoNombre, $trabajoData);
-                } else {
+                }
+
+                if ($pendientePorItem > 0) {
                     if (!$credito->has($trabajoNombre)) {
                         $credito->put($trabajoNombre, [
                             'metodos' => collect(),
@@ -1693,11 +1694,11 @@ class CierreVentasSemanalController extends Controller
                     }
 
                     $trabajoData = $credito->get($trabajoNombre);
-                    $trabajoData['total'] += $valorPorItem;
+                    $trabajoData['total'] += $pendientePorItem;
 
                     foreach ($pagosVenta as $pago) {
                         $metodoNombre = $metodosPago[$pago['metodo_pago']] ?? 'Método ' . $pago['metodo_pago'];
-                        $montoProporcional = $pago['monto'] / $totalItems;
+                        $montoProporcional = ($pago['monto'] ?? 0) / $totalItems;
 
                         if (!$trabajoData['metodos']->has($metodoNombre)) {
                             $trabajoData['metodos']->put($metodoNombre, [
@@ -1807,6 +1808,18 @@ class CierreVentasSemanalController extends Controller
 
         // Consideramos crédito si falta cualquier monto por pagar.
         return ($totalPagado + 0.01) < $valor;
+    }
+
+    private function calcularPagadoPendiente($venta): array
+    {
+        $valor = (float) ($venta->valor_v ?? 0);
+        $pagos = collect($this->parsePagos($venta->pagos ?? []));
+        $pagado = min($valor, $pagos->sum(function ($pago) {
+            return (float) ($pago['monto'] ?? 0);
+        }));
+        $pendiente = max($valor - $pagado, 0);
+
+        return [$pagado, $pendiente];
     }
 
     private function procesarTransacciones($transacciones, $metodosPago)
