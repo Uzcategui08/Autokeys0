@@ -279,16 +279,12 @@ class EstadisticasVentasController extends Controller
     protected function calcularPagadoPendienteVenta($venta): array
     {
         $valor = (float) ($venta->valor_v ?? 0);
-
-        // Si la venta fue marcada como crédito, mantenerla en crédito aunque esté pagada.
-        if (($venta->tipo_venta ?? null) === 'credito') {
-            return [0.0, $valor, 0.0]; // pagado, pendiente, pagos_totales
-        }
-
         $totalPagos = $this->sumarPagosVenta($venta->pagos ?? []);
         $pagado = min($valor, $totalPagos);
         $pendiente = max($valor - $pagado, 0);
 
+        // Si fue marcada como crédito, se mantiene en crédito aunque esté pagada,
+        // pero los pagos sí cuentan como cobrado/ingresos_recibidos.
         return [$pagado, $pendiente, $totalPagos];
     }
 
@@ -311,8 +307,8 @@ class EstadisticasVentasController extends Controller
             $cobradoTotal += $pagosTotales;
 
             if (($venta->tipo_venta ?? null) === 'credito') {
-                // Todo el valor permanece en crédito (respeta selección manual)
-                $creditoPendiente += $valor;
+                // Se mantiene en crédito; pagos van a cobrado y pendiente a crédito
+                $creditoPendiente += $pendiente;
             } else {
                 $contadoPagado += $pagado;
                 $creditoPendiente += $pendiente;
