@@ -232,6 +232,11 @@
                             <td>Evolución Facturación (vs mes anterior)</td>
                             <td colspan="2">{{ number_format($stats['ventas']['evolucion_facturacion'], 2) }}</td>
                         </tr>
+                        <tr>
+                            <td>Devoluciones del mes</td>
+                            <td>${{ number_format($stats['devoluciones']['total'] ?? 0, 2) }}</td>
+                            <td>{{ number_format(($stats['devoluciones']['total'] ?? 0) / max($stats['ventas']['facturacion'], 1) * 100, 2) }}%</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>

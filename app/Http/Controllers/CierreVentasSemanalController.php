@@ -1079,8 +1079,17 @@ class CierreVentasSemanalController extends Controller
             })
             ->get()
             ->map(function ($tecnico) {
-                $ventasContado = $tecnico->ventas->where('tipo_venta', 'contado')->sum('valor_v');
-                $ventasCredito = $tecnico->ventas->where('tipo_venta', 'credito')->sum('valor_v');
+                $ventasContado = 0;
+                $ventasCredito = 0;
+
+                foreach ($tecnico->ventas as $venta) {
+                    $esCredito = ($venta->tipo_venta === 'credito') || $this->ventaEsCredito($venta);
+                    if ($esCredito) {
+                        $ventasCredito += (float) ($venta->valor_v ?? 0);
+                    } else {
+                        $ventasContado += (float) ($venta->valor_v ?? 0);
+                    }
+                }
 
                 return [
                     'tecnico' => $tecnico->nombre,
@@ -1452,7 +1461,8 @@ class CierreVentasSemanalController extends Controller
                         continue;
                     }
 
-                    if ($venta->tipo_venta !== 'credito') {
+                    $ventaEsCredito = ($venta->tipo_venta === 'credito') || $this->ventaEsCredito($venta);
+                    if (! $ventaEsCredito) {
                         continue;
                     }
 
@@ -1594,11 +1604,23 @@ class CierreVentasSemanalController extends Controller
             ->groupBy('id_cliente')
             ->map(function ($ventas, $idCliente) {
                 $cliente = $ventas->first()->cliente;
+                $ventasContado = 0;
+                $ventasCredito = 0;
+
+                foreach ($ventas as $venta) {
+                    $esCredito = ($venta->tipo_venta === 'credito') || $this->ventaEsCredito($venta);
+                    if ($esCredito) {
+                        $ventasCredito += (float) ($venta->valor_v ?? 0);
+                    } else {
+                        $ventasContado += (float) ($venta->valor_v ?? 0);
+                    }
+                }
+
                 return [
                     'id_cliente' => $idCliente,
                     'cliente' => $cliente ? $cliente->nombre : $idCliente,
-                    'ventas_contado' => $ventas->where('tipo_venta', 'contado')->sum('valor_v'),
-                    'ventas_credito' => $ventas->where('tipo_venta', 'credito')->sum('valor_v'),
+                    'ventas_contado' => $ventasContado,
+                    'ventas_credito' => $ventasCredito,
                     'total_ventas' => $ventas->sum('valor_v')
                 ];
             })
@@ -1621,6 +1643,8 @@ class CierreVentasSemanalController extends Controller
             $totalItems = count($items);
             $valorPorItem = $totalItems > 0 ? $venta->valor_v / $totalItems : $venta->valor_v;
 
+            $esCredito = ($venta->tipo_venta === 'credito') || $this->ventaEsCredito($venta);
+
             foreach ($items as $item) {
                 // Obtener el nombre del trabajo usando el trabajo_id si existe
                 $trabajoNombre = $item['trabajo_id']
@@ -1628,7 +1652,7 @@ class CierreVentasSemanalController extends Controller
                     : ($this->formatosTrabajo[$item['trabajo'] ?? 'Sin especificar'] ?? ($item['trabajo'] ?? 'Sin especificar'));
                 $trabajoKey = $trabajoNombre;
 
-                if ($venta->tipo_venta === 'contado') {
+                if (! $esCredito) {
                     if (!$contado->has($trabajoNombre)) {
                         $contado->put($trabajoNombre, [
                             'metodos' => collect(),
@@ -1767,6 +1791,22 @@ class CierreVentasSemanalController extends Controller
         }
 
         return [];
+    }
+
+    private function ventaEsCredito($venta): bool
+    {
+        $valor = (float) ($venta->valor_v ?? 0);
+        if ($valor <= 0) {
+            return false;
+        }
+
+        $pagos = collect($this->parsePagos($venta->pagos ?? []));
+        $totalPagado = $pagos->sum(function ($pago) {
+            return (float) ($pago['monto'] ?? 0);
+        });
+
+        // Consideramos crédito si falta cualquier monto por pagar.
+        return ($totalPagado + 0.01) < $valor;
     }
 
     private function procesarTransacciones($transacciones, $metodosPago)
