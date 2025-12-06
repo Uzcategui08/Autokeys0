@@ -1813,6 +1813,12 @@ class CierreVentasSemanalController extends Controller
     private function calcularPagadoPendiente($venta): array
     {
         $valor = (float) ($venta->valor_v ?? 0);
+
+        // Respeta la selección explícita de crédito: no mover a contado aunque esté pagado.
+        if (($venta->tipo_venta ?? null) === 'credito') {
+            return [0.0, $valor];
+        }
+
         $pagos = collect($this->parsePagos($venta->pagos ?? []));
         $pagado = min($valor, $pagos->sum(function ($pago) {
             return (float) ($pago['monto'] ?? 0);
