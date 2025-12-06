@@ -263,6 +263,70 @@ class EstadisticasVentasController extends Controller
             ->count();
     }
 
+    protected function sumarPagosVenta($pagosData): float
+    {
+        if (is_string($pagosData)) {
+            $pagosData = json_decode($pagosData, true) ?? [];
+        }
+        if (!is_array($pagosData)) {
+            return 0;
+        }
+        return array_reduce($pagosData, function ($carry, $pago) {
+            return $carry + (float) ($pago['monto'] ?? 0);
+        }, 0.0);
+    }
+
+    protected function calcularPagadoPendienteVenta($venta): array
+    {
+        $valor = (float) ($venta->valor_v ?? 0);
+
+        // Si la venta fue marcada como crédito, mantenerla en crédito aunque esté pagada.
+        if (($venta->tipo_venta ?? null) === 'credito') {
+            return [0.0, $valor, 0.0]; // pagado, pendiente, pagos_totales
+        }
+
+        $totalPagos = $this->sumarPagosVenta($venta->pagos ?? []);
+        $pagado = min($valor, $totalPagos);
+        $pendiente = max($valor - $pagado, 0);
+
+        return [$pagado, $pendiente, $totalPagos];
+    }
+
+    protected function obtenerResumenPagosDelMes(): array
+    {
+        $ventas = RegistroV::whereYear('fecha_h', $this->year)
+            ->whereMonth('fecha_h', $this->month)
+            ->get();
+
+        $facturacion = 0;
+        $cobradoTotal = 0;
+        $contadoPagado = 0;
+        $creditoPendiente = 0;
+
+        foreach ($ventas as $venta) {
+            $valor = (float) ($venta->valor_v ?? 0);
+            $facturacion += $valor;
+
+            [$pagado, $pendiente, $pagosTotales] = $this->calcularPagadoPendienteVenta($venta);
+            $cobradoTotal += $pagosTotales;
+
+            if (($venta->tipo_venta ?? null) === 'credito') {
+                // Todo el valor permanece en crédito (respeta selección manual)
+                $creditoPendiente += $valor;
+            } else {
+                $contadoPagado += $pagado;
+                $creditoPendiente += $pendiente;
+            }
+        }
+
+        return [
+            'facturacion' => $facturacion,
+            'cobrado' => $cobradoTotal,
+            'contado_pagado' => $contadoPagado,
+            'credito_pendiente' => $creditoPendiente,
+        ];
+    }
+
     protected function ticketPromedio()
     {
         // Solo considerar ventas con items válidos
@@ -865,7 +929,8 @@ class EstadisticasVentasController extends Controller
     // Método principal que obtiene todas las estadísticas
     protected function getAllStats()
     {
-        $facturacion = $this->facturacionDelMes();
+        $resumenPagos = $this->obtenerResumenPagosDelMes();
+        $facturacion = $resumenPagos['facturacion'];
         $totalCostoVenta = $this->totalCostoVenta();
         $totalCostosMes = $this->totalCostosDelMes();
         $totalGastos = $this->totalGastos();
@@ -944,9 +1009,10 @@ class EstadisticasVentasController extends Controller
             }
         }
 
-        $ingresosRecibidos = $this->ingresosRecibidosDelMes();
-        $ingresosContado = $this->ingresosAlContadoDelMes();
-        $cobradoTotal = $ingresosRecibidos + $ingresosContado;
+        $ingresosContado = $resumenPagos['contado_pagado'];
+        $cobradoTotal = $resumenPagos['cobrado'];
+        $ingresosRecibidos = max($cobradoTotal - $ingresosContado, 0);
+        $ventasCredito = $resumenPagos['credito_pendiente'];
 
         return [
             // Datos básicos
@@ -958,6 +1024,7 @@ class EstadisticasVentasController extends Controller
                 'cobrado' => $cobradoTotal,
                 'ingresos_contado' => $ingresosContado,
                 'ingresos_recibidos' => $ingresosRecibidos,
+                'ventas_credito' => $ventasCredito,
                 'facturacion' => $facturacion,
                 'facturacion_mes_anterior' => $this->obtenerFacturacionMesAnterior(),
                 'evolucion_facturacion' => $this->evolucionFacturacion(),
