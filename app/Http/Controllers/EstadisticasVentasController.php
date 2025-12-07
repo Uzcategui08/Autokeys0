@@ -1008,10 +1008,8 @@ class EstadisticasVentasController extends Controller
         $ingresosContado = $resumenPagos['contado_pagado'];
         // Pagos recibidos de créditos históricos (previos) con fecha de pago en el mes
         $ingresosRecibidos = $this->ingresosRecibidosDelMes();
-        // Pagos de créditos del mes y contado (todos los pagos registrados este mes)
-        $pagosDelMes = $resumenPagos['cobrado'];
-        // Cobrado total = pagos del mes (incluye contado y créditos del mes) + créditos históricos cobrados en el mes
-        $cobradoTotal = $pagosDelMes + $ingresosRecibidos;
+        // Cobrado total en la vista: contado del mes + recibidos de créditos históricos
+        $cobradoTotal = $ingresosContado + $ingresosRecibidos;
         $ventasCredito = $resumenPagos['credito_pendiente'];
 
         return [
