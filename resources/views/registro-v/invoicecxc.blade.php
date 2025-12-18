@@ -247,18 +247,6 @@
                 @if($itemGroup->descripcion)
                 <div class="trabajo-descripcion">{{ $itemGroup->descripcion }}</div>
                 @endif
-                @if(count($itemGroup->productos) > 0)
-                <table class="productos-table">
-                    <tr>
-                        <td width="15%">Products:</td>
-                        <td>
-                            @foreach($itemGroup->productos as $producto)
-                                {{ $producto->nombre_producto }} ({{ $producto->cantidad }}),
-                            @endforeach
-                        </td>
-                    </tr>
-                </table>
-                @endif
             </div>
             @endforeach
         </div>

@@ -1588,8 +1588,24 @@ class RegistroVController extends Controller
             $query->where('id_cliente', $request->cliente_id);
         }
 
-        if ($request->estatus) {
-            $query->where('estatus', $request->estatus);
+        $estatusInput = $request->input('estatus');
+        $estatusSeleccionados = [];
+        if (is_array($estatusInput)) {
+            $estatusSeleccionados = $estatusInput;
+        } elseif (is_string($estatusInput) && $estatusInput !== '') {
+            $estatusSeleccionados = [$estatusInput];
+        }
+
+        $estatusSeleccionados = array_values(array_filter(array_map('trim', $estatusSeleccionados), function ($v) {
+            return $v !== '';
+        }));
+
+        $estatusPermitidos = ['pendiente', 'parcialemente pagado', 'pagado'];
+        $estatusSeleccionados = array_values(array_intersect($estatusSeleccionados, $estatusPermitidos));
+        $estatusSeleccionados = array_slice($estatusSeleccionados, 0, 2);
+
+        if (!empty($estatusSeleccionados)) {
+            $query->whereIn('estatus', $estatusSeleccionados);
         }
 
         $resumenClientes = $query->get()->groupBy('id_cliente')->map(function ($ventas, $clienteId) {
@@ -1665,7 +1681,7 @@ class RegistroVController extends Controller
         $fechaDesde = $request->fecha_desde;
         $fechaHasta = $request->fecha_hasta;
         $clienteId = $request->cliente_id;
-        $estatus = $request->estatus;
+        $estatus = $request->input('estatus');
         $language = $request->language ?? 'es';
 
         $query = RegistroV::whereBetween('fecha_h', [$fechaDesde, $fechaHasta])
@@ -1676,8 +1692,23 @@ class RegistroVController extends Controller
             $query->where('id_cliente', $clienteId);
         }
 
-        if ($estatus) {
-            $query->where('estatus', $estatus);
+        $estatusSeleccionados = [];
+        if (is_array($estatus)) {
+            $estatusSeleccionados = $estatus;
+        } elseif (is_string($estatus) && $estatus !== '') {
+            $estatusSeleccionados = [$estatus];
+        }
+
+        $estatusSeleccionados = array_values(array_filter(array_map('trim', $estatusSeleccionados), function ($v) {
+            return $v !== '';
+        }));
+
+        $estatusPermitidos = ['pendiente', 'parcialemente pagado', 'pagado'];
+        $estatusSeleccionados = array_values(array_intersect($estatusSeleccionados, $estatusPermitidos));
+        $estatusSeleccionados = array_slice($estatusSeleccionados, 0, 2);
+
+        if (!empty($estatusSeleccionados)) {
+            $query->whereIn('estatus', $estatusSeleccionados);
         }
 
         $ventas = $query->get();

@@ -42,11 +42,11 @@
                 <div class="col-md-2">
                     <div class="form-group">
                         <label for="estatus">Estatus</label>
-                        <select name="estatus" id="estatus" class="form-control">
-                            <option value="">Todos los estados</option>
-                            <option value="pendiente" {{ request('estatus') == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
-                            <option value="parcialemente pagado" {{ request('estatus') == 'parcialemente pagado' ? 'selected' : '' }}>Parcialmente Pagado</option>
-                            <option value="pagado" {{ request('estatus') == 'pagado' ? 'selected' : '' }}>Pagado</option>
+                        @php($estatusSeleccionados = (array) request('estatus', []))
+                        <select name="estatus[]" id="estatus" class="form-control select2" multiple="multiple" data-placeholder="Todos los estados">
+                            <option value="pendiente" {{ in_array('pendiente', $estatusSeleccionados, true) ? 'selected' : '' }}>Pendiente</option>
+                            <option value="parcialemente pagado" {{ in_array('parcialemente pagado', $estatusSeleccionados, true) ? 'selected' : '' }}>Parcialmente Pagado</option>
+                            <option value="pagado" {{ in_array('pagado', $estatusSeleccionados, true) ? 'selected' : '' }}>Pagado</option>
                         </select>
                     </div>
                 </div>
@@ -86,8 +86,7 @@
                                     data-tipo="resumen"
                                     data-fecha-desde="{{ request('fecha_desde') }}"
                                     data-fecha-hasta="{{ request('fecha_hasta') }}"
-                                    data-cliente-id="{{ request('cliente_id') }}"
-                                    data-estatus="{{ request('estatus') }}">
+                                    data-cliente-id="{{ request('cliente_id') }}">
                                 <i class="fas fa-file-pdf mr-1"></i> Exportar PDF
                             </button>
                         </div>
@@ -223,6 +222,10 @@
         padding: 6px 12px;
         border: 1px solid #d2d6de;
     }
+    .select2-container--default .select2-selection--multiple {
+        min-height: 38px;
+        border: 1px solid #d2d6de;
+    }
     .select2-container--default .select2-selection--single .select2-selection__arrow {
         height: 38px;
     }
@@ -251,6 +254,32 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/i18n/es.js"></script>
 
 <script>
+    function initSelect2() {
+        // Cliente
+        if ($('#cliente_id').length) {
+            $('#cliente_id').select2({
+                theme: 'bootstrap',
+                width: '100%'
+            });
+        }
+
+        // Estatus (máximo 2)
+        if ($('#estatus').length) {
+            $('#estatus').select2({
+                theme: 'bootstrap',
+                width: '100%',
+                closeOnSelect: false,
+                allowClear: true,
+                placeholder: $('#estatus').data('placeholder') || '',
+                maximumSelectionLength: 2
+            });
+        }
+    }
+
+    $(document).ready(function() {
+        initSelect2();
+    });
+
     $('#filtroForm').on('submit', function(e) {
         e.preventDefault();
         const fechaDesde = $('#fecha_desde').val();
@@ -296,17 +325,23 @@
 
     $(document).on('click', '.generar-reporte', function() {
         const tipo = $(this).data('tipo');
-        const fechaDesde = $(this).data('fecha-desde');
-        const fechaHasta = $(this).data('fecha-hasta');
-        const clienteId = $(this).data('cliente-id');
-        const estatus = $(this).data('estatus');
+        const fechaDesde = $('#fecha_desde').val();
+        const fechaHasta = $('#fecha_hasta').val();
+        const clienteId = $('#cliente_id').val();
+        const estatus = $('#estatus').val() || [];
         const language = $('#language').val();
         
         let url = "{{ url('reportes/cxc/generar-pdf') }}";
         url += `?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&tipo=${tipo}&language=${language}`;
         
         if(clienteId) url += `&cliente_id=${clienteId}`;
-        if(estatus) url += `&estatus=${estatus}`;
+        if (Array.isArray(estatus)) {
+            estatus.forEach(function(e) {
+                url += `&estatus[]=${encodeURIComponent(e)}`;
+            });
+        } else if (estatus) {
+            url += `&estatus=${encodeURIComponent(estatus)}`;
+        }
         
         window.open(url, '_blank');
     });
