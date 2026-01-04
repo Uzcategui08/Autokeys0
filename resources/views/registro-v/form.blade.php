@@ -267,7 +267,7 @@
                                 <div class="form-group mb-3">
                                     <label for="titular_c" class="form-label">{{ __('Titular') }}</label>
                                     <input type="text" name="titular_c" class="form-control @error('titular_c') is-invalid @enderror" 
-                                        value="{{ old('titular_c', $registroV?->titular_c) }}" id="titular_c" placeholder="Titular">
+                                        value="{{ old('titular_c', $registroV?->titular_c ?? 'N/A') }}" id="titular_c" placeholder="Titular" readonly>
                                     {!! $errors->first('titular_c', '<div class="invalid-feedback"><strong>:message</strong></div>') !!}
                                 </div>
                             </div>
@@ -1332,6 +1332,32 @@ $(document).ready(function() {
 
         calcularPorcentajeCerrajero();
     });
+
+    /**************************************
+     * TITULAR (solo Zelle)
+     **************************************/
+    function isZelleSelected() {
+        return String($('#pago_metodo').val() || '') === '1';
+    }
+
+    function syncTitularWithMetodo() {
+        const $titular = $('#titular_c');
+        if ($titular.length === 0) return;
+
+        if (isZelleSelected()) {
+            $titular.prop('readonly', false);
+            if (($titular.val() || '').trim().toUpperCase() === 'N/A') {
+                $titular.val('');
+            }
+        } else {
+            $titular.val('N/A');
+            $titular.prop('readonly', true);
+        }
+    }
+
+    $(document).on('change', '#pago_metodo', syncTitularWithMetodo);
+    $(document).ready(syncTitularWithMetodo);
+    $(document).on('submit', 'form', syncTitularWithMetodo);
 
     /**************************************
      * SECCIÓN DE GASTOS 

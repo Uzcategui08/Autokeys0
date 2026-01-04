@@ -51,6 +51,25 @@ class RegistroVRequest extends FormRequest
     {
         $data = $this->all();
 
+        $isZelle = (string) ($data['pago_metodo'] ?? '') === '1';
+
+        $pagosRaw = $data['pagos'] ?? null;
+        if (!$isZelle && $pagosRaw) {
+            $pagos = is_array($pagosRaw) ? $pagosRaw : json_decode((string) $pagosRaw, true);
+            if (is_array($pagos)) {
+                foreach ($pagos as $pago) {
+                    if ((string) ($pago['metodo_pago'] ?? '') === '1') {
+                        $isZelle = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!$isZelle) {
+            $data['titular_c'] = 'N/A';
+        }
+
         if (!empty($data['id_cliente']) && !ctype_digit((string) $data['id_cliente'])) {
             $nombreCliente = trim((string) $data['id_cliente']);
             if ($nombreCliente !== '') {
